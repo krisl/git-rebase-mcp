@@ -132,7 +132,7 @@ Plus:
 
 ## Phasing
 
-- **v1 — rebase.** Everything above. Smallest surface that would have prevented all three errors.
+- **v1 — rebase. Done.** Everything above. Smallest surface that would have prevented all three errors.
 - **v2 — structural conflicts.** tree-sitter (`tree-sitter-language-pack`) to classify each collision unit as node-disjoint or overlapping, and auto-resolve the disjoint ones so they never surface. Most of this session's conflicts were end-of-file test appends and pure reindents, which are node-disjoint. Must be a lossless CST, not a Python `ast`: these files are comment-heavy and several conflicts *were* comment blocks, and any reformatting would break the byte-identical invariant.
 - **later — history surgery.** `split_commit` by hunk (the one operation that forced hand-written Python this session, because `git add -p` is interactive), `absorb` (route a fix to the commit that introduced the line), bisect driving.
 

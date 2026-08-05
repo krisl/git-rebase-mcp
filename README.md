@@ -2,8 +2,8 @@
 
 An MCP server that makes driving a `git rebase` safe for an agent.
 
-It exists because a rebase can corrupt history in ways git does not report. Three
-that happened, in one session, on one branch:
+It exists because a rebase can corrupt history in ways git does not report.
+Three that happened, in one session, on one branch:
 
 - **Amending at a conflicted `edit` stop.** `edit` normally stops with `HEAD` on
   the commit just applied, but when it stops *because of a conflict* `HEAD` is
@@ -14,18 +14,77 @@ that happened, in one session, on one branch:
 - **Staging a file that still contained conflict markers.** Two commits shipped
   `<<<<<<<` into the tree.
 
-So the server does two things:
+Every one exited zero and reported success.
 
-1. **Refuses the unsafe operation** rather than documenting it. `rebase_amend`
-   is not callable at a conflicted stop.
-2. **Presents a conflict as two intents instead of marker soup** — the diff from
-   the merge base to the branch so far, and the diff from the merge base to the
-   commit being replayed. "Wrap this loop in `if current:`" against "replace
-   `delta` with `delta_count(...)`" composes in seconds; three near-identical
-   marker blocks differing by indentation and one token does not.
+## What it does about it
 
-It also records the tip before starting and asserts at the end that the final
-tree is unchanged, which is what caught all three errors above.
+**Refuses the unsafe operation** rather than documenting it. `rebase_amend` is
+not callable at a conflicted stop, and the refusal says why and what to do
+instead:
+
+> Refusing to amend: the rebase is conflicted, and HEAD (2c806c04b 'base') is
+> not a commit this step created. Stopped part-way through applying 87f3d0fd4
+> (third). That commit does not exist yet, so HEAD is still the one before it
+> and amending would rewrite the wrong commit. Resolve the conflicted paths,
+> then continue.
+
+**Shows a conflict as two intents, not as marker soup.** Per contested region
+it reports what each side did to the common base:
+
+```
+──── branch so far ────          ──── replaying: "Use delta_count" ────
+ def counts(packages):            def counts(packages):
+-    if packages:                     if packages:
+-        rows = []                        rows = []
+-        for package in packages:         for package in packages:
++    rows = []                   -            rows.append(delta(package))
++    for package in packages:    +            rows.append(delta_count(package))
+     return rows                      return rows
+```
+
+"The branch has not replayed the wrap yet" against "the fix swaps the call, and
+leaves the wrap alone". Composing those needs no reasoning about which of three
+interleaved blocks belongs to whom.
+
+**Records where the branch was, and checks the result against it.** Reordering
+commits must not change the end result, so a difference at the end is a report
+of damage. This is what caught all three errors above.
+
+## Tools
+
+| Tool | |
+| --- | --- |
+| `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. |
+| `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. |
+| `rebase_status` | Typed state, and whether `HEAD` is the commit being replayed. |
+| `rebase_conflicts` | Each contested region as two diffs, plus the replayed commit's message. |
+| `rebase_resolve` | Writes and stages a resolution. Refuses one containing markers. |
+| `rebase_amend` | Amends — only where `HEAD` really is this step's commit. |
+| `rebase_continue` | Carries on. Refuses while anything is unmerged. |
+| `rebase_finish` | Checks the tree against the backup and scans every commit for markers. |
+| `rebase_abort` | Abandons the rebase and puts back what was moved aside. |
+
+`rebase_start` takes a `check_command`, run after every commit. It is the only
+thing that catches a step which applies cleanly and still leaves the tree
+broken.
+
+## Use it
+
+```bash
+uv tool install --from . git-rebase-mcp     # or: uv sync, for development
+```
+
+In Claude Code, `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "git-rebase": { "command": "git-rebase-mcp" }
+  }
+}
+```
+
+Every tool takes a `repo` argument, defaulting to the working directory.
 
 ## Prior art
 
@@ -35,19 +94,44 @@ as labels, conflict counts, resolve-with-ours/theirs — anticipates most of thi
 tool surface. This server is that insight delivered to an agent instead of a
 buffer, wrapped in the rebase state machine.
 
-The difference in mechanism: DiffDiff parses conflict markers because it works
-inside a buffer. A server does not have to. Git keeps all three sides in the
-index as stages 1, 2 and 3, so the payload is read with `git show :1:path`
-rather than reconstructed from text.
+The mechanism differs: DiffDiff parses conflict markers because it works inside
+a buffer. A server does not have to. Git keeps all three sides in the index as
+stages 1, 2 and 3, so the payload is read with `git show :1:path` rather than
+reconstructed from text.
+
+## Design notes
+
+- [docs/plan.md](docs/plan.md) — the design, and what is deliberately left out.
+- [docs/decisions/0001-python-rather-than-rust.md](docs/decisions/0001-python-rather-than-rust.md)
+  — including the two things Rust would have done better, and how each is
+  recovered here.
+
+Rebase state is a closed union of four types rather than fields on one object,
+so `rebase_amend` accepts one type instead of testing a set of conditions that
+could drift apart from the states. `patiencediff` rather than `difflib`, because
+the default matcher pairs up the wrong blocks in files that repeat — a test file
+being the obvious case — and those hunk boundaries are the main output.
 
 ## Status
 
-Early. See [docs/plan.md](docs/plan.md) for the design and
-[docs/decisions/](docs/decisions/) for why it is Python.
+The rebase tools are complete and tested. Still to come, in rough order:
+
+- **Structural conflicts.** Use tree-sitter to spot regions the two sides edited
+  at different nodes, and merge those without asking. Most conflicts in practice
+  are appends at the end of a file or pure reindents. Must be a lossless
+  concrete syntax tree, not a Python `ast`: comments matter, and reformatting
+  would break the unchanged-tree check.
+- **`split_commit`** by hunk — the one operation that still needs doing by hand,
+  because `git add -p` is interactive.
+- **`absorb`** — route a fix to the commit that introduced the line it changes.
 
 ## Development
 
 ```bash
 uv sync
-uv run pytest
+uv run pytest       # builds real repositories and runs real git against them
+uv run pyright
 ```
+
+Tests use scratch repositories rather than mocks. The point of the server is
+that it agrees with git, so mocking git would test nothing worth testing.
