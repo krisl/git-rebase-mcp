@@ -19,8 +19,8 @@ from mcp.server.mcpserver import MCPServer
 
 from .conflicts import FileConflict, read_conflict
 from .git import Git
-from .invariants import has_markers
-from .plan import check_plan
+from .invariants import Session, has_markers, record_backup, save_session
+from .plan import TODO_LINE, check_plan
 from .state import (
     Commit,
     Conflicted,
@@ -271,6 +271,101 @@ def _untracked_collisions(git: Git, base: str) -> tuple[str, ...]:
     known = set(git.lines("ls-tree", "-r", "--name-only", base))
     known.update(git.lines("log", "--name-only", "--format=", f"{base}..HEAD"))
     return tuple(sorted(untracked & known))
+
+
+@dataclass(frozen=True)
+class StartReport:
+    backup_ref: str
+    stashed: tuple[str, ...]
+    status: StatusReport
+    guidance: str
+
+
+@mcp.tool()
+def rebase_start(
+    base: str,
+    repo: str = ".",
+    todo: list[str] | None = None,
+    check_command: str | None = None,
+    force: bool = False,
+) -> StartReport:
+    """Begin a rebase onto `base`, and report where it stops.
+
+    Refuses anything rebase_preflight called unsafe, unless `force`. Before
+    starting it tags the current tip, so the result can be checked against it,
+    and moves aside untracked files a replayed commit would collide with.
+
+    `check_command` is run after every commit, which is the only thing that
+    catches a step that applies cleanly but leaves the tree broken.
+    """
+    git = _git(repo)
+    preflight = rebase_preflight(base, repo, todo)
+    if not preflight.safe_to_start and not force:
+        raise ValueError(f"Refusing to start. {preflight.guidance}")
+
+    stashed = _stash(git, preflight.untracked_collisions)
+    backup = record_backup(git)
+    save_session(
+        git,
+        Session(
+            backup_ref=backup.ref,
+            backup_sha=backup.sha,
+            backup_tree=backup.tree,
+            base=base,
+            stashed=stashed,
+            check_command=check_command,
+        ),
+    )
+
+    args = ["rebase", "-i"]
+    config: list[str] = ["-c", "core.editor=true"]
+    if todo is not None:
+        # A supplied todo replaces whatever git generates, so --exec would be
+        # discarded with it; the exec lines have to be woven in here instead.
+        lines = _with_checks(todo, check_command)
+        todo_file = git.git_path("rebase-mcp-todo")
+        todo_file.write_text("\n".join(lines) + "\n")
+        config += ["-c", f"sequence.editor=cp '{todo_file}'"]
+    elif check_command:
+        args += ["--exec", check_command]
+    args.append(base)
+
+    # Stopping at a conflict is an ordinary outcome that git reports as failure,
+    # so the result is read from the rebase state instead.
+    git.run(*config, *args, check=False)
+    status = _report(read_state(git))
+    return StartReport(
+        backup_ref=backup.ref,
+        stashed=stashed,
+        status=status,
+        guidance=(
+            f"Started. The tip beforehand is tagged {backup.ref}; rebase_finish "
+            "checks the result against it. " + status.guidance
+        ),
+    )
+
+
+def _with_checks(todo: list[str], check_command: str | None) -> list[str]:
+    if not check_command:
+        return todo
+    woven: list[str] = []
+    for line in todo:
+        woven.append(line)
+        if TODO_LINE.match(line):
+            woven.append(f"exec {check_command}")
+    return woven
+
+
+def _stash(git: Git, paths: tuple[str, ...]) -> tuple[str, ...]:
+    """Move untracked files out of the way, remembering them for later.
+
+    Only the ones that would actually collide: stashing anything else would be
+    taking away work the caller did not ask us to touch.
+    """
+    if not paths:
+        return ()
+    git.run("stash", "push", "--include-untracked", "--quiet", "--", *paths)
+    return paths
 
 
 @dataclass(frozen=True)
