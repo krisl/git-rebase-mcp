@@ -19,7 +19,16 @@ from mcp.server.mcpserver import MCPServer
 
 from .conflicts import FileConflict, read_conflict
 from .git import Git
-from .invariants import Session, has_markers, record_backup, save_session
+from .invariants import (
+    Session,
+    clear_session,
+    commits_with_markers,
+    has_markers,
+    load_session,
+    record_backup,
+    save_session,
+    tree_change,
+)
 from .plan import TODO_LINE, check_plan
 from .state import (
     Commit,
@@ -511,6 +520,113 @@ def _report(state: RebaseState) -> StatusReport:
         case _:
             # Reached only if a state is added without a branch here.
             assert_never(state)
+
+
+@dataclass(frozen=True)
+class FinishReport:
+    ok: bool
+    backup_ref: str
+    tree_change: str | None
+    commits_with_markers: tuple[str, ...]
+    commits: tuple[CommitInfo, ...]
+    restored: tuple[str, ...]
+    guidance: str
+
+
+@mcp.tool()
+def rebase_finish(repo: str = ".", allow_tree_change: bool = False) -> FinishReport:
+    """Check the finished rebase against the tip it started from, and tidy up.
+
+    Reordering commits must not change the end result, so a difference here is
+    a report of damage: a commit dropped from the todo, or two folded together.
+    Every rewritten commit is also scanned for conflict markers, since one
+    committed part-way and tidied up later still leaves a commit nobody can
+    build.
+
+    The backup tag is kept either way; deleting the only record of where the
+    branch was is not this tool's decision to make.
+    """
+    git = _git(repo)
+    state = read_state(git)
+    if not isinstance(state, NotRebasing):
+        raise ValueError(
+            f"Refusing to finish: the rebase is still {_report(state).state}. "
+            "Continue or abort it first."
+        )
+    session = load_session(git)
+    if session is None:
+        raise ValueError("No rebase recorded by this server; nothing to check against.")
+
+    difference = tree_change(git, session.backup)
+    marker_hits = commits_with_markers(git, f"{session.base_sha}..HEAD")
+    problems: list[str] = []
+    if difference and not allow_tree_change:
+        problems.append(
+            "the tree at the tip is not what it was before the rebase, so "
+            f"something was lost or merged:\n{difference}"
+        )
+    if marker_hits:
+        problems.append(
+            "conflict markers were committed in "
+            + ", ".join(f"{hit.sha[:9]} ({hit.subject})" for hit in marker_hits)
+        )
+
+    restored = _unstash(git, session.stashed) if not problems else ()
+    if not problems:
+        clear_session(git)
+
+    return FinishReport(
+        ok=not problems,
+        backup_ref=session.backup_ref,
+        tree_change=difference,
+        commits_with_markers=tuple(hit.sha for hit in marker_hits),
+        commits=tuple(
+            _commit_info(git, sha)
+            for sha in git.lines("rev-list", "--reverse", f"{session.base_sha}..HEAD")
+        ),
+        restored=restored,
+        guidance=(
+            f"Rebase checks out. Anything moved aside was restored. The tip before "
+            f"the rebase is still tagged {session.backup_ref}."
+            if not problems
+            else "Not finished: "
+            + "; ".join(problems)
+            + f". The branch before the rebase is at {session.backup_ref}; "
+            "`git reset --hard` to it to undo."
+        ),
+    )
+
+
+@dataclass(frozen=True)
+class AbortReport:
+    head: CommitInfo
+    restored: tuple[str, ...]
+    guidance: str
+
+
+@mcp.tool()
+def rebase_abort(repo: str = ".") -> AbortReport:
+    """Abandon the rebase and put back anything that was moved aside."""
+    git = _git(repo)
+    if not isinstance(read_state(git), NotRebasing):
+        git.run("rebase", "--abort", check=False)
+    session = load_session(git)
+    restored = _unstash(git, session.stashed) if session else ()
+    if session:
+        clear_session(git)
+    return AbortReport(
+        head=_commit_info(git, "HEAD"),
+        restored=restored,
+        guidance="Rebase abandoned."
+        + (f" Restored: {', '.join(restored)}." if restored else ""),
+    )
+
+
+def _unstash(git: Git, stashed: tuple[str, ...]) -> tuple[str, ...]:
+    """Put back what _stash moved, if it is still there to put back."""
+    if not stashed:
+        return ()
+    return stashed if git.run("stash", "pop", check=False).ok else ()
 
 
 def main() -> None:
