@@ -18,7 +18,7 @@ from typing import Literal, assert_never
 
 from mcp.server.mcpserver import MCPServer
 
-from .conflicts import FileConflict, auto_resolve_file, read_conflict
+from .conflicts import FileConflict, auto_resolve_file, read_conflict, take_side
 from .git import Git, GitResult
 from .invariants import (
     Session,
@@ -224,18 +224,30 @@ def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport
 
 
 @mcp.tool()
-def rebase_resolve(path: str, content: str | None = None, repo: str = ".") -> ResolveReport:
+def rebase_resolve(
+    path: str, content: str | None = None, repo: str = ".", take: str | None = None
+) -> ResolveReport:
     """Stage the resolved content for one conflicted path.
 
-    Pass `content` to write the file and stage it. Omit it to stage what is
-    already in the working tree, which is what you want for a file large enough
-    that sending it back would cost more than editing it in place.
+    Three ways, in rough order of how much they cost to use:
 
-    Either way the content is refused if it still contains conflict markers.
-    Staging one is how a commit ends up with `<<<<<<<` in it, and nothing
-    downstream catches that.
+    - `take="both"`, `"branch"` or `"replaying"` resolves every conflict block
+      in the file the stated way. "both" keeps the branch's lines then the
+      replayed commit's, which is what two insertions at the same point almost
+      always mean. Cheapest, and it cannot introduce a typo.
+    - no arguments stages what is already in the working tree, for a file large
+      enough that sending it back costs more than editing it in place.
+    - `content` writes the finished file and stages it.
+
+    Every route refuses content that still contains conflict markers. Staging
+    one is how a commit ends up with `<<<<<<<` in it, and nothing downstream
+    catches that.
     """
     git = _git(repo)
+    if take is not None and content is not None:
+        raise ValueError("take and content are two ways to say the same thing; pass one.")
+    if take is not None:
+        content = take_side(git, path, take)
     target = git.repo / path
     if not target.parent.is_dir():
         raise ValueError(f"{path} is not inside {git.repo}")

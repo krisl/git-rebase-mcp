@@ -187,6 +187,45 @@ def _locate(base_lines: list[str], section: list[str], from_line: int) -> int:
     return from_line
 
 
+def take_side(git: Git, path: str, side: str) -> str:
+    """The whole file with every conflict block resolved the same stated way.
+
+    For the blocks composing refuses: two insertions at the same point, which is
+    almost always "both, in this order", and a genuine disagreement, which is
+    almost always one side or the other. Saying which is far cheaper than
+    sending the finished file back, and it cannot introduce a typo.
+    """
+    base = _stage(git, BASE, path)
+    merged = _merged(git, _stage(git, BRANCH_SO_FAR, path), base, _stage(git, REPLAYING, path))
+    resolved: list[str] = []
+    block_lines: list[str] = []
+    inside = False
+    for line in merged.splitlines():
+        if line.startswith("<<<<<<<"):
+            inside, block_lines = True, [line]
+        elif inside:
+            block_lines.append(line)
+            if line.startswith(">>>>>>>"):
+                block = _parse_diff3(block_lines)[0]
+                resolved.extend(_chosen(block, side))
+                inside = False
+        else:
+            resolved.append(line)
+    return "".join(line + "\n" for line in resolved)
+
+
+def _chosen(block: _Block, side: str) -> list[str]:
+    if side == "branch":
+        return block.branch_so_far
+    if side == "replaying":
+        return block.replaying
+    if side == "both":
+        # The branch first: it is what the file already reads like, and the
+        # replayed commit is the newer thought arriving on top of it.
+        return block.branch_so_far + block.replaying
+    raise ValueError(f"side must be branch, replaying or both, not {side!r}")
+
+
 def auto_resolve_file(git: Git, path: str) -> str | None:
     """The whole file with every block composed, or None if any block cannot be.
 

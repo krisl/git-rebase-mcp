@@ -140,3 +140,48 @@ def test_staging_a_file_that_is_not_there_says_so(scratch: Scratch) -> None:
     scratch.commit("base", f="one\n")
     with pytest.raises(ValueError, match="nothing to stage"):
         rebase_resolve("absent", repo=str(scratch.path))
+
+
+@pytest.fixture
+def both_appended(scratch: Scratch) -> Scratch:
+    """Both sides added at the same point, which composing refuses on purpose."""
+    scratch.commit("base", f="head\n")
+    scratch.commit("branch adds", f="head\nfrom branch\n")
+    branch_side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "-b", "side", "HEAD~1")
+    scratch.commit("side adds", f="head\nfrom replaying\n")
+    side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.start_rebase(branch_side, [f"pick {side}"])
+    return scratch
+
+
+def test_taking_both_keeps_the_branch_first(both_appended: Scratch) -> None:
+    """What two insertions at the same point almost always mean."""
+    rebase_resolve("f", take="both", repo=str(both_appended.path))
+    assert both_appended.read("f") == "head\nfrom branch\nfrom replaying\n"
+
+
+def test_taking_the_replayed_commit(both_appended: Scratch) -> None:
+    rebase_resolve("f", take="replaying", repo=str(both_appended.path))
+    assert both_appended.read("f") == "head\nfrom replaying\n"
+
+
+def test_taking_the_branch(both_appended: Scratch) -> None:
+    rebase_resolve("f", take="branch", repo=str(both_appended.path))
+    assert both_appended.read("f") == "head\nfrom branch\n"
+
+
+def test_taking_a_side_stages_it(both_appended: Scratch) -> None:
+    report = rebase_resolve("f", take="both", repo=str(both_appended.path))
+    assert report.still_conflicted == ()
+
+
+def test_an_unknown_side_is_refused(both_appended: Scratch) -> None:
+    with pytest.raises(ValueError, match="branch, replaying or both"):
+        rebase_resolve("f", take="ours", repo=str(both_appended.path))
+
+
+def test_take_and_content_together_are_refused(both_appended: Scratch) -> None:
+    with pytest.raises(ValueError, match="pass one"):
+        rebase_resolve("f", content="x\n", take="both", repo=str(both_appended.path))
