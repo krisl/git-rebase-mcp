@@ -177,3 +177,25 @@ def test_autosquash_and_a_todo_together_are_refused(scratch: Scratch) -> None:
     second = scratch.git.out("rev-parse", "HEAD")
     with pytest.raises(ValueError, match="cannot be given one"):
         rebase_start("HEAD~1", str(scratch.path), todo=[f"pick {second}"], autosquash=True)
+
+
+def test_a_resolution_is_replayed_when_the_same_conflict_comes_back(scratch: Scratch) -> None:
+    """A rebase that is retried hits the identical conflicts a second time.
+    Without rerere they are resolved again by hand for nothing."""
+    scratch.commit("base", f="one\n")
+    scratch.commit("second", f="two\n")
+    scratch.commit("third", f="three\n")
+    before = scratch.git.out("rev-parse", "HEAD")
+    second, third = scratch.git.out("rev-parse", "HEAD~1"), scratch.git.out("rev-parse", "HEAD")
+    todo = [f"pick {third}", f"pick {second}"]
+
+    assert rebase_start("HEAD~2", str(scratch.path), todo).status.state == "conflicted"
+    scratch.write("f", "resolved by hand\n")
+    scratch.git.run("add", "f")
+    scratch.git.run("-c", "core.editor=true", "-c", "rerere.enabled=true",
+                    "rebase", "--continue", check=False)
+    scratch.git.run("rebase", "--abort", check=False)
+    scratch.git.run("reset", "-q", "--hard", before)
+
+    assert rebase_start("HEAD~2", str(scratch.path), todo).status.state == "conflicted"
+    assert scratch.read("f") == "resolved by hand\n"  # replayed, no markers

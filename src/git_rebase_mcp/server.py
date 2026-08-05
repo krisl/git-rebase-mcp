@@ -51,6 +51,17 @@ mcp = MCPServer(
     ),
 )
 
+# Record every resolution and replay it if the same conflict comes back. A rebase
+# that is aborted and retried, or a series replayed onto a different base, hits
+# the identical conflicts a second time; without this they are resolved again by
+# hand for nothing. Set per invocation rather than written to the repo config,
+# because turning on a recording facility in someone's repository is not this
+# tool's decision to make.
+#
+# rerere.autoUpdate stays off on purpose: a replayed resolution is a guess from
+# an earlier context and should be looked at before it is staged.
+RERERE = ("-c", "rerere.enabled=true")
+
 StateName = Literal[
     "not_rebasing", "conflicted", "stopped_after_apply", "stopped_without_apply"
 ]
@@ -464,7 +475,7 @@ def rebase_start(
     )
 
     args = ["rebase", "-i"]
-    config: list[str] = ["-c", "core.editor=true"]
+    config: list[str] = ["-c", "core.editor=true", *RERERE]
     if todo is not None:
         # A supplied todo replaces whatever git generates, so --exec would be
         # discarded with it; the exec lines have to be woven in here instead.
@@ -592,7 +603,7 @@ def rebase_continue(repo: str = ".") -> StatusReport:
         raise ValueError("No rebase in progress.")
     # Stopping again on the next conflict is an ordinary outcome, not a failure,
     # so the exit status is read from the state rather than from git.
-    result = git.run("-c", "core.editor=true", "rebase", "--continue", check=False)
+    result = git.run("-c", "core.editor=true", *RERERE, "rebase", "--continue", check=False)
     return _report(read_state(git), _git_said(result))
 
 
