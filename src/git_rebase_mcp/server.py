@@ -20,6 +20,7 @@ from mcp.server.mcpserver import MCPServer
 from .conflicts import FileConflict, read_conflict
 from .git import Git
 from .invariants import has_markers
+from .plan import check_plan
 from .state import (
     Commit,
     Conflicted,
@@ -197,6 +198,79 @@ def rebase_resolve(path: str, content: str, repo: str = ".") -> ResolveReport:
             else f"Still conflicted: {', '.join(remaining)}."
         ),
     )
+
+
+@dataclass(frozen=True)
+class PreflightReport:
+    base: str
+    commits: tuple[CommitInfo, ...]
+    dropped: tuple[CommitInfo, ...]
+    unknown: tuple[str, ...]
+    blocking: tuple[str, ...]
+    untracked_collisions: tuple[str, ...]
+    safe_to_start: bool
+    guidance: str
+
+
+@mcp.tool()
+def rebase_preflight(
+    base: str, repo: str = ".", todo: list[str] | None = None
+) -> PreflightReport:
+    """Check what a rebase would do, without starting it or changing anything.
+
+    Reports commits the todo would drop silently, commits it names that are not
+    in the range, anything already in progress or uncommitted, and untracked
+    files a replayed commit would collide with.
+    """
+    git = _git(repo)
+    check = check_plan(git, base, todo)
+    blocking = _blocking(git)
+    collisions = _untracked_collisions(git, base)
+
+    problems = [*blocking, *check.problems]
+    return PreflightReport(
+        base=base,
+        commits=tuple(_info(c) for c in check.commits),
+        dropped=tuple(_info(c) for c in check.dropped),
+        unknown=check.unknown,
+        blocking=blocking,
+        untracked_collisions=collisions,
+        safe_to_start=not problems,
+        guidance=(
+            "Nothing found; safe to start."
+            if not problems
+            else "Not safe to start: " + "; ".join(problems)
+        )
+        + (
+            f" Untracked files would be moved aside first: {', '.join(collisions)}."
+            if collisions
+            else ""
+        ),
+    )
+
+
+def _blocking(git: Git) -> tuple[str, ...]:
+    """Conditions that must be cleared before a rebase can start."""
+    problems: list[str] = []
+    if not isinstance(read_state(git), NotRebasing):
+        problems.append("a rebase is already in progress")
+    if git.lines("status", "--porcelain", "--untracked-files=no"):
+        problems.append("the working tree has uncommitted changes")
+    return tuple(problems)
+
+
+def _untracked_collisions(git: Git, base: str) -> tuple[str, ...]:
+    """Untracked files that checking out the range would refuse to overwrite.
+
+    A rebase stops dead on these before doing anything, which is confusing when
+    the file is unrelated scratch work that merely shares a name.
+    """
+    untracked = set(git.lines("ls-files", "--others", "--exclude-standard"))
+    if not untracked:
+        return ()
+    known = set(git.lines("ls-tree", "-r", "--name-only", base))
+    known.update(git.lines("log", "--name-only", "--format=", f"{base}..HEAD"))
+    return tuple(sorted(untracked & known))
 
 
 @dataclass(frozen=True)
