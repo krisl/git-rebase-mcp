@@ -129,12 +129,10 @@ common shape, not an edge case: it took the count from one to five.
 
 ## What would move it further
 
-Only one thing is now worth measuring: a rule for two insertions at the same
-point. Both cases in this run were "the branch appended tests and so did the
-replayed commit", and `take="both"` was right both times. Applying it
-automatically is tempting and wrong -- nothing in the text says which order was
-meant -- but reporting the shape, so a caller can answer in one call instead of
-inspecting first, would remove the last mechanical step.
+The last mechanical step is now closed: two insertions at the same point are
+reported as such, with `take="both"` named as the answer, so a caller answers in
+one call instead of reading the file to work out the same thing. It is still not
+applied automatically -- a guess about order should be someone's decision.
 
 Structural conflicts with tree-sitter remain last, and the case for them is now
 weaker: after this, the only conflicts reaching a person are ones a person
