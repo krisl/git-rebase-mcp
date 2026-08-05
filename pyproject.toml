@@ -31,9 +31,12 @@ packages = ["src/git_rebase_mcp"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
+pythonpath = ["test"]
 addopts = "--strict-markers"
 
 [tool.pyright]
 include = ["src", "test"]
+venvPath = "."
+venv = ".venv"
 strict = ["src"]
 pythonVersion = "3.12"
