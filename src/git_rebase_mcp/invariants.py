@@ -115,6 +115,10 @@ class Session:
     backup_sha: str
     backup_tree: str
     base: str
+    # Resolved when the rebase started. The spelling above is kept for reporting,
+    # but a relative name like HEAD~2 points somewhere else once history has
+    # been rewritten, so it cannot be used to name the range afterwards.
+    base_sha: str
     stashed: tuple[str, ...] = ()
     check_command: str | None = None
 
@@ -157,6 +161,7 @@ def load_session(git: Git) -> Session | None:
             backup_sha=str(raw["backup_sha"]),
             backup_tree=str(raw["backup_tree"]),
             base=str(raw["base"]),
+            base_sha=str(raw["base_sha"]),
             stashed=stashed,
             check_command=str(command) if command is not None else None,
         )

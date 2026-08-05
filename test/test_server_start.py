@@ -114,3 +114,18 @@ def test_a_check_command_that_passes_does_not(series: Scratch) -> None:
     report = rebase_start("HEAD~2", str(series.path), [f"pick {b}", f"pick {c}"],
                           check_command="true")
     assert report.status.state == "not_rebasing"
+
+
+def test_the_base_is_recorded_as_a_resolved_sha(series: Scratch) -> None:
+    """`HEAD~2` names a different commit once history has been rewritten, so
+    the spelling cannot be used to name the range afterwards."""
+    base_before = series.git.out("rev-parse", "HEAD~2")
+    b, c = series.git.out("rev-parse", "HEAD~1"), series.git.out("rev-parse", "HEAD")
+    rebase_start("HEAD~2", str(series.path), [f"pick {c}", f"pick {b}"])
+
+    session = load_session(series.git)
+    assert session is not None
+    assert session.base == "HEAD~2"
+    assert session.base_sha == base_before
+    assert series.git.out("rev-parse", "HEAD~2") == base_before  # unchanged here...
+    assert session.base_sha != series.git.out("rev-parse", "HEAD")

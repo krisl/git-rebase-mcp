@@ -312,6 +312,7 @@ def rebase_start(
             backup_sha=backup.sha,
             backup_tree=backup.tree,
             base=base,
+            base_sha=git.out("rev-parse", f"{base}^{{commit}}"),
             stashed=stashed,
             check_command=check_command,
         ),

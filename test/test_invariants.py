@@ -125,6 +125,7 @@ def test_a_session_survives_being_written_and_read(scratch: Scratch) -> None:
         backup_sha=backup.sha,
         backup_tree=backup.tree,
         base="HEAD~1",
+        base_sha=backup.sha,
         stashed=("pytest.ini",),
         check_command="pytest -q",
     )
@@ -145,7 +146,7 @@ def test_clearing_a_session_removes_it(scratch: Scratch) -> None:
     backup = record_backup(scratch.git, label="test")
     save_session(
         scratch.git,
-        Session(backup.ref, backup.sha, backup.tree, base="HEAD~1"),
+        Session(backup.ref, backup.sha, backup.tree, base="HEAD~1", base_sha=backup.sha),
     )
     clear_session(scratch.git)
     assert load_session(scratch.git) is None
