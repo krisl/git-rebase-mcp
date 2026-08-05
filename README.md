@@ -125,16 +125,15 @@ being the obvious case — and those hunk boundaries are the main output.
 
 ## Status
 
-The rebase tools are complete and tested. Still to come, in rough order:
+The rebase tools are complete and tested, and have driven the same 21-commit
+branch twice. They caught two defects nothing else would have — a syntax error
+committed into 8 of 10 commits, and a `fixup` whose test depended on a commit
+scheduled after it.
 
-- **Structural conflicts.** Use tree-sitter to spot regions the two sides edited
-  at different nodes, and merge those without asking. Most conflicts in practice
-  are appends at the end of a file or pure reindents. Must be a lossless
-  concrete syntax tree, not a Python `ast`: comments matter, and reformatting
-  would break the unchanged-tree check.
-- **`split_commit`** by hunk — the one operation that still needs doing by hand,
-  because `git add -p` is interactive.
-- **`absorb`** — route a fix to the commit that introduced the line it changes.
+What they do not yet do is save much time: nine of eleven conflicts in the last
+run were mechanical shapes resolved by a hand-written script. [Phase 2](docs/phase-2.md)
+is planned against that measurement rather than against a feature list, and says
+how to tell whether it worked.
 
 ## Development
 
