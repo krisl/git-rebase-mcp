@@ -63,24 +63,50 @@ def record_backup(git: Git, label: str | None = None) -> Backup:
     return Backup(ref=ref, sha=sha, tree=git.out("rev-parse", f"{sha}^{{tree}}"))
 
 
-def branch_change(
-    git: Git, backup: Backup, base: str, revision: str = "HEAD"
-) -> str | None:
+@dataclass(frozen=True)
+class Change:
+    """A difference in what the branch does to its base."""
+
+    # True when every changed line is still there, in a different order or
+    # place. A resolution that puts a block somewhere else does that, and it is
+    # not damage; reporting it as damage is how a check stops being believed.
+    reordered_only: bool
+    summary: str
+
+
+def branch_change(git: Git, backup: Backup, base: str, revision: str = "HEAD") -> Change | None:
     """How the branch's own contribution differs from before, or None.
 
     A rebase must not alter what the branch does to its base. Comparing that,
     rather than the resulting tree, is what makes the check hold when the rebase
     also moves onto newer upstream work -- where the tree changes for a
     perfectly good reason and only the branch's own diff should not.
-
-    Anything reported here is damage: a commit dropped from the todo, or a
-    resolution that quietly kept the wrong side.
     """
-    before = _contribution(git, _fork_point(git, backup.sha, base), backup.sha)
-    after = _contribution(git, base, revision)
-    if before == after:
+    fork = _fork_point(git, backup.sha, base)
+    if _contribution(git, fork, backup.sha) == _contribution(git, base, revision):
         return None
-    return git.out("diff", "--stat", backup.sha, revision)
+    return Change(
+        reordered_only=_changed_lines(git, fork, backup.sha) == _changed_lines(git, base, revision),
+        summary=git.out("diff", "--stat", backup.sha, revision),
+    )
+
+
+def _changed_lines(git: Git, base: str, tip: str) -> dict[str, list[str]]:
+    """Every line the branch adds or removes, per file, order discarded.
+
+    Two rebases that produce the same lines in a different order agree on this
+    and disagree on the patch-id, which is exactly the distinction wanted.
+    """
+    per_file: dict[str, list[str]] = {}
+    path = ""
+    for line in git.run("diff", base, tip).stdout.splitlines():
+        if line.startswith("+++ "):
+            path = line[6:] if line.startswith("+++ b/") else line[4:]
+        elif line.startswith("--- ") or line.startswith("@@"):
+            continue
+        elif line[:1] in "+-" and path:
+            per_file.setdefault(path, []).append(line)
+    return {path: sorted(lines) for path, lines in per_file.items()}
 
 
 def _contribution(git: Git, base: str, tip: str) -> str:

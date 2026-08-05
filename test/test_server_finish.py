@@ -141,3 +141,42 @@ def test_finishing_reports_the_resulting_commits(series: Scratch) -> None:
     rebase_start("HEAD~2", str(series.path), [f"pick {c}", f"pick {b}"])
     report = rebase_finish(str(series.path))
     assert [x.subject for x in report.commits] == ["adds c", "adds b"]
+
+
+def test_the_same_lines_in_a_different_order_is_not_reported_as_damage(scratch: Scratch) -> None:
+    """Both real runs ended with this reported as a loss. A resolution that puts
+    a block somewhere else changes the patch-id and loses nothing, and a check
+    that calls it damage stops being believed."""
+    scratch.commit("base", f="keep\n")
+    scratch.commit("adds two helpers", f="keep\ndef one(): pass\ndef two(): pass\n")
+    helpers = scratch.git.out("rev-parse", "HEAD")
+    rebase_start("HEAD~1", str(scratch.path), [f"edit {helpers}"])
+
+    # Resolve it the other way round: same lines, different order.
+    scratch.write("f", "keep\ndef two(): pass\ndef one(): pass\n")
+    scratch.git.run("add", "f")
+    scratch.git.run("-c", "core.editor=true", "commit", "-q", "--amend", "--no-edit")
+    scratch.git.run("-c", "core.editor=true", "rebase", "--continue", check=False)
+
+    report = rebase_finish(str(scratch.path))
+    assert report.ok
+    assert report.reordered_only
+    assert report.branch_change is not None  # still reported, just not fatal
+    assert "different order" in report.guidance
+
+
+def test_a_lost_line_is_still_damage(scratch: Scratch) -> None:
+    """The distinction has to hold in the direction that matters."""
+    scratch.commit("base", f="keep\n")
+    scratch.commit("adds two helpers", f="keep\ndef one(): pass\ndef two(): pass\n")
+    helpers = scratch.git.out("rev-parse", "HEAD")
+    rebase_start("HEAD~1", str(scratch.path), [f"edit {helpers}"])
+
+    scratch.write("f", "keep\ndef one(): pass\n")  # two() dropped
+    scratch.git.run("add", "f")
+    scratch.git.run("-c", "core.editor=true", "commit", "-q", "--amend", "--no-edit")
+    scratch.git.run("-c", "core.editor=true", "rebase", "--continue", check=False)
+
+    report = rebase_finish(str(scratch.path))
+    assert not report.ok
+    assert not report.reordered_only

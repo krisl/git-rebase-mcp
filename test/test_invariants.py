@@ -48,7 +48,8 @@ def test_a_dropped_commit_changes_the_branch_change(scratch: Scratch) -> None:
 
     change = branch_change(scratch.git, backup, base)
     assert change is not None
-    assert "b" in change
+    assert not change.reordered_only  # a dropped commit is not a reordering
+    assert "b" in change.summary
 
 
 def test_moving_onto_newer_upstream_work_is_not_damage(scratch: Scratch) -> None:

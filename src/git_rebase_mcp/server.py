@@ -766,6 +766,9 @@ class FinishReport:
     commits: tuple[CommitInfo, ...]
     restored: tuple[str, ...]
     guidance: str
+    # True when the difference above is the same lines in a different order,
+    # which a resolution that moves a block does and which is not damage.
+    reordered_only: bool = False
 
 
 @mcp.tool()
@@ -794,13 +797,14 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
     if session is None:
         raise ValueError("No rebase recorded by this server; nothing to check against.")
 
-    difference = branch_change(git, session.backup, session.base_sha)
+    change = branch_change(git, session.backup, session.base_sha)
+    difference = change.summary if change else None
     marker_hits = commits_with_markers(git, f"{session.base_sha}..HEAD")
     problems: list[str] = []
-    if difference and not allow_change:
+    if change and not change.reordered_only and not allow_change:
         problems.append(
             "the branch no longer makes the same change to its base, so "
-            f"something was lost or resolved wrongly:\n{difference}"
+            f"something was lost or resolved wrongly:\n{change.summary}"
         )
     if marker_hits:
         problems.append(
@@ -816,6 +820,7 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
         ok=not problems,
         backup_ref=session.backup_ref,
         branch_change=difference,
+        reordered_only=bool(change and change.reordered_only),
         commits_with_markers=tuple(hit.sha for hit in marker_hits),
         commits=tuple(
             _commit_info(git, sha)
@@ -823,8 +828,15 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
         ),
         restored=restored,
         guidance=(
-            f"Rebase checks out. Anything moved aside was restored. The tip before "
-            f"the rebase is still tagged {session.backup_ref}."
+            "Rebase checks out"
+            + (
+                ", with the same lines in a different order than before -- a moved "
+                "block rather than a loss. "
+                if change and change.reordered_only
+                else ". "
+            )
+            + "Anything moved aside was restored. The tip before the rebase is "
+            f"still tagged {session.backup_ref}."
             if not problems
             else "Not finished: "
             + "; ".join(problems)
