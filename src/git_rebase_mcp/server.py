@@ -239,6 +239,7 @@ class PreflightReport:
     commits: tuple[CommitInfo, ...]
     dropped: tuple[CommitInfo, ...]
     unknown: tuple[str, ...]
+    already_upstream: tuple[CommitInfo, ...]
     blocking: tuple[str, ...]
     untracked_collisions: tuple[str, ...]
     safe_to_start: bool
@@ -252,8 +253,9 @@ def rebase_preflight(
     """Check what a rebase would do, without starting it or changing anything.
 
     Reports commits the todo would drop silently, commits it names that are not
-    in the range, anything already in progress or uncommitted, and untracked
-    files a replayed commit would collide with.
+    in the range, commits whose change is already in the base under a different
+    sha, anything already in progress or uncommitted, and untracked files a
+    replayed commit would collide with.
     """
     git = _git(repo)
     check = check_plan(git, base, todo)
@@ -266,6 +268,7 @@ def rebase_preflight(
         commits=tuple(_info(c) for c in check.commits),
         dropped=tuple(_info(c) for c in check.dropped),
         unknown=check.unknown,
+        already_upstream=tuple(_info(c) for c in check.already_upstream),
         blocking=blocking,
         untracked_collisions=collisions,
         safe_to_start=not problems,

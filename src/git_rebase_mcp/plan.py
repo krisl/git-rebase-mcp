@@ -34,11 +34,27 @@ class PlanCheck:
     dropped: tuple[Commit, ...]
     deliberately_dropped: tuple[Commit, ...]
     unknown: tuple[str, ...]
+    already_upstream: tuple[Commit, ...]
     problems: tuple[str, ...]
 
     @property
     def safe(self) -> bool:
         return not self.problems
+
+
+def already_upstream(git: Git, base: str) -> frozenset[str]:
+    """Commits in the range whose change is already in the base.
+
+    A merged branch keeps its old commits: the merge brought in rewritten copies
+    with different shas, so `base..HEAD` still lists every one of them and a
+    rebase dutifully replays work that is already there. Every file then
+    conflicts with itself, which reads as a catastrophe and is merely pointless.
+
+    `--cherry-mark` answers this by patch-id rather than by sha, which is the
+    only thing that can see through the rewrite.
+    """
+    marked = git.lines("rev-list", "--cherry-mark", "--right-only", f"{base}...HEAD")
+    return frozenset(line[1:] for line in marked if line.startswith("="))
 
 
 def commits_in_range(git: Git, base: str) -> tuple[Commit, ...]:
@@ -59,6 +75,19 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
     anything, so only the range is reported.
     """
     commits = commits_in_range(git, base)
+    upstream = already_upstream(git, base)
+    duplicated = tuple(commit for commit in commits if commit.sha in upstream)
+    upstream_problem = (
+        [
+            f"{len(duplicated)} of {len(commits)} commits in the range are already in "
+            f"{base} under different shas, so replaying them conflicts with work that "
+            "is already there. The branch has probably been merged already, or the "
+            "base is wrong."
+        ]
+        if duplicated
+        else []
+    )
+
     if todo is None:
         return PlanCheck(
             commits=commits,
@@ -66,7 +95,8 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
             dropped=(),
             deliberately_dropped=(),
             unknown=(),
-            problems=(),
+            already_upstream=duplicated,
+            problems=tuple(upstream_problem),
         )
 
     by_sha = {commit.sha: commit for commit in commits}
@@ -90,7 +120,7 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
     accounted = set(kept) | set(dropped_on_purpose)
     missing = tuple(commit for sha, commit in by_sha.items() if sha not in accounted)
 
-    problems: list[str] = []
+    problems: list[str] = list(upstream_problem)
     if missing:
         problems.append(
             "the todo leaves out "
@@ -106,6 +136,7 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
         dropped=missing,
         deliberately_dropped=tuple(dropped_on_purpose.values()),
         unknown=tuple(unknown),
+        already_upstream=duplicated,
         problems=tuple(problems),
     )
 

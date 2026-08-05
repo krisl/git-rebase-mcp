@@ -85,3 +85,16 @@ def test_preflight_changes_nothing(series: Scratch) -> None:
     assert series.git.out("rev-parse", "HEAD") == before
     assert series.git.lines("tag") == tags_before
     assert series.git.lines("status", "--porcelain") == []
+
+
+def test_preflight_names_commits_already_in_the_base(scratch: Scratch) -> None:
+    scratch.commit("base", a="one\n")
+    scratch.git.run("checkout", "-q", "-b", "upstream")
+    scratch.commit("the work, as merged", b="feature\n")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.commit("the work, as originally written", b="feature\n")
+
+    report = rebase_preflight("upstream", str(scratch.path))
+    assert not report.safe_to_start
+    assert len(report.already_upstream) == 1
+    assert "probably been merged already" in report.guidance

@@ -93,3 +93,26 @@ def test_no_todo_means_keep_everything(series: Scratch) -> None:
     check = check_plan(series.git, "HEAD~3", None)
     assert check.safe
     assert len(check.named) == 3
+
+
+def test_commits_already_in_the_base_are_reported(scratch: Scratch) -> None:
+    """A merged branch keeps its old commits: the merge brought in rewritten
+    copies with different shas, so the range still lists every one and a rebase
+    replays work that is already there, conflicting with itself. Hit on a real
+    branch whose pull request had been merged an hour earlier."""
+    scratch.commit("base", a="one\n")
+    scratch.git.run("checkout", "-q", "-b", "upstream")
+    scratch.commit("the work, as merged", b="feature\n")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.commit("the work, as originally written", b="feature\n")
+
+    check = check_plan(scratch.git, "upstream", None)
+    assert not check.safe
+    assert [c.subject for c in check.already_upstream] == ["the work, as originally written"]
+    assert "already in upstream under different shas" in check.problems[0]
+
+
+def test_a_normal_branch_reports_nothing_upstream(series: Scratch) -> None:
+    check = check_plan(series.git, "HEAD~3", None)
+    assert check.already_upstream == ()
+    assert check.safe
