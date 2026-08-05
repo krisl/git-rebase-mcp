@@ -86,7 +86,7 @@ def test_a_fix_is_squashed_back_into_its_target(scratch: Scratch) -> None:
 
     finished = rebase_finish(repo)
     assert finished.ok, finished.guidance
-    assert finished.tree_change is None  # the end result is exactly as it was
+    assert finished.branch_change is None  # the end result is exactly as it was
     assert finished.commits_with_markers == ()
     assert [c.subject for c in finished.commits] == ["Add counts", "Wrap the loop"]
     assert scratch.read("counts.py") == before

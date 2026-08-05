@@ -32,7 +32,7 @@ def test_a_clean_reorder_checks_out(series: Scratch) -> None:
 
     report = rebase_finish(str(series.path))
     assert report.ok
-    assert report.tree_change is None
+    assert report.branch_change is None
     assert [x.subject for x in report.commits] == ["adds c", "adds b"]
 
 
@@ -43,7 +43,7 @@ def test_a_dropped_commit_is_caught(series: Scratch) -> None:
 
     report = rebase_finish(str(series.path))
     assert not report.ok
-    assert report.tree_change is not None
+    assert report.branch_change is not None
     assert "something was lost" in report.guidance
 
 
@@ -56,13 +56,13 @@ def test_the_refusal_says_how_to_undo(series: Scratch) -> None:
     assert "reset --hard" in guidance
 
 
-def test_a_deliberate_tree_change_can_be_accepted(series: Scratch) -> None:
+def test_a_deliberate_change_can_be_accepted(series: Scratch) -> None:
     _, c = two(series)
     rebase_start("HEAD~2", str(series.path), [f"pick {c}"], force=True)
 
-    report = rebase_finish(str(series.path), allow_tree_change=True)
+    report = rebase_finish(str(series.path), allow_change=True)
     assert report.ok
-    assert report.tree_change is not None  # still reported, just not fatal
+    assert report.branch_change is not None  # still reported, just not fatal
 
 
 def test_committed_markers_are_caught(scratch: Scratch) -> None:
@@ -78,7 +78,7 @@ def test_committed_markers_are_caught(scratch: Scratch) -> None:
     scratch.git.run("add", "-A")
     scratch.git.run("-c", "core.editor=true", "rebase", "--continue", check=False)
 
-    report = rebase_finish(str(scratch.path), allow_tree_change=True)
+    report = rebase_finish(str(scratch.path), allow_change=True)
     assert not report.ok
     assert report.commits_with_markers
     assert "conflict markers were committed" in report.guidance

@@ -27,7 +27,7 @@ from .invariants import (
     load_session,
     record_backup,
     save_session,
-    tree_change,
+    branch_change,
 )
 from .plan import TODO_LINE, check_plan
 from .state import (
@@ -560,7 +560,7 @@ def _report(state: RebaseState) -> StatusReport:
 class FinishReport:
     ok: bool
     backup_ref: str
-    tree_change: str | None
+    branch_change: str | None
     commits_with_markers: tuple[str, ...]
     commits: tuple[CommitInfo, ...]
     restored: tuple[str, ...]
@@ -568,11 +568,13 @@ class FinishReport:
 
 
 @mcp.tool()
-def rebase_finish(repo: str = ".", allow_tree_change: bool = False) -> FinishReport:
+def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
     """Check the finished rebase against the tip it started from, and tidy up.
 
-    Reordering commits must not change the end result, so a difference here is
-    a report of damage: a commit dropped from the todo, or two folded together.
+    What must stay the same is the change the branch makes to its base -- not
+    the resulting tree, which legitimately changes when the rebase also moves
+    onto newer upstream work. A difference here is a report of damage: a commit
+    dropped from the todo, or a conflict resolved the wrong way.
     Every rewritten commit is also scanned for conflict markers, since one
     committed part-way and tidied up later still leaves a commit nobody can
     build.
@@ -591,13 +593,13 @@ def rebase_finish(repo: str = ".", allow_tree_change: bool = False) -> FinishRep
     if session is None:
         raise ValueError("No rebase recorded by this server; nothing to check against.")
 
-    difference = tree_change(git, session.backup)
+    difference = branch_change(git, session.backup, session.base_sha)
     marker_hits = commits_with_markers(git, f"{session.base_sha}..HEAD")
     problems: list[str] = []
-    if difference and not allow_tree_change:
+    if difference and not allow_change:
         problems.append(
-            "the tree at the tip is not what it was before the rebase, so "
-            f"something was lost or merged:\n{difference}"
+            "the branch no longer makes the same change to its base, so "
+            f"something was lost or resolved wrongly:\n{difference}"
         )
     if marker_hits:
         problems.append(
@@ -612,7 +614,7 @@ def rebase_finish(repo: str = ".", allow_tree_change: bool = False) -> FinishRep
     return FinishReport(
         ok=not problems,
         backup_ref=session.backup_ref,
-        tree_change=difference,
+        branch_change=difference,
         commits_with_markers=tuple(hit.sha for hit in marker_hits),
         commits=tuple(
             _commit_info(git, sha)

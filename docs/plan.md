@@ -8,7 +8,7 @@ Rebasing a 21-commit branch into 11 clean commits took most of a session and pro
 2. **A hand-authored todo that dropped three commits.** They vanished with no warning.
 3. **Staging and committing a file that still contained conflict markers.** Two commits shipped `<<<<<<<` into the tree.
 
-None were detected by git. All three were caught by an ad-hoc harness: tag the tip first, then assert at the end that the final tree is byte-identical. That harness is the thing worth productising.
+None were detected by git. All three were caught by an ad-hoc harness: tag the tip first, then assert at the end that the branch still makes the same change to its base. That harness is the thing worth productising.
 
 A second, separate cost was conflict *presentation*. Reordering commits means a later fix's context no longer matches, so git asks you to merge text when what you want is to compose two intents. Reading three near-identical marker blocks differing in indentation and one token is slow and error-prone; reading "base→ours: wrap loop in `if current:`" against "base→theirs: replace `delta` with `delta_count(...)`" is immediate.
 
@@ -126,14 +126,14 @@ The three errors from this session are the specification. Each becomes a test bu
 
 Plus:
 
-4. **Golden replay.** Build a branch shaped like this session's: a feature series, then fix commits authored later against those features. Autosquash them. Assert the final tree is byte-identical to the pre-rebase tip and that every commit passes its own tests — the end-to-end property the whole server exists to guarantee.
+4. **Golden replay.** Build a branch shaped like this session's: a feature series, then fix commits authored later against those features. Autosquash them. Assert the branch's contribution is unchanged and that every commit passes its own tests — the end-to-end property the whole server exists to guarantee.
 5. **Conflict payload correctness.** Reconstruct the `delta_count` collision from this session as a fixture; assert the two diffs isolate "wrap in `if current:`" from "replace `delta` with `delta_count(...)`", and that the collision unit contains both.
 6. **Manual smoke.** Point a Claude Code session at a scratch repo and drive a real reorder end to end through the tools only.
 
 ## Phasing
 
 - **v1 — rebase. Done.** Everything above. Smallest surface that would have prevented all three errors.
-- **v2 — structural conflicts.** tree-sitter (`tree-sitter-language-pack`) to classify each collision unit as node-disjoint or overlapping, and auto-resolve the disjoint ones so they never surface. Most of this session's conflicts were end-of-file test appends and pure reindents, which are node-disjoint. Must be a lossless CST, not a Python `ast`: these files are comment-heavy and several conflicts *were* comment blocks, and any reformatting would break the byte-identical invariant.
+- **v2 — structural conflicts.** tree-sitter (`tree-sitter-language-pack`) to classify each collision unit as node-disjoint or overlapping, and auto-resolve the disjoint ones so they never surface. Most of this session's conflicts were end-of-file test appends and pure reindents, which are node-disjoint. Must be a lossless CST, not a Python `ast`: these files are comment-heavy and several conflicts *were* comment blocks, and any reformatting would alter the branch's contribution and trip the check.
 - **later — history surgery.** `split_commit` by hunk (the one operation that forced hand-written Python this session, because `git add -p` is interactive), `absorb` (route a fix to the commit that introduced the line), bisect driving.
 
 ## Out of scope

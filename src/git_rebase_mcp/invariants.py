@@ -5,9 +5,11 @@ still has conflict markers in it, and in every case git exits zero and says
 nothing. The only reliable defence is to record what the branch looked like
 before starting and to compare afterwards.
 
-That is the whole idea: a rebase reorders commits, so the *tree* at the tip
-should come out unchanged. When it does not, something was lost or merged that
-should not have been.
+That is the whole idea, with one correction learned from using it: what must
+stay the same is not the tree but *the change the branch makes to its base*. A
+rebase that also moves the branch onto newer upstream work changes the tree by
+definition, and reporting that as damage cries wolf on the most ordinary rebase
+there is. Comparing the branch's own diff holds in both cases.
 """
 
 from __future__ import annotations
@@ -61,16 +63,35 @@ def record_backup(git: Git, label: str | None = None) -> Backup:
     return Backup(ref=ref, sha=sha, tree=git.out("rev-parse", f"{sha}^{{tree}}"))
 
 
-def tree_change(git: Git, backup: Backup, revision: str = "HEAD") -> str | None:
-    """A summary of how the tip's content differs from the backup, or None.
+def branch_change(
+    git: Git, backup: Backup, base: str, revision: str = "HEAD"
+) -> str | None:
+    """How the branch's own contribution differs from before, or None.
 
-    Reordering commits must not change the end result, so anything here is a
-    report of damage: a commit dropped from the todo, or two folded together by
-    amending at the wrong moment.
+    A rebase must not alter what the branch does to its base. Comparing that,
+    rather than the resulting tree, is what makes the check hold when the rebase
+    also moves onto newer upstream work -- where the tree changes for a
+    perfectly good reason and only the branch's own diff should not.
+
+    Anything reported here is damage: a commit dropped from the todo, or a
+    resolution that quietly kept the wrong side.
     """
-    if git.out("rev-parse", f"{revision}^{{tree}}") == backup.tree:
+    before = _contribution(git, _fork_point(git, backup.sha, base), backup.sha)
+    after = _contribution(git, base, revision)
+    if before == after:
         return None
     return git.out("diff", "--stat", backup.sha, revision)
+
+
+def _contribution(git: Git, base: str, tip: str) -> str:
+    """A stable identity for the diff `base..tip`, independent of context lines."""
+    patch = git.run("diff", base, tip).stdout
+    return git.run("patch-id", "--stable", stdin=patch).stdout.split(" ")[0].strip()
+
+
+def _fork_point(git: Git, tip: str, base: str) -> str:
+    """Where the branch left the base it was on before the rebase."""
+    return git.out("merge-base", tip, base)
 
 
 def commits_with_markers(git: Git, revision_range: str) -> list[MarkerHit]:

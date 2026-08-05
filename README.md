@@ -46,9 +46,11 @@ it reports what each side did to the common base:
 leaves the wrap alone". Composing those needs no reasoning about which of three
 interleaved blocks belongs to whom.
 
-**Records where the branch was, and checks the result against it.** Reordering
-commits must not change the end result, so a difference at the end is a report
-of damage. This is what caught all three errors above.
+**Records where the branch was, and checks the result against it.** What must
+stay the same is the change the branch makes to its base -- not the resulting
+tree, which changes for good reason when the rebase also moves onto newer
+upstream work. A difference is a report of damage. This is what caught all
+three errors above.
 
 ## Tools
 
@@ -61,7 +63,7 @@ of damage. This is what caught all three errors above.
 | `rebase_resolve` | Writes and stages a resolution. Refuses one containing markers. |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. |
 | `rebase_continue` | Carries on. Refuses while anything is unmerged. |
-| `rebase_finish` | Checks the tree against the backup and scans every commit for markers. |
+| `rebase_finish` | Checks the branch still makes the same change to its base, and scans every commit for markers. |
 | `rebase_abort` | Abandons the rebase and puts back what was moved aside. |
 
 `rebase_start` takes a `check_command`, run after every commit. It is the only

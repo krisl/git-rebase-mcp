@@ -14,54 +14,79 @@ from git_rebase_mcp.invariants import (
     save_session,
     has_markers,
     record_backup,
-    tree_change,
+    branch_change,
 )
 
 from scratch import Scratch
 
 
-def test_a_reorder_leaves_the_tree_unchanged(scratch: Scratch) -> None:
+def test_a_reorder_leaves_the_branch_change_unchanged(scratch: Scratch) -> None:
     """The property the whole harness rests on."""
     scratch.commit("base", a="one\n")
     scratch.commit("adds b", b="two\n")
     scratch.commit("adds c", c="three\n")
+    base = scratch.git.out("rev-parse", "HEAD~2")
     backup = record_backup(scratch.git, label="test")
 
     adds_b, adds_c = scratch.git.out("rev-parse", "HEAD~1"), scratch.git.out("rev-parse", "HEAD")
     scratch.start_rebase("HEAD~2", [f"pick {adds_c}", f"pick {adds_b}"])
 
     assert scratch.subjects() == ["adds b", "adds c", "base"]  # order really did change
-    assert tree_change(scratch.git, backup) is None
+    assert branch_change(scratch.git, backup, base) is None
 
 
-def test_a_dropped_commit_changes_the_tree(scratch: Scratch) -> None:
+def test_a_dropped_commit_changes_the_branch_change(scratch: Scratch) -> None:
     """The todo that lost three commits, in miniature."""
     scratch.commit("base", a="one\n")
     scratch.commit("adds b", b="two\n")
     scratch.commit("adds c", c="three\n")
+    base = scratch.git.out("rev-parse", "HEAD~2")
     backup = record_backup(scratch.git, label="test")
 
     adds_c = scratch.git.out("rev-parse", "HEAD")
     scratch.start_rebase("HEAD~2", [f"pick {adds_c}"])  # "adds b" simply left out
 
-    change = tree_change(scratch.git, backup)
+    change = branch_change(scratch.git, backup, base)
     assert change is not None
     assert "b" in change
 
 
-def test_folding_two_commits_together_changes_nothing_in_the_tree(scratch: Scratch) -> None:
-    """Honest limit: squashing preserves content, so the tree check cannot see
-    it. The state types are what prevent that one, not this."""
+def test_moving_onto_newer_upstream_work_is_not_damage(scratch: Scratch) -> None:
+    """The tree necessarily changes when the base has moved on. Checking the
+    tree reported that as a loss on the most ordinary rebase there is; checking
+    the branch's own contribution does not."""
+    scratch.commit("base", shared="one\n")
+    fork = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("branch work", mine="feature\n")
+    backup = record_backup(scratch.git, label="test")
+
+    # Upstream gains a commit the branch has never seen.
+    scratch.git.run("checkout", "-q", "-b", "upstream", fork)
+    scratch.commit("upstream work", theirs="other\n")
+    moved_base = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+
+    branch_work = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase(fork, [f"pick {branch_work}"], onto=moved_base)
+
+    assert scratch.read("theirs") == "other\n"  # the tree really did change
+    assert branch_change(scratch.git, backup, moved_base) is None
+
+
+def test_folding_two_commits_together_is_not_visible_here(scratch: Scratch) -> None:
+    """Honest limit: squashing preserves the branch's contribution, so this
+    check cannot see it. The state types are what prevent that one."""
     scratch.commit("base", a="one\n")
     scratch.commit("adds b", b="two\n")
     scratch.commit("adds c", c="three\n")
+    base = scratch.git.out("rev-parse", "HEAD~2")
     backup = record_backup(scratch.git, label="test")
 
     adds_b, adds_c = scratch.git.out("rev-parse", "HEAD~1"), scratch.git.out("rev-parse", "HEAD")
     scratch.start_rebase("HEAD~2", [f"pick {adds_b}", f"fixup {adds_c}"])
 
-    assert len(scratch.subjects()) == 2  # three commits became two ("base" plus one)
-    assert tree_change(scratch.git, backup) is None
+    assert len(scratch.subjects()) == 2  # three commits became two
+    assert branch_change(scratch.git, backup, base) is None
 
 
 def test_the_backup_tag_survives_as_a_real_ref(scratch: Scratch) -> None:
