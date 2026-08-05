@@ -514,14 +514,24 @@ def _report(state: RebaseState) -> StatusReport:
                 conflicted_files=state.unmerged,
             )
         case StoppedAfterApply():
+            same = state.head.sha == state.replaying.sha
             return StatusReport(
                 state="stopped_after_apply",
                 head=_info(state.head),
-                head_is_replaying_commit=True,
+                head_is_replaying_commit=same,
                 can_amend=True,
                 guidance=(
                     f"Stopped at `{state.action}` with {state.replaying.sha[:9]} "
                     "applied. HEAD is that commit, so amending it is safe."
+                    if same
+                    else (
+                        f"Stopped at `{state.action}`. Git will amend HEAD "
+                        f"({state.head.sha[:9]}), which is a run of "
+                        f"{len(state.fixups_pending)} fixup or squash steps so far, not "
+                        f"{state.replaying.sha[:9]} on its own. Its message is still "
+                        "git's template and is rewritten when the run ends, so ignore "
+                        "the subject above."
+                    )
                 ),
                 step=StepInfo(state.step.index, state.step.total),
                 action=state.action,

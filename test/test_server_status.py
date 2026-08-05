@@ -77,3 +77,24 @@ def test_the_tool_is_registered_with_a_description() -> None:
     assert "rebase_status" in registered
     assert registered["rebase_status"].description
     assert "repo" in registered["rebase_status"].input_schema["properties"]
+
+
+def test_a_stopped_fixup_chain_is_not_reported_as_the_replayed_commit(
+    scratch: Scratch,
+) -> None:
+    """HEAD is the accumulation of the fixups so far, and its subject is still
+    git's raw template, so the report must not present it as the commit."""
+    for value in ("one", "two", "three", "four"):
+        scratch.write("f", value + "\n")
+        scratch.commit(f"f={value}")
+    first, last = scratch.git.out("rev-parse", "HEAD~2"), scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~3", [f"pick {first}", f"fixup {last}"])
+    scratch.write("f", "resolved\n")
+    scratch.git.run("add", "f")
+
+    report = rebase_status(str(scratch.path))
+    assert report.state == "stopped_after_apply"
+    assert not report.head_is_replaying_commit
+    assert report.can_amend  # git does mean HEAD; it is just not the replayed commit
+    assert "not " + last[:9] in report.guidance
+    assert "ignore the subject" in report.guidance
