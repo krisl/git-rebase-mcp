@@ -64,6 +64,11 @@ class FileConflict:
     path: str
     units: tuple[CollisionUnit, ...]
     sides: Sides
+    # Set when the two sides have no common ancestor for this path: both added
+    # it, or one added it while the other deleted it. There is no base to diff
+    # against, so the two-intents framing does not apply and the whole text of
+    # each side is the only useful answer.
+    no_common_base: bool = False
 
 
 def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
@@ -71,6 +76,18 @@ def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
     base = _stage(git, BASE, path)
     branch = _stage(git, BRANCH_SO_FAR, path)
     replaying = _stage(git, REPLAYING, path)
+
+    # Git records no stage 1 when the sides share no ancestor for this path. The
+    # units are derived from edits *against a base*, so with no base they would
+    # all be empty -- reporting nothing at exactly the moment there is most to
+    # say. Say so instead, and let the caller read both versions.
+    if not git.succeeds("rev-parse", "--verify", "--quiet", f":{BASE}:{path}"):
+        return FileConflict(
+            path=path,
+            units=(),
+            sides=Sides(base=base, branch_so_far=branch, replaying=replaying),
+            no_common_base=True,
+        )
 
     base_lines = base.splitlines()
     branch_ops = _opcodes(base_lines, branch.splitlines())

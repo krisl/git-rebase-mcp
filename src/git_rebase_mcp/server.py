@@ -104,6 +104,10 @@ class UnitReport:
 class FileReport:
     path: str
     units: tuple[UnitReport, ...]
+    # True when the sides share no ancestor for this path, so there are no units
+    # and the whole texts below are the answer. They are always included in that
+    # case, regardless of include_full_sides, because nothing else is on offer.
+    no_common_base: bool = False
     base: str | None = None
     branch_so_far: str | None = None
     replaying: str | None = None
@@ -152,13 +156,26 @@ def rebase_conflicts(repo: str = ".", include_full_sides: bool = False) -> Confl
         replaying=_info(state.replaying),
         replaying_body=git.out("log", "-1", "--format=%B", state.replaying.sha).strip(),
         files=files,
-        guidance=(
-            "Each region lists what the branch did to the base and what the "
-            "replayed commit did to the same base. The replayed commit's message "
-            "states its intent; reapply that intent on top of what the branch "
-            "already has. Then call rebase_resolve with the finished file."
-        ),
+        guidance=_conflict_guidance(files),
     )
+
+
+def _conflict_guidance(files: tuple[FileReport, ...]) -> str:
+    advice = (
+        "Each region lists what the branch did to the base and what the replayed "
+        "commit did to the same base. The replayed commit's message states its "
+        "intent; reapply that intent on top of what the branch already has. Then "
+        "call rebase_resolve with the finished file."
+    )
+    rootless = [f.path for f in files if f.no_common_base]
+    if rootless:
+        advice += (
+            f" No common base for {', '.join(rootless)}: both sides introduced the "
+            "file independently, so there is nothing to diff against and no "
+            "regions are listed. The whole text of each side is included instead; "
+            "decide between them, or write the combination you want."
+        )
+    return advice
 
 
 def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport:
@@ -172,9 +189,16 @@ def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport
             )
             for unit in conflict.units
         ),
+        no_common_base=conflict.no_common_base,
+        # With no common base there are no units, so withholding the texts would
+        # leave the caller nothing at all.
         base=conflict.sides.base if include_full_sides else None,
-        branch_so_far=conflict.sides.branch_so_far if include_full_sides else None,
-        replaying=conflict.sides.replaying if include_full_sides else None,
+        branch_so_far=conflict.sides.branch_so_far
+        if include_full_sides or conflict.no_common_base
+        else None,
+        replaying=conflict.sides.replaying
+        if include_full_sides or conflict.no_common_base
+        else None,
     )
 
 

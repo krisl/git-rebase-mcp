@@ -85,3 +85,24 @@ def test_remaining_conflicts_are_named(scratch: Scratch) -> None:
     report = rebase_resolve("f", "resolved\n", str(scratch.path))
     assert report.still_conflicted == ("g",)
     assert "g" in report.guidance
+
+
+def test_an_add_add_conflict_hands_over_both_versions(scratch: Scratch) -> None:
+    """With no base there are no regions, so withholding the texts behind
+    include_full_sides would leave the caller nothing at all."""
+    scratch.commit("base", other="x\n")
+    scratch.commit("branch adds", f="from branch\n")
+    branch_side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "-b", "side", "HEAD~1")
+    scratch.commit("side adds", f="from side\n")
+    side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.start_rebase(branch_side, [f"pick {side}"])
+
+    report = rebase_conflicts(str(scratch.path))
+    entry = report.files[0]
+    assert entry.no_common_base
+    assert entry.units == ()
+    assert entry.branch_so_far == "from branch\n"
+    assert entry.replaying == "from side\n"
+    assert "No common base for f" in report.guidance

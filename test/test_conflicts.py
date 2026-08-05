@@ -125,8 +125,12 @@ def test_reads_the_three_sides_out_of_the_index(scratch: Scratch) -> None:
     assert "+three" in conflict.units[0].replaying_diff
 
 
-def test_a_missing_stage_reads_as_empty(scratch: Scratch) -> None:
-    """Both sides adding the same path leaves no base stage at all."""
+def test_an_add_add_conflict_says_there_is_no_common_base(scratch: Scratch) -> None:
+    """Both sides adding the same path leaves no base stage. The units are built
+    from edits against a base, so with no base they would all come out empty --
+    reporting nothing at the moment there is most to say. The original version of
+    this test checked only that the sides were read, which is why that went
+    unnoticed until it happened on a real branch."""
     scratch.commit("base", other="x\n")
     scratch.commit("branch adds", f="from branch\n")
     branch_side = scratch.git.out("rev-parse", "HEAD")
@@ -139,6 +143,21 @@ def test_a_missing_stage_reads_as_empty(scratch: Scratch) -> None:
     state = read_state(scratch.git)
     assert isinstance(state, Conflicted)
     conflict = read_conflict(scratch.git, "f")
+
+    assert conflict.no_common_base
+    assert conflict.units == ()  # not one empty unit pretending to be a region
     assert conflict.sides.base == ""
     assert conflict.sides.branch_so_far == "from branch\n"
     assert conflict.sides.replaying == "from side\n"
+
+
+def test_an_ordinary_conflict_is_not_marked_rootless(scratch: Scratch) -> None:
+    scratch.commit("base", f="one\n")
+    scratch.commit("second", f="two\n")
+    scratch.commit("third", f="three\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    conflict = read_conflict(scratch.git, "f")
+    assert not conflict.no_common_base
+    assert conflict.units  # and it still reports a region
