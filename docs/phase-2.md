@@ -106,12 +106,36 @@ remain.
 `split_commit` and `absorb`. Both were on the original list; neither has come up
 in real use. They stay speculative until something demands them.
 
-## How to know it worked
+## Result of the third run
 
-Rebase the same 21-commit branch a third time and count:
+Same 21-commit branch, same todo, driven again after items 1--4.
 
-- conflicts requiring a hand-written resolution (was 9)
-- calls to `git` outside the tools (was roughly 40)
-- false alarms from `rebase_finish` (was 1 of 1 runs, twice)
+| | Second run | Third run |
+| --- | --- | --- |
+| Conflicts needing a hand-written resolution | 9 | **2** |
+| Conflicts composed without asking | 0 | **4** (5 files) |
+| Conflicts resolved by naming a side | 0 | **2** |
+| False alarms from `rebase_finish` | 1 of 1 | **0** |
 
-If the first two do not fall substantially, the answer is not more features.
+The two that still need a hand are the genuinely structural pair -- one side
+wrapped a loop in an `if` and reindented it while the other swapped a call
+inside it -- which is exactly the case the two-diff payload was built for, and
+where a person should be looking anyway.
+
+The run also fed back a fix. The first attempt composed only one conflict,
+because every insertion was widened to a line for the overlap test and so an
+insertion at the *boundary* of another edit read as a collision. That is the
+common shape, not an edge case: it took the count from one to five.
+
+## What would move it further
+
+Only one thing is now worth measuring: a rule for two insertions at the same
+point. Both cases in this run were "the branch appended tests and so did the
+replayed commit", and `take="both"` was right both times. Applying it
+automatically is tempting and wrong -- nothing in the text says which order was
+meant -- but reporting the shape, so a caller can answer in one call instead of
+inspecting first, would remove the last mechanical step.
+
+Structural conflicts with tree-sitter remain last, and the case for them is now
+weaker: after this, the only conflicts reaching a person are ones a person
+should see.
