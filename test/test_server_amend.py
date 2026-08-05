@@ -55,12 +55,16 @@ def test_amending_after_an_applied_stop_is_allowed(three_commits: Scratch) -> No
     assert report.after.subject == "second, reworded"
 
 
-def test_amending_can_carry_new_content(three_commits: Scratch) -> None:
+def test_amending_carries_whatever_is_staged(three_commits: Scratch) -> None:
+    """A file git does not track yet has to be staged deliberately. The tool
+    will not go looking for it: that is the whole difference between `add -u`
+    and `add -A`, and the latter is how junk gets into history."""
     second = three_commits.git.out("rev-parse", "HEAD~1")
     three_commits.start_rebase("HEAD~2", [f"edit {second}"])
 
     three_commits.write("extra", "added while stopped\n")
-    rebase_amend(str(three_commits.path), stage_all=True)
+    three_commits.git.run("add", "extra")
+    rebase_amend(str(three_commits.path))
 
     assert "extra" in three_commits.git.lines("show", "--name-only", "--format=", "HEAD")
 
@@ -117,3 +121,22 @@ def test_amending_stays_allowed_after_a_first_amend(three_commits: Scratch) -> N
     again = rebase_amend(str(three_commits.path), message="twice")
     assert first.after.sha != again.after.sha
     assert rebase_status(str(three_commits.path)).can_amend
+
+
+def test_amending_never_stages_untracked_files(three_commits: Scratch) -> None:
+    """`git add -A` here would sweep scratch files, stray binaries and local
+    notes into history, and the amend would report success either way."""
+    second = three_commits.git.out("rev-parse", "HEAD~1")
+    three_commits.start_rebase("HEAD~2", [f"edit {second}"])
+    three_commits.write("tracked.txt", "edited\n")
+    three_commits.git.run("add", "tracked.txt")
+    three_commits.git.run("commit", "-q", "--amend", "--no-edit")  # now tracked
+    three_commits.write("tracked.txt", "edited again\n")
+    three_commits.write("my-scratch-notes.txt", "not for history\n")
+
+    rebase_amend(str(three_commits.path), stage_tracked=True)
+
+    committed = three_commits.git.lines("show", "--name-only", "--format=", "HEAD")
+    assert "tracked.txt" in committed
+    assert "my-scratch-notes.txt" not in committed
+    assert three_commits.read("my-scratch-notes.txt") == "not for history\n"

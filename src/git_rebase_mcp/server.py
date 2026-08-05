@@ -421,7 +421,7 @@ class AmendReport:
 
 @mcp.tool()
 def rebase_amend(
-    repo: str = ".", message: str | None = None, stage_all: bool = False
+    repo: str = ".", message: str | None = None, stage_tracked: bool = False
 ) -> AmendReport:
     """Amend the commit this rebase has just applied.
 
@@ -429,6 +429,11 @@ def rebase_amend(
     replayed has not been created yet, so HEAD is still the one before it and
     amending would fold two commits into one -- silently, and reported by git as
     success.
+
+    `stage_tracked` stages modifications to files git already tracks. It will
+    not add untracked files: those are never part of what a rebase is
+    rewriting, and sweeping them in is how a stray binary or somebody's local
+    notes end up in history.
     """
     git = _git(repo)
     state = read_state(git)
@@ -436,8 +441,13 @@ def rebase_amend(
         raise ValueError(_why_not_amendable(_report(state)))
 
     before = _info(state.head)
-    if stage_all:
-        git.run("add", "-A")
+    if stage_tracked:
+        # `git add -u`, never `-A`. The difference is untracked files, and
+        # sweeping those into a commit is how a scratch file, a stray binary or
+        # somebody's local notes end up in history -- silently, since the amend
+        # reports success either way. Untracked files are never part of what a
+        # rebase is rewriting, so this tool has no business staging them.
+        git.run("add", "-u")
     args = ["commit", "--amend", "--no-verify"]
     args += ["-m", message] if message is not None else ["--no-edit"]
     git.run("-c", "core.editor=true", *args)
