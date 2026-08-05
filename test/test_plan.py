@@ -126,8 +126,9 @@ def test_fixups_are_matched_to_their_targets(scratch: Scratch) -> None:
     fixup = scratch.git.out("rev-parse", "HEAD")
 
     targets = autosquash_targets(commits_in_range(scratch.git, "HEAD~2"))
-    assert targets[fixup] is not None
-    assert targets[fixup].sha == target
+    matched = targets[fixup]
+    assert matched is not None
+    assert matched.sha == target
 
 
 def test_a_fixup_naming_nothing_in_the_range_is_a_problem(scratch: Scratch) -> None:

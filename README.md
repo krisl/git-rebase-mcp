@@ -63,6 +63,7 @@ three errors above.
 | `rebase_resolve` | Stages a resolution, written inline or edited in place. Refuses markers. |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. |
 | `rebase_continue` | Carries on. Refuses while anything is unmerged. |
+| `rebase_todo` | The steps left, and replaces them. Refuses to drop a commit. |
 | `rebase_finish` | Checks the branch still makes the same change to its base, and scans every commit for markers. |
 | `rebase_abort` | Abandons the rebase and puts back what was moved aside. |
 

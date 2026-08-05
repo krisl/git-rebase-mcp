@@ -30,7 +30,7 @@ from .invariants import (
     save_session,
     branch_change,
 )
-from .plan import TODO_LINE, check_plan
+from .plan import DROPPING_ACTIONS, TODO_LINE, check_plan
 from .state import (
     Commit,
     Conflicted,
@@ -256,6 +256,81 @@ def rebase_resolve(path: str, content: str | None = None, repo: str = ".") -> Re
             else f"Still conflicted: {', '.join(remaining)}."
         ),
     )
+
+
+@dataclass(frozen=True)
+class TodoReport:
+    remaining: tuple[str, ...]
+    dropped: tuple[CommitInfo, ...]
+    guidance: str
+
+
+@mcp.tool()
+def rebase_todo(
+    repo: str = ".", todo: list[str] | None = None, force: bool = False
+) -> TodoReport:
+    """Read the steps a running rebase has left, or replace them.
+
+    Worth having because the need shows up mid-run: a `fixup` turns out to
+    depend on a commit scheduled after it, and the fix is to move one line
+    rather than to abandon thirty resolved conflicts and start again.
+
+    Replacing the list can drop commits exactly as writing one badly can, so
+    the same check applies: a commit in the remaining steps and not in the
+    replacement is refused unless `force`. Lines that name no commit -- `exec`
+    above all -- are counted too, and dropping every `exec` silently turns off
+    the per-commit check, so that is called out rather than assumed.
+    """
+    git = _git(repo)
+    if isinstance(read_state(git), NotRebasing):
+        raise ValueError("No rebase in progress, so there are no steps left.")
+    path = git.git_path("rebase-merge/git-rebase-todo")
+    current = [
+        line for line in path.read_text().splitlines() if line.strip() and not line.startswith("#")
+    ]
+    if todo is None:
+        return TodoReport(
+            remaining=tuple(current),
+            dropped=(),
+            guidance=f"{len(current)} steps left. Pass todo to replace them.",
+        )
+
+    dropped = _dropped_steps(git, current, todo)
+    if dropped and not force:
+        raise ValueError(
+            "Refusing to replace the steps: "
+            + ", ".join(f"{c.sha[:9]} ({c.subject})" for c in dropped)
+            + " would be dropped without a warning. Pass force to mean it."
+        )
+    lost_checks = sum(l.startswith("exec ") for l in current) - sum(
+        l.startswith("exec ") for l in todo
+    )
+    path.write_text("\n".join(todo) + "\n")
+    return TodoReport(
+        remaining=tuple(todo),
+        dropped=dropped,
+        guidance=f"{len(todo)} steps now queued. Call rebase_continue."
+        + (f" {lost_checks} fewer exec steps, so less is checked." if lost_checks > 0 else ""),
+    )
+
+
+def _dropped_steps(git: Git, current: list[str], replacement: list[str]) -> tuple[CommitInfo, ...]:
+    """Commits named in the remaining steps that the replacement leaves out."""
+
+    def named(lines: list[str]) -> dict[str, str]:
+        found: dict[str, str] = {}
+        for line in lines:
+            match = TODO_LINE.match(line)
+            if match and match["action"].lower() not in DROPPING_ACTIONS:
+                resolved = git.run(
+                    "rev-parse", "--verify", "--quiet", f"{match['sha']}^{{commit}}", check=False
+                ).stdout.strip()
+                if resolved:
+                    found[resolved] = match["sha"]
+        return found
+
+    missing = set(named(current)) - set(named(replacement))
+    return tuple(_commit_info(git, sha) for sha in missing)
 
 
 @dataclass(frozen=True)
