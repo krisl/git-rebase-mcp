@@ -268,16 +268,19 @@ def auto_resolution(block: _Block) -> list[str] | None:
     answer either side would recognise, and doing it by hand is where the time
     goes.
 
-    Unambiguous means the base lines the two sides touch do not overlap. An
-    insertion occupies no base lines, so it is widened to one for that test:
-    two insertions at the same point have no defined order, and a insertion
-    inside the other side's edit has no defined place, so both are refused.
+    Unambiguous means the base lines the two sides touch do not overlap, with
+    two cases for insertions, which occupy no base lines: two at the same point
+    have no defined order, and one strictly inside the other side's edit has no
+    defined place once the surrounding lines are gone. An insertion at the
+    *boundary* of the other side's edit is fine, and it is the common case --
+    the branch dropped a block a later commit adds, and the replayed commit puts
+    something immediately before it.
     """
     ours = _edits(block.base, block.branch_so_far)
     theirs = _edits(block.base, block.replaying)
     # Only across the two sides: the edits within one diff never overlap.
     for one, other in itertools.product(ours, theirs):
-        if _overlaps(_widened(one), _widened(other)):
+        if _ambiguous((one[0], one[1]), (other[0], other[1])):
             return None
     edits = ours + theirs
 
@@ -300,14 +303,16 @@ def _edits(base: list[str], side: list[str]) -> list[tuple[int, int, list[str]]]
     ]
 
 
-def _overlaps(a: tuple[int, int], b: tuple[int, int]) -> bool:
-    return a[0] < b[1] and b[0] < a[1]
-
-
-def _widened(edit: tuple[int, int, list[str]]) -> tuple[int, int]:
-    """An edit's base range, with an insertion given one line to collide over."""
-    start, end, _ = edit
-    return (start, end if end > start else start + 1)
+def _ambiguous(a: tuple[int, int], b: tuple[int, int]) -> bool:
+    """Whether two edits to the same base have no single obvious composition."""
+    a_inserts, b_inserts = a[0] == a[1], b[0] == b[1]
+    if a_inserts and b_inserts:
+        return a[0] == b[0]  # same point, and nothing says which comes first
+    if a_inserts:
+        return b[0] < a[0] < b[1]  # strictly inside: no place left to put it
+    if b_inserts:
+        return a[0] < b[0] < a[1]
+    return a[0] < b[1] and b[0] < a[1]  # two real ranges: plain overlap
 
 
 def _stage(git: Git, stage: str, path: str) -> str:

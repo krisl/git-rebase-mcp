@@ -281,3 +281,24 @@ def test_a_deletion_and_a_distant_edit_compose():
         theirs="a\nd\ne\n",          # deletes b and c
     ))
     assert resolved == ["a", "d", "E"]
+
+
+def test_an_insertion_at_the_boundary_of_a_deletion_composes():
+    """The shape a real branch turned up: the branch dropped a block a later
+    commit adds, and the replayed commit puts something immediately before it.
+    Treating any insertion touching an edit as ambiguous refused this."""
+    resolved = auto_resolution(block(
+        ours="head\ntail\n",                       # dropped the middle block
+        base="head\nkept\nblock\ntail\n",
+        theirs="head\nnew\nkept\nblock\ntail\n",   # inserts just before it
+    ))
+    assert resolved == ["head", "new", "tail"]
+
+
+def test_an_insertion_at_the_end_boundary_composes_too():
+    resolved = auto_resolution(block(
+        ours="head\ntail\n",
+        base="head\nkept\nblock\ntail\n",
+        theirs="head\nkept\nblock\nnew\ntail\n",
+    ))
+    assert resolved == ["head", "new", "tail"]
