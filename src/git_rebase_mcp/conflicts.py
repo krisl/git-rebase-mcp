@@ -33,6 +33,7 @@ their roles: the branch built so far, and the commit being replayed.
 
 from __future__ import annotations
 
+import itertools
 import tempfile
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -180,6 +181,59 @@ def _locate(base_lines: list[str], section: list[str], from_line: int) -> int:
         if base_lines[start : start + len(section)] == section:
             return start
     return from_line
+
+
+def auto_resolution(block: _Block) -> list[str] | None:
+    """Both sides applied together, when that is unambiguous. Otherwise None.
+
+    Git marks a region as conflicted when the two sides edited near each other,
+    not only when they edited the same thing. A great many of those are
+    decidable without understanding the language at all: the branch has not
+    reached a block a later commit adds, and the replayed commit appends beside
+    it; or the two sides insert at different points. Applying both is the only
+    answer either side would recognise, and doing it by hand is where the time
+    goes.
+
+    Unambiguous means the base lines the two sides touch do not overlap. An
+    insertion occupies no base lines, so it is widened to one for that test:
+    two insertions at the same point have no defined order, and a insertion
+    inside the other side's edit has no defined place, so both are refused.
+    """
+    ours = _edits(block.base, block.branch_so_far)
+    theirs = _edits(block.base, block.replaying)
+    # Only across the two sides: the edits within one diff never overlap.
+    for one, other in itertools.product(ours, theirs):
+        if _overlaps(_widened(one), _widened(other)):
+            return None
+    edits = ours + theirs
+
+    resolved: list[str] = []
+    position = 0
+    for start, end, replacement in sorted(edits):
+        resolved.extend(block.base[position:start])
+        resolved.extend(replacement)
+        position = end
+    resolved.extend(block.base[position:])
+    return resolved
+
+
+def _edits(base: list[str], side: list[str]) -> list[tuple[int, int, list[str]]]:
+    """What one side did to the base: the range it replaced, and with what."""
+    return [
+        (i1, i2, side[j1:j2])
+        for tag, i1, i2, j1, j2 in _opcodes(base, side)
+        if tag != "equal"
+    ]
+
+
+def _overlaps(a: tuple[int, int], b: tuple[int, int]) -> bool:
+    return a[0] < b[1] and b[0] < a[1]
+
+
+def _widened(edit: tuple[int, int, list[str]]) -> tuple[int, int]:
+    """An edit's base range, with an insertion given one line to collide over."""
+    start, end, _ = edit
+    return (start, end if end > start else start + 1)
 
 
 def _stage(git: Git, stage: str, path: str) -> str:

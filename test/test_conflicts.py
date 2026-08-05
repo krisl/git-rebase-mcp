@@ -9,9 +9,11 @@ branch; the last test here is that case, kept as a measurement.
 from __future__ import annotations
 
 from git_rebase_mcp.conflicts import (
+    _Block,
     _locate,
     _parse_diff3,
     _render,
+    auto_resolution,
     read_conflict,
 )
 from git_rebase_mcp.state import Conflicted, read_state
@@ -214,3 +216,68 @@ def test_a_very_large_addition_is_still_capped():
     rendered = _render(base, side, 0, 3)
     assert "more lines ..." in rendered
     assert len(rendered.splitlines()) < 50
+
+
+# ── composing both sides when that is unambiguous ────────────────────────────
+
+
+def block(ours: str, base: str, theirs: str) -> _Block:
+    return _Block(
+        branch_so_far=ours.splitlines(),
+        base=base.splitlines(),
+        replaying=theirs.splitlines(),
+    )
+
+
+def test_a_block_the_branch_has_not_reached_composes():
+    """The commonest shape by far: the branch is missing lines a later commit
+    adds, and the replayed commit appends beside them."""
+    resolved = auto_resolution(block(
+        ours="a\nb\n",                    # has not reached c and d
+        base="a\nb\nc\nd\n",
+        theirs="a\nb\nc\nd\nappended\n",  # appends past the end
+    ))
+    assert resolved == ["a", "b", "appended"]
+
+
+def test_insertions_at_different_points_compose():
+    resolved = auto_resolution(block(
+        ours="head\nfrom branch\nmiddle\ntail\n",
+        base="head\nmiddle\ntail\n",
+        theirs="head\nmiddle\nfrom replaying\ntail\n",
+    ))
+    assert resolved == ["head", "from branch", "middle", "from replaying", "tail"]
+
+
+def test_one_side_leaving_the_block_alone_composes():
+    resolved = auto_resolution(block(ours="a\nB\nc\n", base="a\nb\nc\n", theirs="a\nb\nc\n"))
+    assert resolved == ["a", "B", "c"]
+
+
+def test_both_sides_editing_the_same_line_is_refused():
+    assert auto_resolution(block(ours="a\nMINE\nc\n", base="a\nb\nc\n", theirs="a\nTHEIRS\nc\n")) is None
+
+
+def test_both_sides_appending_at_the_same_point_is_refused():
+    """Both added at the end; nothing says which order was meant."""
+    assert auto_resolution(block(
+        ours="a\nfrom branch\n", base="a\n", theirs="a\nfrom replaying\n"
+    )) is None
+
+
+def test_an_insertion_inside_the_other_side_s_edit_is_refused():
+    """It has no defined place once the surrounding lines are gone."""
+    assert auto_resolution(block(
+        ours="a\nREPLACED\nd\n",
+        base="a\nb\nc\nd\n",
+        theirs="a\nb\ninserted\nc\nd\n",
+    )) is None
+
+
+def test_a_deletion_and_a_distant_edit_compose():
+    resolved = auto_resolution(block(
+        ours="a\nb\nc\nd\nE\n",     # edits the last line
+        base="a\nb\nc\nd\ne\n",
+        theirs="a\nd\ne\n",          # deletes b and c
+    ))
+    assert resolved == ["a", "d", "E"]
