@@ -90,6 +90,11 @@ class FileConflict:
     # against, so the two-intents framing does not apply and the whole text of
     # each side is the only useful answer.
     no_common_base: bool = False
+    # Set when every block is both sides inserting at the same point, which
+    # composing refuses because nothing says which order was meant. It is
+    # almost always "both, branch first", so saying so lets a caller answer in
+    # one call instead of reading the file to work out the same thing.
+    both_inserted: bool = False
 
 
 def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
@@ -106,8 +111,9 @@ def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
         return FileConflict(path=path, units=(), sides=sides, no_common_base=True)
 
     base_lines = base.splitlines()
+    blocks = _blocks(git, branch, base, replaying)
     units: list[CollisionUnit] = []
-    for block in _blocks(git, branch, base, replaying):
+    for block in blocks:
         start = _locate(base_lines, block.base, len(units) and units[-1].base_range[1] or 0)
         units.append(
             CollisionUnit(
@@ -116,7 +122,12 @@ def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
                 replaying_diff=_render(block.base, block.replaying, start, context),
             )
         )
-    return FileConflict(path=path, units=tuple(units), sides=sides)
+    return FileConflict(
+        path=path,
+        units=tuple(units),
+        sides=sides,
+        both_inserted=bool(blocks) and all(not block.base for block in blocks),
+    )
 
 
 @dataclass(frozen=True)

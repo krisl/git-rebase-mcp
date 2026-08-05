@@ -185,3 +185,17 @@ def test_an_unknown_side_is_refused(both_appended: Scratch) -> None:
 def test_take_and_content_together_are_refused(both_appended: Scratch) -> None:
     with pytest.raises(ValueError, match="pass one"):
         rebase_resolve("f", content="x\n", take="both", repo=str(both_appended.path))
+
+
+def test_both_sides_appending_is_named_with_the_answer(both_appended: Scratch) -> None:
+    """The shape a real rebase hit twice. Naming it lets a caller answer in one
+    call instead of reading the file to work out the same thing."""
+    report = rebase_conflicts(str(both_appended.path))
+    assert report.files[0].both_inserted
+    assert 'take="both"' in report.guidance
+
+
+def test_an_ordinary_conflict_is_not_named_that_way(conflicted: Scratch) -> None:
+    report = rebase_conflicts(str(conflicted.path))
+    assert not report.files[0].both_inserted
+    assert "take=" not in report.guidance

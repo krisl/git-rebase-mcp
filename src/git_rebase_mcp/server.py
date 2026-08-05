@@ -129,6 +129,9 @@ class FileReport:
     # and the whole texts below are the answer. They are always included in that
     # case, regardless of include_full_sides, because nothing else is on offer.
     no_common_base: bool = False
+    # Every block is both sides inserting at the same point. Nothing says which
+    # order was meant, so composing refuses -- but `take="both"` answers it.
+    both_inserted: bool = False
     base: str | None = None
     branch_so_far: str | None = None
     replaying: str | None = None
@@ -188,6 +191,14 @@ def _conflict_guidance(files: tuple[FileReport, ...]) -> str:
         "intent; reapply that intent on top of what the branch already has. Then "
         "call rebase_resolve with the finished file."
     )
+    appended = [f.path for f in files if f.both_inserted]
+    if appended:
+        advice += (
+            f" Both sides inserted at the same point in {', '.join(appended)}, so"
+            " nothing in the text says which order was meant. If it is two"
+            ' independent additions, `rebase_resolve(path, take="both")` keeps the'
+            " branch's first and the replayed commit's after."
+        )
     rootless = [f.path for f in files if f.no_common_base]
     if rootless:
         advice += (
@@ -211,6 +222,7 @@ def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport
             for unit in conflict.units
         ),
         no_common_base=conflict.no_common_base,
+        both_inserted=conflict.both_inserted,
         # With no common base there are no units, so withholding the texts would
         # leave the caller nothing at all.
         base=conflict.sides.base if include_full_sides else None,
