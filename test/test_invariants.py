@@ -7,7 +7,11 @@ carried out silently and reported as success.
 from __future__ import annotations
 
 from git_rebase_mcp.invariants import (
+    Session,
+    clear_session,
     commits_with_markers,
+    load_session,
+    save_session,
     has_markers,
     record_backup,
     tree_change,
@@ -111,3 +115,44 @@ def test_has_markers_checks_resolved_content() -> None:
     assert has_markers("||||||| parent of abc\n")
     assert not has_markers("a\nb\n")
     assert not has_markers("Heading\n=======\n")
+
+
+def test_a_session_survives_being_written_and_read(scratch: Scratch) -> None:
+    scratch.commit("base", a="one\n")
+    backup = record_backup(scratch.git, label="test")
+    session = Session(
+        backup_ref=backup.ref,
+        backup_sha=backup.sha,
+        backup_tree=backup.tree,
+        base="HEAD~1",
+        stashed=("pytest.ini",),
+        check_command="pytest -q",
+    )
+    save_session(scratch.git, session)
+
+    loaded = load_session(scratch.git)
+    assert loaded == session
+    assert loaded is not None and loaded.backup == backup
+
+
+def test_no_session_reads_as_none(scratch: Scratch) -> None:
+    scratch.commit("base", a="one\n")
+    assert load_session(scratch.git) is None
+
+
+def test_clearing_a_session_removes_it(scratch: Scratch) -> None:
+    scratch.commit("base", a="one\n")
+    backup = record_backup(scratch.git, label="test")
+    save_session(
+        scratch.git,
+        Session(backup.ref, backup.sha, backup.tree, base="HEAD~1"),
+    )
+    clear_session(scratch.git)
+    assert load_session(scratch.git) is None
+
+
+def test_an_unreadable_session_is_treated_as_absent(scratch: Scratch) -> None:
+    """A file from another version must not stop the server working."""
+    scratch.commit("base", a="one\n")
+    scratch.git.git_path("rebase-mcp.json").write_text("{not json")
+    assert load_session(scratch.git) is None

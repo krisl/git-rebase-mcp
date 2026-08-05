@@ -12,8 +12,10 @@ should not have been.
 
 from __future__ import annotations
 
+import json
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from typing import cast
 from datetime import datetime, timezone
 
 from .git import Git
@@ -98,3 +100,69 @@ def commits_with_markers(git: Git, revision_range: str) -> list[MarkerHit]:
 def has_markers(text: str) -> bool:
     """Whether resolved content still contains a conflict marker."""
     return any(line.startswith(MARKER_PREFIXES) for line in text.splitlines())
+
+
+@dataclass(frozen=True)
+class Session:
+    """What one run of the server set up, so a later call can undo or check it.
+
+    Kept in the git directory rather than in memory: it has to survive the
+    server being restarted mid-rebase, and it is what someone reads by hand if
+    everything else fails.
+    """
+
+    backup_ref: str
+    backup_sha: str
+    backup_tree: str
+    base: str
+    stashed: tuple[str, ...] = ()
+    check_command: str | None = None
+
+    @property
+    def backup(self) -> Backup:
+        return Backup(ref=self.backup_ref, sha=self.backup_sha, tree=self.backup_tree)
+
+
+def _session_file(git: Git):
+    return git.git_path("rebase-mcp.json")
+
+
+def save_session(git: Git, session: Session) -> None:
+    _session_file(git).write_text(json.dumps(asdict(session), indent=1) + "\n")
+
+
+def load_session(git: Git) -> Session | None:
+    """Read the session back, treating anything unreadable as absent.
+
+    A file left by a different version must not stop the server working.
+    """
+    try:
+        parsed: object = json.loads(_session_file(git).read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    raw = cast("dict[str, object]", parsed)
+
+    stashed_raw = raw.get("stashed", ())
+    stashed: tuple[str, ...] = (
+        tuple(str(path) for path in cast("list[object]", stashed_raw))
+        if isinstance(stashed_raw, list)
+        else ()
+    )
+    command = raw.get("check_command")
+    try:
+        return Session(
+            backup_ref=str(raw["backup_ref"]),
+            backup_sha=str(raw["backup_sha"]),
+            backup_tree=str(raw["backup_tree"]),
+            base=str(raw["base"]),
+            stashed=stashed,
+            check_command=str(command) if command is not None else None,
+        )
+    except KeyError:
+        return None
+
+
+def clear_session(git: Git) -> None:
+    _session_file(git).unlink(missing_ok=True)
