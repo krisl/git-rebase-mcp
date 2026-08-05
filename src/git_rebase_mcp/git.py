@@ -76,6 +76,15 @@ class Git:
         text = self.out(*args)
         return text.split("\n") if text else []
 
+    def git_path(self, name: str) -> Path:
+        """Resolve a path inside the git directory.
+
+        Asking git rather than assuming `.git/` keeps this working in worktrees
+        and submodules, where the git directory is somewhere else entirely.
+        """
+        path = Path(self.out("rev-parse", "--git-path", name))
+        return path if path.is_absolute() else self.repo / path
+
     def succeeds(self, *args: str) -> bool:
         """Whether the command exits zero. For questions, not for actions."""
         return self.run(*args, check=False).ok

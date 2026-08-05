@@ -66,3 +66,11 @@ def test_stdin_is_passed_through(scratch: Scratch) -> None:
     scratch.commit("first", a="one\n")
     sha = scratch.git.out("rev-parse", "HEAD")
     assert scratch.git.run("cat-file", "--batch-check", stdin=sha).stdout.startswith(sha)
+
+
+def test_git_path_resolves_inside_the_git_directory(scratch: Scratch) -> None:
+    """Asked of git rather than assumed, so worktrees and submodules work."""
+    scratch.commit("first", a="one\n")
+    head = scratch.git.git_path("HEAD")
+    assert head.is_file()
+    assert head.read_text().startswith("ref:")

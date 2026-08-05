@@ -93,9 +93,9 @@ class UnsupportedRebase(Exception):
 
 
 def read_state(git: Git) -> RebaseState:
-    directory = _git_path(git, "rebase-merge")
+    directory = git.git_path("rebase-merge")
     if not directory.is_dir():
-        if _git_path(git, "rebase-apply").is_dir():
+        if git.git_path("rebase-apply").is_dir():
             raise UnsupportedRebase(
                 "this is an am-based rebase (git rebase --apply); "
                 "only interactive/merge rebases are supported"
@@ -120,16 +120,6 @@ def read_state(git: Git) -> RebaseState:
             step=step, action=action, replaying=_commit(git, "REBASE_HEAD"), head=head
         )
     return StoppedWithoutApply(step=step, action=action, head=head)
-
-
-def _git_path(git: Git, name: str) -> Path:
-    """Resolve a path inside the git directory.
-
-    Asking git rather than assuming `.git/` keeps this working in worktrees and
-    submodules, where the git directory is somewhere else entirely.
-    """
-    path = Path(git.out("rev-parse", "--git-path", name))
-    return path if path.is_absolute() else git.repo / path
 
 
 def _commit(git: Git, revision: str) -> Commit:
