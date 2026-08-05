@@ -46,6 +46,14 @@ it reports what each side did to the common base:
 leaves the wrap alone". Composing those needs no reasoning about which of three
 interleaved blocks belongs to whom.
 
+**Composes the conflicts that have one answer.** Git stops whenever the two
+sides edited *near* each other, not only when they edited the same thing. Where
+the edits are to different lines — the branch has not reached a block a later
+commit adds, and the replayed commit appends beside it — both sides applied is
+the only answer either would recognise, so it is applied and the rebase carries
+on. Nine of eleven conflicts in a real run were that shape. Anything genuinely
+ambiguous still stops and asks; `auto_resolve=False` turns it off entirely.
+
 **Records where the branch was, and checks the result against it.** What must
 stay the same is the change the branch makes to its base -- not the resulting
 tree, which changes for good reason when the rebase also moves onto newer
@@ -59,7 +67,7 @@ three errors above.
 | `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. |
 | `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in. |
 | `rebase_status` | Typed state, and whether `HEAD` is the commit being replayed. |
-| `rebase_conflicts` | Each contested region as two diffs, plus the replayed commit's message. |
+| `rebase_conflicts` | Each contested region as two diffs, plus the replayed commit's message. Only the ones that needed asking about. |
 | `rebase_resolve` | Stages a resolution, written inline or edited in place. Refuses markers. |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. |
 | `rebase_continue` | Carries on. Refuses while anything is unmerged. |

@@ -18,7 +18,7 @@ from typing import Literal, assert_never
 
 from mcp.server.mcpserver import MCPServer
 
-from .conflicts import FileConflict, read_conflict
+from .conflicts import FileConflict, auto_resolve_file, read_conflict
 from .git import Git, GitResult
 from .invariants import (
     Session,
@@ -90,6 +90,10 @@ class StatusReport:
     action: str | None = None
     replaying: CommitInfo | None = None
     conflicted_files: tuple[str, ...] = ()
+    # Paths this server composed and staged without asking, because the two
+    # sides edited different lines. Named rather than left silent: an automatic
+    # resolution is still a resolution, and worth a look.
+    auto_resolved: tuple[str, ...] = ()
     # What git printed when it stopped, when this report follows a git command.
     # Git often explains a stop in a way nothing else can reconstruct -- "the
     # previous cherry-pick is now empty" being the one that cost the most time --
@@ -437,6 +441,7 @@ def rebase_start(
     todo: list[str] | None = None,
     autosquash: bool = False,
     check_command: str | None = None,
+    auto_resolve: bool = True,
     force: bool = False,
 ) -> StartReport:
     """Begin a rebase onto `base`, and report where it stops.
@@ -494,7 +499,7 @@ def rebase_start(
     # so the result is read from the rebase state instead -- but git's own words
     # about why it stopped are kept, because nothing else can reconstruct them.
     result = git.run(*config, *args, check=False)
-    status = _report(read_state(git), _git_said(result))
+    status = _advance(git, _git_said(result), auto_resolve)
     return StartReport(
         backup_ref=backup.ref,
         stashed=stashed,
@@ -586,7 +591,7 @@ def _why_not_amendable(report: StatusReport) -> str:
 
 
 @mcp.tool()
-def rebase_continue(repo: str = ".") -> StatusReport:
+def rebase_continue(repo: str = ".", auto_resolve: bool = True) -> StatusReport:
     """Carry on with the rebase, and report where it stops next.
 
     Refused while any path is still unmerged, which is the other way a marker
@@ -604,7 +609,7 @@ def rebase_continue(repo: str = ".") -> StatusReport:
     # Stopping again on the next conflict is an ordinary outcome, not a failure,
     # so the exit status is read from the state rather than from git.
     result = git.run("-c", "core.editor=true", *RERERE, "rebase", "--continue", check=False)
-    return _report(read_state(git), _git_said(result))
+    return _advance(git, _git_said(result), auto_resolve)
 
 
 def _commit_info(git: Git, revision: str) -> CommitInfo:
@@ -639,11 +644,47 @@ def _info(commit: Commit) -> CommitInfo:
     return CommitInfo(sha=commit.sha, subject=commit.subject)
 
 
-def _report(state: RebaseState, git_said: str = "") -> StatusReport:
+# A rebase of any size stops many times; the cap only exists so a bug cannot
+# spin forever. Reaching it means something is wrong, not that a branch is long.
+AUTO_STEPS = 200
+
+
+def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
+    """Read where the rebase stopped, composing the decidable conflicts on the way.
+
+    Git stops on a conflict whenever the two sides edited near each other, not
+    only when they edited the same thing. Where the edits are to different lines
+    there is one answer both sides would recognise, so it is applied and the
+    rebase carries on rather than handing back a question with a known answer.
+    """
+    resolved: list[str] = []
+    for _ in range(AUTO_STEPS):
+        state = read_state(git)
+        if not isinstance(state, Conflicted) or not auto_resolve:
+            return _report(state, git_said, tuple(resolved))
+
+        composed = {path: auto_resolve_file(git, path) for path in state.unmerged}
+        if any(text is None for text in composed.values()):
+            return _report(state, git_said, tuple(resolved))
+
+        for path, text in composed.items():
+            assert text is not None
+            (git.repo / path).write_text(text)
+            git.run("add", "--", path)
+            resolved.append(path)
+        result = git.run("-c", "core.editor=true", *RERERE, "rebase", "--continue", check=False)
+        git_said = _git_said(result)
+    return _report(read_state(git), git_said, tuple(resolved))
+
+
+def _report(
+    state: RebaseState, git_said: str = "", auto_resolved: tuple[str, ...] = ()
+) -> StatusReport:
     match state:
         case NotRebasing():
             return StatusReport(
                 git_said=git_said,
+                auto_resolved=auto_resolved,
                 state="not_rebasing",
                 head=_info(state.head),
                 head_is_replaying_commit=False,
@@ -653,6 +694,7 @@ def _report(state: RebaseState, git_said: str = "") -> StatusReport:
         case Conflicted():
             return StatusReport(
                 git_said=git_said,
+                auto_resolved=auto_resolved,
                 state="conflicted",
                 head=_info(state.head),
                 head_is_replaying_commit=False,
@@ -672,6 +714,7 @@ def _report(state: RebaseState, git_said: str = "") -> StatusReport:
             same = state.head.sha == state.replaying.sha
             return StatusReport(
                 git_said=git_said,
+                auto_resolved=auto_resolved,
                 state="stopped_after_apply",
                 head=_info(state.head),
                 head_is_replaying_commit=same,
@@ -696,6 +739,7 @@ def _report(state: RebaseState, git_said: str = "") -> StatusReport:
         case StoppedWithoutApply():
             return StatusReport(
                 git_said=git_said,
+                auto_resolved=auto_resolved,
                 state="stopped_without_apply",
                 head=_info(state.head),
                 head_is_replaying_commit=False,

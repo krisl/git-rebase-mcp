@@ -135,14 +135,18 @@ def _blocks(git: Git, branch: str, base: str, replaying: str) -> list[_Block]:
     ones already marked in the working file -- but it writes to stdout, so
     nothing the caller may have started editing is disturbed.
     """
+    return _parse_diff3(_merged(git, branch, base, replaying).splitlines())
+
+
+def _merged(git: Git, branch: str, base: str, replaying: str) -> str:
+    """git's own merge of the three sides, with conflict markers, as text."""
     with tempfile.TemporaryDirectory() as directory:
         paths: list[str] = []
         for name, text in (("ours", branch), ("base", base), ("theirs", replaying)):
             written = Path(directory) / name
             written.write_text(text)
             paths.append(str(written))
-        merged = git.run("merge-file", "-p", "--diff3", *paths, check=False).stdout
-    return _parse_diff3(merged.splitlines())
+        return git.run("merge-file", "-p", "--diff3", *paths, check=False).stdout
 
 
 def _parse_diff3(lines: Sequence[str]) -> list[_Block]:
@@ -181,6 +185,37 @@ def _locate(base_lines: list[str], section: list[str], from_line: int) -> int:
         if base_lines[start : start + len(section)] == section:
             return start
     return from_line
+
+
+def auto_resolve_file(git: Git, path: str) -> str | None:
+    """The whole file with every block composed, or None if any block cannot be.
+
+    All or nothing on purpose: half-resolving a file leaves markers behind for
+    the caller to find, which is worse than leaving the file as git wrote it.
+    """
+    base = _stage(git, BASE, path)
+    if not git.succeeds("rev-parse", "--verify", "--quiet", f":{BASE}:{path}"):
+        return None  # no common base, so there is nothing to compose against
+
+    merged = _merged(git, _stage(git, BRANCH_SO_FAR, path), base, _stage(git, REPLAYING, path))
+    resolved: list[str] = []
+    block_lines: list[str] = []
+    inside = False
+    for line in merged.splitlines():
+        if line.startswith("<<<<<<<"):
+            inside, block_lines = True, [line]
+        elif inside:
+            block_lines.append(line)
+            if line.startswith(">>>>>>>"):
+                blocks = _parse_diff3(block_lines)
+                composed = auto_resolution(blocks[0]) if blocks else None
+                if composed is None:
+                    return None
+                resolved.extend(composed)
+                inside = False
+        else:
+            resolved.append(line)
+    return "".join(line + "\n" for line in resolved)
 
 
 def auto_resolution(block: _Block) -> list[str] | None:
