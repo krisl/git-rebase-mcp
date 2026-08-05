@@ -17,7 +17,9 @@ from typing import Literal, assert_never
 
 from mcp.server.mcpserver import MCPServer
 
+from .conflicts import FileConflict, read_conflict
 from .git import Git
+from .invariants import has_markers
 from .state import (
     Commit,
     Conflicted,
@@ -77,6 +79,124 @@ def rebase_status(repo: str = ".") -> StatusReport:
     from one where it conflicted part-way, which git's own output does not.
     """
     return _report(read_state(_git(repo)))
+
+
+@dataclass(frozen=True)
+class UnitReport:
+    """One region both sides edited, as what each side did to the base."""
+
+    base_range: tuple[int, int]
+    branch_so_far_diff: str
+    replaying_diff: str
+
+
+@dataclass(frozen=True)
+class FileReport:
+    path: str
+    units: tuple[UnitReport, ...]
+    base: str | None = None
+    branch_so_far: str | None = None
+    replaying: str | None = None
+
+
+@dataclass(frozen=True)
+class ConflictReport:
+    replaying: CommitInfo | None
+    replaying_body: str
+    files: tuple[FileReport, ...]
+    guidance: str
+
+
+@dataclass(frozen=True)
+class ResolveReport:
+    path: str
+    still_conflicted: tuple[str, ...]
+    guidance: str
+
+
+@mcp.tool()
+def rebase_conflicts(repo: str = ".", include_full_sides: bool = False) -> ConflictReport:
+    """Report each conflict as what the two sides did, rather than as markers.
+
+    Per contested region you get two diffs from the common base: one for the
+    branch built so far, one for the commit being replayed. Read them as two
+    intents and compose them -- "wrap this block in an `if`" plus "swap this
+    call" is usually just both.
+
+    Regions only one side changed are not listed: git merged those already.
+    Set `include_full_sides` to also get the three whole texts.
+    """
+    git = _git(repo)
+    state = read_state(git)
+    if not isinstance(state, Conflicted):
+        return ConflictReport(
+            replaying=None,
+            replaying_body="",
+            files=(),
+            guidance="Nothing is conflicted.",
+        )
+    files = tuple(
+        _file_report(read_conflict(git, path), include_full_sides) for path in state.unmerged
+    )
+    return ConflictReport(
+        replaying=_info(state.replaying),
+        replaying_body=git.out("log", "-1", "--format=%B", state.replaying.sha).strip(),
+        files=files,
+        guidance=(
+            "Each region lists what the branch did to the base and what the "
+            "replayed commit did to the same base. The replayed commit's message "
+            "states its intent; reapply that intent on top of what the branch "
+            "already has. Then call rebase_resolve with the finished file."
+        ),
+    )
+
+
+def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport:
+    return FileReport(
+        path=conflict.path,
+        units=tuple(
+            UnitReport(
+                base_range=unit.base_range,
+                branch_so_far_diff=unit.branch_so_far_diff,
+                replaying_diff=unit.replaying_diff,
+            )
+            for unit in conflict.units
+        ),
+        base=conflict.sides.base if include_full_sides else None,
+        branch_so_far=conflict.sides.branch_so_far if include_full_sides else None,
+        replaying=conflict.sides.replaying if include_full_sides else None,
+    )
+
+
+@mcp.tool()
+def rebase_resolve(path: str, content: str, repo: str = ".") -> ResolveReport:
+    """Write the resolved content for one conflicted path and stage it.
+
+    Refuses content that still contains conflict markers. Staging one is how a
+    commit ends up with `<<<<<<<` in it, which nothing downstream catches.
+    """
+    git = _git(repo)
+    if has_markers(content):
+        raise ValueError(
+            f"{path} still contains conflict markers. Resolve them first: staging "
+            "this would commit them."
+        )
+    target = git.repo / path
+    if not target.parent.is_dir():
+        raise ValueError(f"{path} is not inside {git.repo}")
+    target.write_text(content)
+    git.run("add", "--", path)
+
+    remaining = tuple(git.lines("diff", "--name-only", "--diff-filter=U"))
+    return ResolveReport(
+        path=path,
+        still_conflicted=remaining,
+        guidance=(
+            "All paths resolved; call rebase_continue."
+            if not remaining
+            else f"Still conflicted: {', '.join(remaining)}."
+        ),
+    )
 
 
 def _git(repo: str) -> Git:
