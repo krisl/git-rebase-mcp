@@ -96,10 +96,17 @@ as labels, conflict counts, resolve-with-ours/theirs — anticipates most of thi
 tool surface. This server is that insight delivered to an agent instead of a
 buffer, wrapped in the rebase state machine.
 
-The mechanism differs: DiffDiff parses conflict markers because it works inside
-a buffer. A server does not have to. Git keeps all three sides in the index as
-stages 1, 2 and 3, so the payload is read with `git show :1:path` rather than
-reconstructed from text.
+The regions are DiffDiff's too, and that matters more than it looks. Git's merge
+has already decided which parts of a file could not be reconciled, and marked
+exactly those; DiffDiff diffs the three sides of one such block and never sees
+the rest of the file. Working the regions out independently -- diffing whole
+sides against the whole base and intersecting -- re-derives that decision badly:
+two independent diffs cannot know what a merge could reconcile, so a block one
+side has not reached yet gets fused with a one-line change beside it, and one
+side ends up with nothing to say. This server made that mistake first and
+measured it: 4556 characters for one conflict, of which one side was 104 lines
+of unchanged context. Asking git for the blocks instead brought the same
+conflict to 289.
 
 ## Design notes
 

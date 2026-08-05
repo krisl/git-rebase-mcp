@@ -11,9 +11,20 @@ base: "wrap this loop in `if current:`" against "replace `delta` with
 region, the diff from the base to each side.
 
 The idea is DiffDiff's (https://github.com/krisl/DiffDiff), which shows exactly
-those two diffs in vim. The mechanism differs: DiffDiff parses conflict markers
-because it works inside a buffer, whereas git keeps all three sides in the index
-as stages 1, 2 and 3, so there is nothing to parse.
+those two diffs in vim, and so is the boundary they are computed over.
+
+That boundary matters more than it looks. Git's merge has already decided which
+parts of the file could not be reconciled, and marked exactly those. Working out
+the regions independently -- by diffing the whole of each side against the whole
+of the base and intersecting -- re-derives that decision, and does it worse: two
+independent diffs cannot know what a merge could reconcile, so a large block one
+side has not reached yet gets fused with a one-line change next to it, and the
+result is a region where one side has nothing at all to say. Measured on a real
+branch: 4556 characters of output, of which one side was 104 lines of unchanged
+context.
+
+So the blocks come from git, via `git merge-file --diff3` over the three stages,
+which is the same merge machinery without touching the working file.
 
 In a rebase the sides are not "ours" and "theirs" in the sense anyone means by
 those words -- they are inverted relative to a merge -- so they are named for
@@ -22,7 +33,10 @@ their roles: the branch built so far, and the commit being replayed.
 
 from __future__ import annotations
 
+import tempfile
+from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import cast
 
 from patiencediff import PatienceSequenceMatcher  # type: ignore[import-untyped]
@@ -72,40 +86,94 @@ class FileConflict:
 
 
 def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
-    """Build the collision units for one conflicted path."""
+    """Describe one conflicted path, one region per block git could not merge."""
     base = _stage(git, BASE, path)
     branch = _stage(git, BRANCH_SO_FAR, path)
     replaying = _stage(git, REPLAYING, path)
+    sides = Sides(base=base, branch_so_far=branch, replaying=replaying)
 
-    # Git records no stage 1 when the sides share no ancestor for this path. The
-    # units are derived from edits *against a base*, so with no base they would
-    # all be empty -- reporting nothing at exactly the moment there is most to
-    # say. Say so instead, and let the caller read both versions.
+    # Git records no stage 1 when the sides share no ancestor for this path. With
+    # no base there is nothing to diff against, so the two-intents framing does
+    # not apply and the whole text of each side is the only useful answer.
     if not git.succeeds("rev-parse", "--verify", "--quiet", f":{BASE}:{path}"):
-        return FileConflict(
-            path=path,
-            units=(),
-            sides=Sides(base=base, branch_so_far=branch, replaying=replaying),
-            no_common_base=True,
-        )
+        return FileConflict(path=path, units=(), sides=sides, no_common_base=True)
 
     base_lines = base.splitlines()
-    branch_ops = _opcodes(base_lines, branch.splitlines())
-    replaying_ops = _opcodes(base_lines, replaying.splitlines())
-
-    units = tuple(
-        CollisionUnit(
-            base_range=(window[0] + 1, window[1]),
-            branch_so_far_diff=_render(base_lines, branch.splitlines(), branch_ops, window),
-            replaying_diff=_render(base_lines, replaying.splitlines(), replaying_ops, window),
+    units: list[CollisionUnit] = []
+    for block in _blocks(git, branch, base, replaying):
+        start = _locate(base_lines, block.base, len(units) and units[-1].base_range[1] or 0)
+        units.append(
+            CollisionUnit(
+                base_range=(start + 1, start + len(block.base)),
+                branch_so_far_diff=_render(block.base, block.branch_so_far, start, context),
+                replaying_diff=_render(block.base, block.replaying, start, context),
+            )
         )
-        for window in _contested_windows(branch_ops, replaying_ops, len(base_lines), context)
-    )
-    return FileConflict(
-        path=path,
-        units=units,
-        sides=Sides(base=base, branch_so_far=branch, replaying=replaying),
-    )
+    return FileConflict(path=path, units=tuple(units), sides=sides)
+
+
+@dataclass(frozen=True)
+class _Block:
+    """One region git marked as unmergeable, as its three sides."""
+
+    branch_so_far: list[str]
+    base: list[str]
+    replaying: list[str]
+
+
+def _blocks(git: Git, branch: str, base: str, replaying: str) -> list[_Block]:
+    """Ask git which regions could not be merged, and return their three sides.
+
+    `merge-file` runs the same merge as the rebase did, so the regions match the
+    ones already marked in the working file -- but it writes to stdout, so
+    nothing the caller may have started editing is disturbed.
+    """
+    with tempfile.TemporaryDirectory() as directory:
+        paths: list[str] = []
+        for name, text in (("ours", branch), ("base", base), ("theirs", replaying)):
+            written = Path(directory) / name
+            written.write_text(text)
+            paths.append(str(written))
+        merged = git.run("merge-file", "-p", "--diff3", *paths, check=False).stdout
+    return _parse_diff3(merged.splitlines())
+
+
+def _parse_diff3(lines: Sequence[str]) -> list[_Block]:
+    """Split merge-file's output into the blocks it could not merge."""
+    blocks: list[_Block] = []
+    side: list[str] | None = None
+    ours: list[str] = []
+    base: list[str] = []
+    theirs: list[str] = []
+    for line in lines:
+        if line.startswith("<<<<<<<"):
+            ours, base, theirs = [], [], []
+            side = ours
+        elif line.startswith("|||||||") and side is not None:
+            side = base
+        elif line.startswith("=======") and side is not None:
+            side = theirs
+        elif line.startswith(">>>>>>>") and side is not None:
+            blocks.append(_Block(branch_so_far=ours, base=base, replaying=theirs))
+            side = None
+        elif side is not None:
+            side.append(line)
+    return blocks
+
+
+def _locate(base_lines: list[str], section: list[str], from_line: int) -> int:
+    """Where a block's base section sits in the base file.
+
+    Blocks come in order and do not overlap, so the search starts after the last
+    one. An empty section belongs at the search position: the block adds lines
+    the base never had.
+    """
+    if not section:
+        return from_line
+    for start in range(from_line, len(base_lines) - len(section) + 1):
+        if base_lines[start : start + len(section)] == section:
+            return start
+    return from_line
 
 
 def _stage(git: Git, stage: str, path: str) -> str:
@@ -130,90 +198,51 @@ def _opcodes(base: list[str], other: list[str]) -> list[Opcode]:
     return cast("list[Opcode]", PatienceSequenceMatcher(None, base, other).get_opcodes())
 
 
-def _edited_ranges(ops: list[Opcode]) -> list[tuple[int, int]]:
-    """Base line ranges a side touched, half-open and 0-based.
+def _render(base: list[str], side: list[str], start: int, context: int) -> str:
+    """A unified diff of one side of a block, against the block's base.
 
-    An insertion occupies no base lines, so it is widened to one to give it
-    something to overlap with.
+    Line numbers are absolute in the base file, so they can be checked against
+    it. A side that did not touch this block says so in one line instead of
+    repeating it: the region was chosen because *some* side changed it, and
+    printing unchanged text for the other is what made this output unreadable.
     """
-    ranges: list[tuple[int, int]] = []
-    for tag, i1, i2, _, _ in ops:
-        if tag == "equal":
-            continue
-        ranges.append((i1, i2 if i2 > i1 else i1 + 1))
-    return ranges
+    opcodes = _opcodes(base, side)
+    if all(tag == "equal" for tag, *_ in opcodes):
+        return "(unchanged in this region)"
 
-
-def _contested_windows(
-    branch_ops: list[Opcode], replaying_ops: list[Opcode], base_length: int, context: int
-) -> list[tuple[int, int]]:
-    """Regions both sides edited, widened by context lines.
-
-    Regions only one side touched are left out on purpose: git merged those
-    cleanly and they are already in the working file. What needs a decision is
-    where the two edits meet.
-    """
-    branch_ranges = _edited_ranges(branch_ops)
-    replaying_ranges = _edited_ranges(replaying_ops)
-
-    merged = _merge_overlapping(sorted(branch_ranges + replaying_ranges))
-    contested = [
-        window
-        for window in merged
-        if any(_overlaps(window, r) for r in branch_ranges)
-        and any(_overlaps(window, r) for r in replaying_ranges)
-    ]
-    return [
-        (max(0, start - context), min(base_length, end + context)) for start, end in contested
-    ]
-
-
-def _merge_overlapping(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:
-    """Join ranges that overlap or touch, so one region is reported once."""
-    merged: list[tuple[int, int]] = []
-    for start, end in ranges:
-        if merged and start <= merged[-1][1]:
-            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
-        else:
-            merged.append((start, end))
-    return merged
-
-
-def _overlaps(a: tuple[int, int], b: tuple[int, int]) -> bool:
-    return a[0] < b[1] and b[0] < a[1]
-
-
-def _render(
-    base: list[str], side: list[str], ops: list[Opcode], window: tuple[int, int]
-) -> str:
-    """A unified diff of one side, over the base lines in `window`.
-
-    Line numbers are absolute so they can be compared against the file, which
-    means the header is assembled here rather than by difflib.
-    """
-    start, end = window
     body: list[str] = []
-    side_start: int | None = None
-    side_end = 0
-
-    for tag, i1, i2, j1, j2 in ops:
-        if i2 <= start and not (tag == "insert" and i1 >= start):
-            continue
-        if i1 >= end:
-            break
-        low, high = max(i1, start), min(i2, end)
+    for index, (tag, i1, i2, j1, j2) in enumerate(opcodes):
         if tag == "equal":
-            body += [" " + line for line in base[low:high]]
-            side_low, side_high = j1 + (low - i1), j1 + (high - i1)
+            kept = _trim(base[i1:i2], context, first=index == 0, last=index == len(opcodes) - 1)
+            body += [" " + line for line in kept]
         else:
-            body += ["-" + line for line in base[low:high]]
-            body += ["+" + line for line in side[j1:j2]]
-            side_low, side_high = j1, j2
-        if side_start is None:
-            side_start = side_low
-        side_end = side_high
-
-    if side_start is None:
-        side_start = side_end = 0
-    header = f"@@ -{start + 1},{end - start} +{side_start + 1},{side_end - side_start} @@"
+            body += _changed(base[i1:i2], "-", context)
+            body += _changed(side[j1:j2], "+", context)
+    header = f"@@ -{start + 1},{len(base)} +{start + 1},{len(side)} @@"
     return "\n".join([header, *body])
+
+
+def _changed(lines: list[str], prefix: str, context: int) -> list[str]:
+    """One side's added or removed lines, with a long run summarised.
+
+    A hundred removed lines are a hundred lines of output saying one thing: the
+    branch has not reached them yet. The count says it in one.
+    """
+    if len(lines) <= context * 2 + 1:
+        return [prefix + line for line in lines]
+    return (
+        [prefix + line for line in lines[:context]]
+        + [f"{prefix}... {len(lines) - context * 2} more lines ..."]
+        + [prefix + line for line in lines[-context:]]
+    )
+
+
+def _trim(lines: list[str], context: int, first: bool, last: bool) -> list[str]:
+    """Keep only the context around a change, with an elision in the middle."""
+    if len(lines) <= context * 2 + 1:
+        return lines
+    if first:
+        return ["..."] + lines[-context:]
+    if last:
+        return lines[:context] + ["..."]
+    return lines[:context] + ["..."] + lines[-context:]
