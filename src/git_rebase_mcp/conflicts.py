@@ -45,6 +45,12 @@ from .git import Git
 
 CONTEXT = 3
 
+# Added lines are elided far more reluctantly than removed ones, because they
+# are what a caller copies to reapply the replayed commit's intent. Removed
+# lines are context: a count conveys them. Past this many additions the region
+# is big enough that include_full_sides is the better answer anyway.
+ADDED_LIMIT = 40
+
 # Index stages of a conflicted path, as git records them.
 BASE, BRANCH_SO_FAR, REPLAYING = "1", "2", "3"
 
@@ -217,23 +223,26 @@ def _render(base: list[str], side: list[str], start: int, context: int) -> str:
             body += [" " + line for line in kept]
         else:
             body += _changed(base[i1:i2], "-", context)
-            body += _changed(side[j1:j2], "+", context)
+            body += _changed(side[j1:j2], "+", ADDED_LIMIT // 2)
     header = f"@@ -{start + 1},{len(base)} +{start + 1},{len(side)} @@"
     return "\n".join([header, *body])
 
 
-def _changed(lines: list[str], prefix: str, context: int) -> list[str]:
+def _changed(lines: list[str], prefix: str, keep: int) -> list[str]:
     """One side's added or removed lines, with a long run summarised.
 
     A hundred removed lines are a hundred lines of output saying one thing: the
-    branch has not reached them yet. The count says it in one.
+    branch has not reached them yet, and a count says it in one. Additions get a
+    much larger allowance: they are the text a caller copies to reapply the
+    commit, so summarising them makes the region unusable rather than merely
+    long.
     """
-    if len(lines) <= context * 2 + 1:
+    if len(lines) <= keep * 2 + 1:
         return [prefix + line for line in lines]
     return (
-        [prefix + line for line in lines[:context]]
-        + [f"{prefix}... {len(lines) - context * 2} more lines ..."]
-        + [prefix + line for line in lines[-context:]]
+        [prefix + line for line in lines[:keep]]
+        + [f"{prefix}... {len(lines) - keep * 2} more lines ..."]
+        + [prefix + line for line in lines[-keep:]]
     )
 
 

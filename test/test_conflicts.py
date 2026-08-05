@@ -194,3 +194,23 @@ def test_a_block_the_branch_has_not_reached_stays_small(scratch: Scratch) -> Non
     )
     assert payload < 600, f"payload is {payload} characters"  # was 4556
     assert any("appended" in unit.replaying_diff for unit in conflict.units)
+
+
+def test_added_lines_survive_where_removed_ones_are_summarised():
+    """Additions are the text a caller copies to reapply the commit; a count
+    instead of them makes the region unusable rather than merely long."""
+    base = [f"missing{i}" for i in range(30)]
+    side = [f"new{i}" for i in range(30)]
+    rendered = _render(base, side, 0, 3)
+
+    assert "... 24 more lines ..." in rendered  # the removals
+    for i in range(30):
+        assert f"+new{i}" in rendered  # every addition, verbatim
+
+
+def test_a_very_large_addition_is_still_capped():
+    base = ["x"]
+    side = [f"new{i}" for i in range(200)]
+    rendered = _render(base, side, 0, 3)
+    assert "more lines ..." in rendered
+    assert len(rendered.splitlines()) < 50
