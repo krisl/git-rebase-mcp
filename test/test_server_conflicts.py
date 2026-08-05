@@ -106,3 +106,37 @@ def test_an_add_add_conflict_hands_over_both_versions(scratch: Scratch) -> None:
     assert entry.branch_so_far == "from branch\n"
     assert entry.replaying == "from side\n"
     assert "No common base for f" in report.guidance
+
+
+def test_resolving_can_stage_what_is_already_in_the_working_tree(scratch: Scratch) -> None:
+    """Sending a large file back through a tool parameter costs more than
+    editing it in place; a 900-line file was about ten thousand tokens."""
+    scratch.commit("base", f="one\n")
+    scratch.commit("second", f="two\n")
+    scratch.commit("third", f="three\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    scratch.write("f", "resolved in place\n")
+    report = rebase_resolve("f", repo=str(scratch.path))
+
+    assert report.still_conflicted == ()
+    assert scratch.git.out("show", ":0:f") == "resolved in place"
+
+
+def test_staging_the_working_tree_still_refuses_markers(scratch: Scratch) -> None:
+    """The check must not be skippable by taking the other route into the tool."""
+    scratch.commit("base", f="one\n")
+    scratch.commit("second", f="two\n")
+    scratch.commit("third", f="three\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    with pytest.raises(ValueError, match="conflict markers"):
+        rebase_resolve("f", repo=str(scratch.path))  # git left markers in the file
+
+
+def test_staging_a_file_that_is_not_there_says_so(scratch: Scratch) -> None:
+    scratch.commit("base", f="one\n")
+    with pytest.raises(ValueError, match="nothing to stage"):
+        rebase_resolve("absent", repo=str(scratch.path))

@@ -60,7 +60,7 @@ three errors above.
 | `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. |
 | `rebase_status` | Typed state, and whether `HEAD` is the commit being replayed. |
 | `rebase_conflicts` | Each contested region as two diffs, plus the replayed commit's message. |
-| `rebase_resolve` | Writes and stages a resolution. Refuses one containing markers. |
+| `rebase_resolve` | Stages a resolution, written inline or edited in place. Refuses markers. |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. |
 | `rebase_continue` | Carries on. Refuses while anything is unmerged. |
 | `rebase_finish` | Checks the branch still makes the same change to its base, and scans every commit for markers. |

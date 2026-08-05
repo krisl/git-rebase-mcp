@@ -209,22 +209,41 @@ def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport
 
 
 @mcp.tool()
-def rebase_resolve(path: str, content: str, repo: str = ".") -> ResolveReport:
-    """Write the resolved content for one conflicted path and stage it.
+def rebase_resolve(path: str, content: str | None = None, repo: str = ".") -> ResolveReport:
+    """Stage the resolved content for one conflicted path.
 
-    Refuses content that still contains conflict markers. Staging one is how a
-    commit ends up with `<<<<<<<` in it, which nothing downstream catches.
+    Pass `content` to write the file and stage it. Omit it to stage what is
+    already in the working tree, which is what you want for a file large enough
+    that sending it back would cost more than editing it in place.
+
+    Either way the content is refused if it still contains conflict markers.
+    Staging one is how a commit ends up with `<<<<<<<` in it, and nothing
+    downstream catches that.
     """
     git = _git(repo)
+    target = git.repo / path
+    if not target.parent.is_dir():
+        raise ValueError(f"{path} is not inside {git.repo}")
+
+    from_disk = content is None
+    if from_disk:
+        if not target.is_file():
+            raise ValueError(
+                f"{path} is not in the working tree, so there is nothing to stage. "
+                "Pass content to write it."
+            )
+        content = target.read_text()
+
+    # Checked before anything is written, so a refusal leaves the file as it was
+    # and the caller does not have to reconstruct what they sent.
+    assert content is not None
     if has_markers(content):
         raise ValueError(
             f"{path} still contains conflict markers. Resolve them first: staging "
             "this would commit them."
         )
-    target = git.repo / path
-    if not target.parent.is_dir():
-        raise ValueError(f"{path} is not inside {git.repo}")
-    target.write_text(content)
+    if not from_disk:
+        target.write_text(content)
     git.run("add", "--", path)
 
     remaining = tuple(git.lines("diff", "--name-only", "--diff-filter=U"))
