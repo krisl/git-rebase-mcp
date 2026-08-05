@@ -11,6 +11,7 @@ discriminator, because a stable schema is easier for a caller to rely on.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, assert_never
@@ -18,7 +19,7 @@ from typing import Literal, assert_never
 from mcp.server.mcpserver import MCPServer
 
 from .conflicts import FileConflict, read_conflict
-from .git import Git
+from .git import Git, GitResult
 from .invariants import (
     Session,
     clear_session,
@@ -78,6 +79,11 @@ class StatusReport:
     action: str | None = None
     replaying: CommitInfo | None = None
     conflicted_files: tuple[str, ...] = ()
+    # What git printed when it stopped, when this report follows a git command.
+    # Git often explains a stop in a way nothing else can reconstruct -- "the
+    # previous cherry-pick is now empty" being the one that cost the most time --
+    # and swallowing it leaves the caller guessing.
+    git_said: str = ""
 
 
 @mcp.tool()
@@ -368,9 +374,10 @@ def rebase_start(
     args.append(base)
 
     # Stopping at a conflict is an ordinary outcome that git reports as failure,
-    # so the result is read from the rebase state instead.
-    git.run(*config, *args, check=False)
-    status = _report(read_state(git))
+    # so the result is read from the rebase state instead -- but git's own words
+    # about why it stopped are kept, because nothing else can reconstruct them.
+    result = git.run(*config, *args, check=False)
+    status = _report(read_state(git), _git_said(result))
     return StartReport(
         backup_ref=backup.ref,
         stashed=stashed,
@@ -469,13 +476,29 @@ def rebase_continue(repo: str = ".") -> StatusReport:
         raise ValueError("No rebase in progress.")
     # Stopping again on the next conflict is an ordinary outcome, not a failure,
     # so the exit status is read from the state rather than from git.
-    git.run("-c", "core.editor=true", "rebase", "--continue", check=False)
-    return _report(read_state(git))
+    result = git.run("-c", "core.editor=true", "rebase", "--continue", check=False)
+    return _report(read_state(git), _git_said(result))
 
 
 def _commit_info(git: Git, revision: str) -> CommitInfo:
     sha, _, subject = git.out("log", "-1", "--format=%H%n%s", revision).partition("\n")
     return CommitInfo(sha=sha, subject=subject)
+
+
+# Progress ticks and git's generic advice add length without adding meaning; the
+# sentence explaining the stop is what is worth keeping.
+NOISE = re.compile(r"^(Rebasing \(\d+/\d+\)|hint:|\s*$)")
+
+
+def _git_said(result: GitResult, limit: int = 1200) -> str:
+    """The part of git's output that explains itself."""
+    lines = [
+        line.rstrip()
+        for line in (result.stderr + result.stdout).splitlines()
+        if not NOISE.match(line)
+    ]
+    said = "\n".join(lines).strip()
+    return said if len(said) <= limit else said[:limit] + "\n[...]"
 
 
 def _git(repo: str) -> Git:
@@ -489,10 +512,11 @@ def _info(commit: Commit) -> CommitInfo:
     return CommitInfo(sha=commit.sha, subject=commit.subject)
 
 
-def _report(state: RebaseState) -> StatusReport:
+def _report(state: RebaseState, git_said: str = "") -> StatusReport:
     match state:
         case NotRebasing():
             return StatusReport(
+                git_said=git_said,
                 state="not_rebasing",
                 head=_info(state.head),
                 head_is_replaying_commit=False,
@@ -501,6 +525,7 @@ def _report(state: RebaseState) -> StatusReport:
             )
         case Conflicted():
             return StatusReport(
+                git_said=git_said,
                 state="conflicted",
                 head=_info(state.head),
                 head_is_replaying_commit=False,
@@ -519,6 +544,7 @@ def _report(state: RebaseState) -> StatusReport:
         case StoppedAfterApply():
             same = state.head.sha == state.replaying.sha
             return StatusReport(
+                git_said=git_said,
                 state="stopped_after_apply",
                 head=_info(state.head),
                 head_is_replaying_commit=same,
@@ -542,6 +568,7 @@ def _report(state: RebaseState) -> StatusReport:
             )
         case StoppedWithoutApply():
             return StatusReport(
+                git_said=git_said,
                 state="stopped_without_apply",
                 head=_info(state.head),
                 head_is_replaying_commit=False,

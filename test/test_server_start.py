@@ -129,3 +129,29 @@ def test_the_base_is_recorded_as_a_resolved_sha(series: Scratch) -> None:
     assert session.base_sha == base_before
     assert series.git.out("rev-parse", "HEAD~2") == base_before  # unchanged here...
     assert session.base_sha != series.git.out("rev-parse", "HEAD")
+
+
+def test_git_own_words_are_kept_when_it_stops(scratch: Scratch) -> None:
+    """Git explains a stop in ways nothing else can reconstruct. Swallowing that
+    left a real run inscrutable for several minutes."""
+    scratch.commit("base", f="one\n")
+    scratch.commit("second", f="two\n")
+    scratch.commit("third", f="three\n")
+    second, third = scratch.git.out("rev-parse", "HEAD~1"), scratch.git.out("rev-parse", "HEAD")
+
+    report = rebase_start("HEAD~2", str(scratch.path), [f"pick {third}", f"pick {second}"])
+    assert report.status.state == "conflicted"
+    assert "CONFLICT" in report.status.git_said
+
+
+def test_progress_ticks_and_generic_advice_are_left_out(series: Scratch) -> None:
+    """"Rebasing (2/20)" and git's hints are length without meaning."""
+    b, c = series.git.out("rev-parse", "HEAD~1"), series.git.out("rev-parse", "HEAD")
+    report = rebase_start("HEAD~2", str(series.path), [f"pick {c}", f"pick {b}"])
+    assert "Rebasing (" not in report.status.git_said
+    assert "hint:" not in report.status.git_said
+
+
+def test_a_plain_status_carries_no_git_output(series: Scratch) -> None:
+    """Nothing was run, so there is nothing for git to have said."""
+    assert rebase_status(str(series.path)).git_said == ""
