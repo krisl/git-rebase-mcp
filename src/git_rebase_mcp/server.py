@@ -265,6 +265,7 @@ class PreflightReport:
     dropped: tuple[CommitInfo, ...]
     unknown: tuple[str, ...]
     already_upstream: tuple[CommitInfo, ...]
+    stray_fixups: tuple[CommitInfo, ...]
     blocking: tuple[str, ...]
     untracked_collisions: tuple[str, ...]
     safe_to_start: bool
@@ -294,6 +295,7 @@ def rebase_preflight(
         dropped=tuple(_info(c) for c in check.dropped),
         unknown=check.unknown,
         already_upstream=tuple(_info(c) for c in check.already_upstream),
+        stray_fixups=tuple(_info(c) for c in check.stray_fixups),
         blocking=blocking,
         untracked_collisions=collisions,
         safe_to_start=not problems,
@@ -347,6 +349,7 @@ def rebase_start(
     base: str,
     repo: str = ".",
     todo: list[str] | None = None,
+    autosquash: bool = False,
     check_command: str | None = None,
     force: bool = False,
 ) -> StartReport:
@@ -356,9 +359,15 @@ def rebase_start(
     starting it tags the current tip, so the result can be checked against it,
     and moves aside untracked files a replayed commit would collide with.
 
+    `autosquash` folds every `fixup!` and `squash!` in the range into the commit
+    its subject names, which is the workflow `git commit --fixup` sets up. It
+    cannot be combined with a todo, since it is a way of generating one.
+
     `check_command` is run after every commit, which is the only thing that
     catches a step that applies cleanly but leaves the tree broken.
     """
+    if autosquash and todo is not None:
+        raise ValueError("autosquash generates the todo, so it cannot be given one.")
     git = _git(repo)
     preflight = rebase_preflight(base, repo, todo)
     if not preflight.safe_to_start and not force:
@@ -388,8 +397,11 @@ def rebase_start(
         todo_file = git.git_path("rebase-mcp-todo")
         todo_file.write_text("\n".join(lines) + "\n")
         config += ["-c", f"sequence.editor=cp '{todo_file}'"]
-    elif check_command:
-        args += ["--exec", check_command]
+    else:
+        if autosquash:
+            args.append("--autosquash")
+        if check_command:
+            args += ["--exec", check_command]
     args.append(base)
 
     # Stopping at a conflict is an ordinary outcome that git reports as failure,

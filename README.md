@@ -57,7 +57,7 @@ three errors above.
 | Tool | |
 | --- | --- |
 | `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. |
-| `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. |
+| `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in. |
 | `rebase_status` | Typed state, and whether `HEAD` is the commit being replayed. |
 | `rebase_conflicts` | Each contested region as two diffs, plus the replayed commit's message. |
 | `rebase_resolve` | Stages a resolution, written inline or edited in place. Refuses markers. |
@@ -68,7 +68,8 @@ three errors above.
 
 `rebase_start` takes a `check_command`, run after every commit. It is the only
 thing that catches a step which applies cleanly and still leaves the tree
-broken.
+broken -- a resolution that drops a line, say, so the file no longer parses.
+Use it.
 
 ## Use it
 

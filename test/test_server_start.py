@@ -155,3 +155,25 @@ def test_progress_ticks_and_generic_advice_are_left_out(series: Scratch) -> None
 def test_a_plain_status_carries_no_git_output(series: Scratch) -> None:
     """Nothing was run, so there is nothing for git to have said."""
     assert rebase_status(str(series.path)).git_said == ""
+
+
+def test_autosquash_folds_fixups_into_their_targets(scratch: Scratch) -> None:
+    """The workflow `git commit --fixup` sets up, which the README recommends."""
+    scratch.commit("base", a="one\n")
+    scratch.commit("Add the thing", b="thing\n")
+    scratch.commit("Add another thing", c="other\n")
+    scratch.commit("fixup! Add the thing", b="thing, fixed\n")
+
+    report = rebase_start("HEAD~3", str(scratch.path), autosquash=True,
+                          check_command="test -f b")
+    assert report.status.state == "not_rebasing"
+    assert scratch.subjects("HEAD~2..HEAD") == ["Add another thing", "Add the thing"]
+    assert scratch.read("b") == "thing, fixed\n"
+
+
+def test_autosquash_and_a_todo_together_are_refused(scratch: Scratch) -> None:
+    scratch.commit("base", a="one\n")
+    scratch.commit("second", b="two\n")
+    second = scratch.git.out("rev-parse", "HEAD")
+    with pytest.raises(ValueError, match="cannot be given one"):
+        rebase_start("HEAD~1", str(scratch.path), todo=[f"pick {second}"], autosquash=True)

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from git_rebase_mcp.plan import check_plan, commits_in_range
+from git_rebase_mcp.plan import autosquash_targets, check_plan, commits_in_range
 
 from scratch import Scratch
 
@@ -116,3 +116,29 @@ def test_a_normal_branch_reports_nothing_upstream(series: Scratch) -> None:
     check = check_plan(series.git, "HEAD~3", None)
     assert check.already_upstream == ()
     assert check.safe
+
+
+def test_fixups_are_matched_to_their_targets(scratch: Scratch) -> None:
+    scratch.commit("base", a="one\n")
+    scratch.commit("Add the thing", b="thing\n")
+    target = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("fixup! Add the thing", b="thing, fixed\n")
+    fixup = scratch.git.out("rev-parse", "HEAD")
+
+    targets = autosquash_targets(commits_in_range(scratch.git, "HEAD~2"))
+    assert targets[fixup] is not None
+    assert targets[fixup].sha == target
+
+
+def test_a_fixup_naming_nothing_in_the_range_is_a_problem(scratch: Scratch) -> None:
+    """Git leaves it where it is and says nothing, so a stray `fixup!` survives
+    into the final history -- usually because the target is already upstream, or
+    its subject was edited after the fixup was written."""
+    scratch.commit("base", a="one\n")
+    scratch.commit("Add the thing", b="thing\n")
+    scratch.commit("fixup! Add something that is not here", b="thing, fixed\n")
+
+    check = check_plan(scratch.git, "HEAD~2", None)
+    assert not check.safe
+    assert [c.subject for c in check.stray_fixups] == ["fixup! Add something that is not here"]
+    assert "survive into the final history" in check.problems[0]

@@ -35,6 +35,7 @@ class PlanCheck:
     deliberately_dropped: tuple[Commit, ...]
     unknown: tuple[str, ...]
     already_upstream: tuple[Commit, ...]
+    stray_fixups: tuple[Commit, ...]
     problems: tuple[str, ...]
 
     @property
@@ -68,6 +69,26 @@ def commits_in_range(git: Git, base: str) -> tuple[Commit, ...]:
     )
 
 
+FIXUP_SUBJECT = re.compile(r"^(fixup|squash)!\s+(?P<subject>.+)$")
+
+
+def autosquash_targets(commits: tuple[Commit, ...]) -> dict[str, Commit | None]:
+    """Which commit each `fixup!` or `squash!` in the range would fold into.
+
+    A value of None means git will leave it where it is: the subject matches
+    nothing in the range, usually because the target is already upstream or the
+    subject was edited after the fixup was written. Git says nothing about that,
+    and the commit then survives as a stray `fixup!` in the final history.
+    """
+    by_subject = {commit.subject: commit for commit in commits}
+    targets: dict[str, Commit | None] = {}
+    for commit in commits:
+        found = FIXUP_SUBJECT.match(commit.subject)
+        if found:
+            targets[commit.sha] = by_subject.get(found["subject"])
+    return targets
+
+
 def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
     """Compare a todo against the commits it claims to cover.
 
@@ -75,8 +96,22 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
     anything, so only the range is reported.
     """
     commits = commits_in_range(git, base)
+    stray = tuple(
+        commit
+        for commit in commits
+        if commit.sha in autosquash_targets(commits) and autosquash_targets(commits)[commit.sha] is None
+    )
     upstream = already_upstream(git, base)
     duplicated = tuple(commit for commit in commits if commit.sha in upstream)
+    stray_problem = (
+        [
+            "these name a commit that is not in the range, so autosquash leaves them "
+            "where they are and they survive into the final history: "
+            + ", ".join(f"{c.sha[:9]} ({c.subject})" for c in stray)
+        ]
+        if stray
+        else []
+    )
     upstream_problem = (
         [
             f"{len(duplicated)} of {len(commits)} commits in the range are already in "
@@ -96,7 +131,8 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
             deliberately_dropped=(),
             unknown=(),
             already_upstream=duplicated,
-            problems=tuple(upstream_problem),
+            stray_fixups=stray,
+            problems=tuple(upstream_problem + stray_problem),
         )
 
     by_sha = {commit.sha: commit for commit in commits}
@@ -120,7 +156,7 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
     accounted = set(kept) | set(dropped_on_purpose)
     missing = tuple(commit for sha, commit in by_sha.items() if sha not in accounted)
 
-    problems: list[str] = list(upstream_problem)
+    problems: list[str] = list(upstream_problem) + list(stray_problem)
     if missing:
         problems.append(
             "the todo leaves out "
@@ -137,6 +173,7 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
         deliberately_dropped=tuple(dropped_on_purpose.values()),
         unknown=tuple(unknown),
         already_upstream=duplicated,
+        stray_fixups=stray,
         problems=tuple(problems),
     )
 
