@@ -199,6 +199,79 @@ def rebase_resolve(path: str, content: str, repo: str = ".") -> ResolveReport:
     )
 
 
+@dataclass(frozen=True)
+class AmendReport:
+    before: CommitInfo
+    after: CommitInfo
+    guidance: str
+
+
+@mcp.tool()
+def rebase_amend(
+    repo: str = ".", message: str | None = None, stage_all: bool = False
+) -> AmendReport:
+    """Amend the commit this rebase has just applied.
+
+    Refused at every other kind of stop. At a conflicted stop the commit being
+    replayed has not been created yet, so HEAD is still the one before it and
+    amending would fold two commits into one -- silently, and reported by git as
+    success.
+    """
+    git = _git(repo)
+    state = read_state(git)
+    if not isinstance(state, StoppedAfterApply):
+        raise ValueError(_why_not_amendable(_report(state)))
+
+    before = _info(state.head)
+    if stage_all:
+        git.run("add", "-A")
+    args = ["commit", "--amend", "--no-verify"]
+    args += ["-m", message] if message is not None else ["--no-edit"]
+    git.run("-c", "core.editor=true", *args)
+    after = _commit_info(git, "HEAD")
+    return AmendReport(
+        before=before,
+        after=after,
+        guidance=f"Amended {before.sha[:9]} into {after.sha[:9]}. Call rebase_continue.",
+    )
+
+
+def _why_not_amendable(report: StatusReport) -> str:
+    """Say what is wrong and what to do instead, not just that it was refused."""
+    return (
+        f"Refusing to amend: the rebase is {report.state}, and HEAD "
+        f"({report.head.sha[:9]} {report.head.subject!r}) is not a commit this "
+        f"step created. {report.guidance}"
+    )
+
+
+@mcp.tool()
+def rebase_continue(repo: str = ".") -> StatusReport:
+    """Carry on with the rebase, and report where it stops next.
+
+    Refused while any path is still unmerged, which is the other way a marker
+    reaches a commit.
+    """
+    git = _git(repo)
+    state = read_state(git)
+    if isinstance(state, Conflicted):
+        raise ValueError(
+            "Refusing to continue: still unmerged: "
+            f"{', '.join(state.unmerged)}. Resolve them with rebase_resolve first."
+        )
+    if isinstance(state, NotRebasing):
+        raise ValueError("No rebase in progress.")
+    # Stopping again on the next conflict is an ordinary outcome, not a failure,
+    # so the exit status is read from the state rather than from git.
+    git.run("-c", "core.editor=true", "rebase", "--continue", check=False)
+    return _report(read_state(git))
+
+
+def _commit_info(git: Git, revision: str) -> CommitInfo:
+    sha, _, subject = git.out("log", "-1", "--format=%H%n%s", revision).partition("\n")
+    return CommitInfo(sha=sha, subject=subject)
+
+
 def _git(repo: str) -> Git:
     path = Path(repo).expanduser().resolve()
     if not path.is_dir():
