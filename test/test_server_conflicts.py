@@ -393,31 +393,48 @@ def test_the_containment_check_still_refuses_an_outside_path(tmp_path: Path) -> 
         _contained(real, "../outside")
 
 
-def test_the_guidance_names_a_file_with_a_region_it_cannot_place() -> None:
-    """A region with no base_range is found by its two diffs, and the guidance
-    says so -- otherwise the only thing distinguishing it would be silence."""
+def _guidance_for(base_range: tuple[int, int] | None) -> str:
+    """The advice for one file holding one region, placed or not."""
     state = Conflicted(
         step=Step(index=1, total=1),
         action="pick abc123",
         replaying=Commit(sha="a" * 40, subject="replayed"),
         head=Commit(sha="b" * 40, subject="before"),
-        unmerged=("f",),
+        unmerged=("src/report.py",),
     )
     files = (
         FileReport(
-            path="f",
+            path="src/report.py",
             units=(
                 UnitReport(
-                    base_range=None,
+                    base_range=base_range,
                     branch_so_far_diff="@@ not found in the base file @@",
                     replaying_diff="@@ not found in the base file @@",
                 ),
             ),
         ),
     )
+    return _conflict_guidance(files, state)
 
-    advice = _conflict_guidance(files, state)
-    assert "f" in advice
-    assert "no base_range" in advice
+
+def test_the_guidance_names_a_file_with_a_region_it_cannot_place() -> None:
+    """A region with no base_range is found by its two diffs, and the guidance
+    says so -- otherwise the only thing distinguishing it would be silence.
+
+    Named in full, and against a path that is not a substring of the advice
+    itself: `f` appears in "file" and in "diffs", so asserting on it passes
+    whether the file is named or not."""
+    advice = _guidance_for(None)
+
+    assert "A region in src/report.py has no base_range" in advice
     assert "none is guessed" in advice
     assert "two diffs" in advice
+
+
+def test_the_guidance_says_nothing_of_the_kind_when_the_region_is_placed() -> None:
+    """The other half of the same claim: advice that appeared either way would
+    tell a caller nothing, and is what an assertion on `f` alone would allow."""
+    advice = _guidance_for((1, 2))
+
+    assert "src/report.py" not in advice
+    assert "base_range" not in advice
