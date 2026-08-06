@@ -101,13 +101,17 @@ thing that catches a step which applies cleanly and still leaves the tree
 broken -- a resolution that drops a line, say, so the file no longer parses.
 Use it.
 
-## Use it
+## Install it
+
+One stdio server, one command, no arguments and no environment. Put it on your
+`PATH`:
 
 ```bash
-uv tool install --from . git-rebase-mcp     # or: uv sync, for development
+uv tool install --from git+https://github.com/aaron-riact/git-rebase-mcp git-rebase-mcp
 ```
 
-In Claude Code, `.mcp.json`:
+Then point your agent at `git-rebase-mcp`. Most harnesses take the same shape
+and differ only in where the file lives and what the top-level key is called:
 
 ```json
 {
@@ -117,7 +121,38 @@ In Claude Code, `.mcp.json`:
 }
 ```
 
-Every tool takes a `repo` argument, defaulting to the working directory.
+| Harness | Where | Key |
+| --- | --- | --- |
+| **Claude Code** | `claude mcp add git-rebase --scope project -- git-rebase-mcp`, or `.mcp.json` in the repo | `mcpServers` |
+| **Cursor** | `.cursor/mcp.json`, or `~/.cursor/mcp.json` for every project | `mcpServers` |
+| **Gemini CLI** | `.gemini/settings.json`, or `~/.gemini/settings.json` | `mcpServers` |
+| **Codex CLI** | `codex mcp add git-rebase -- git-rebase-mcp`, or `~/.codex/config.toml` | `[mcp_servers.git-rebase]` |
+| **VS Code** (Copilot) | `.vscode/mcp.json` | `servers` |
+| **Zed** | `~/.config/zed/settings.json` | `context_servers` |
+
+The two that are not JSON-with-`mcpServers`:
+
+```toml
+# ~/.codex/config.toml
+[mcp_servers.git-rebase]
+command = "git-rebase-mcp"
+```
+
+```json
+// .vscode/mcp.json — "servers", not "mcpServers"
+{ "servers": { "git-rebase": { "type": "stdio", "command": "git-rebase-mcp" } } }
+```
+
+If the server fails to start in an editor launched from a desktop icon rather
+than a shell, it is `PATH`: those processes do not read your shell profile, so
+`~/.local/bin` is missing. Give the absolute path — `which git-rebase-mcp` — as
+the `command`.
+
+Every tool takes a `repo` argument, defaulting to the working directory, so one
+installation serves every repository you work in.
+
+For development, clone it and `uv sync`; `uv tool install --from . git-rebase-mcp`
+installs the working tree instead of the published remote.
 
 ## Prior art
 
