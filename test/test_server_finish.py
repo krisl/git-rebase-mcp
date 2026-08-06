@@ -117,11 +117,36 @@ def test_aborting_restores_what_was_moved_aside(scratch: Scratch) -> None:
     scratch.write("b", "local scratch of my own\n")
     adds_b, removes_b = two(scratch)
     rebase_start("HEAD~2", str(scratch.path), [f"pick {adds_b}", f"pick {removes_b}"])
+    assert not (scratch.path / "b").exists()  # moved aside, not deleted
 
     report = abort(str(scratch.path))
     assert report.restored == ("b",)
     assert scratch.read("b") == "local scratch of my own\n"
     assert load_session(scratch.git) is None
+
+
+def test_restoring_targets_our_stash_not_a_stash_made_meanwhile(
+    scratch: Scratch,
+) -> None:
+    """A stash the user makes mid-rebase sits on top of the stash stack, and a
+    positional pop would take that one and leave the moved-aside file hidden."""
+    scratch.commit("base", a="one\n")
+    scratch.commit("adds b", b="b\n")
+    scratch.git.run("rm", "-q", "b")
+    scratch.git.run("commit", "-q", "-m", "removes b")
+    scratch.write("b", "local scratch of my own\n")
+    adds_b, removes_b = two(scratch)
+    rebase_start("HEAD~2", str(scratch.path), [f"pick {adds_b}", f"pick {removes_b}"])
+    assert not (scratch.path / "b").exists()
+
+    scratch.write("notes.txt", "mine\n")
+    scratch.git.run("stash", "push", "-q", "-u", "-m", "user work", "--", "notes.txt")
+
+    report = rebase_finish(str(scratch.path))
+    assert report.ok
+    assert report.restored == ("b",)
+    assert scratch.read("b") == "local scratch of my own\n"  # ours came back
+    assert "user work" in "\n".join(scratch.git.lines("stash", "list"))  # theirs remains
 
 
 def test_aborting_mid_conflict_returns_to_where_it_started(scratch: Scratch) -> None:

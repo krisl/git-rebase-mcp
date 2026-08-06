@@ -192,6 +192,10 @@ class Session:
     # been rewritten, so it cannot be used to name the range afterwards.
     base_sha: str
     stashed: tuple[str, ...] = ()
+    # The stash entry holding the moved-aside files, so restoring targets that
+    # entry rather than the top of the stash stack -- which is what a stash the
+    # user made meanwhile would otherwise be.
+    stash_ref: str | None = None
     check_command: str | None = None
 
     @property
@@ -227,6 +231,7 @@ def load_session(git: Git) -> Session | None:
         else ()
     )
     command = raw.get("check_command")
+    stash_ref = raw.get("stash_ref")
     try:
         return Session(
             backup_ref=str(raw["backup_ref"]),
@@ -235,6 +240,7 @@ def load_session(git: Git) -> Session | None:
             base=str(raw["base"]),
             base_sha=str(raw["base_sha"]),
             stashed=stashed,
+            stash_ref=str(stash_ref) if stash_ref is not None else None,
             check_command=str(command) if command is not None else None,
         )
     except KeyError:

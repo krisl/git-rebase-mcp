@@ -628,7 +628,7 @@ def rebase_start(
     if not preflight.safe_to_start and not force:
         raise ValueError(f"Refusing to start. {preflight.guidance}")
 
-    stashed = _stash(git, preflight.untracked_collisions)
+    stashed, stash_ref = _stash(git, preflight.untracked_collisions)
     backup = record_backup(git)
     save_session(
         git,
@@ -639,6 +639,7 @@ def rebase_start(
             base=base,
             base_sha=git.out("rev-parse", f"{base}^{{commit}}"),
             stashed=stashed,
+            stash_ref=stash_ref,
             check_command=check_command,
         ),
     )
@@ -686,16 +687,20 @@ def _with_checks(todo: list[str], check_command: str | None) -> list[str]:
     return woven
 
 
-def _stash(git: Git, paths: tuple[str, ...]) -> tuple[str, ...]:
+def _stash(git: Git, paths: tuple[str, ...]) -> tuple[tuple[str, ...], str | None]:
     """Move untracked files out of the way, remembering them for later.
 
     Only the ones that would actually collide: stashing anything else would be
     taking away work the caller did not ask us to touch.
+
+    The entry's sha comes back with the paths, so a later restore can target
+    that entry rather than the top of the stash stack -- which is what a stash
+    made by the user meanwhile would otherwise be.
     """
     if not paths:
-        return ()
+        return (), None
     git.run("stash", "push", "--include-untracked", "--quiet", "--", *paths)
-    return paths
+    return paths, git.out("rev-parse", "stash@{0}")
 
 
 @dataclass(frozen=True)
@@ -1062,7 +1067,9 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
             + ", ".join(f"{hit.sha[:9]} ({hit.subject})" for hit in marker_hits)
         )
 
-    restored = _unstash(git, session.stashed) if not problems else ()
+    restored = (
+        _unstash(git, session.stashed, session.stash_ref) if not problems else ()
+    )
     if not problems:
         clear_session(git)
 
@@ -1158,7 +1165,7 @@ def abort(repo: str = ".") -> AbortReport:
     if command is not None:
         git.run(command, "--abort", check=False)
     session = load_session(git)
-    restored = _unstash(git, session.stashed) if session else ()
+    restored = _unstash(git, session.stashed, session.stash_ref) if session else ()
     if session:
         clear_session(git)
     return AbortReport(
@@ -1169,11 +1176,34 @@ def abort(repo: str = ".") -> AbortReport:
     )
 
 
-def _unstash(git: Git, stashed: tuple[str, ...]) -> tuple[str, ...]:
-    """Put back what _stash moved, if it is still there to put back."""
+def _unstash(
+    git: Git, stashed: tuple[str, ...], stash_ref: str | None = None
+) -> tuple[str, ...]:
+    """Put back what _stash moved, if it is still there to put back.
+
+    Targeted at the entry that holds it, not at the top of the stash stack: a
+    stash the user made meanwhile sits above it, and a positional pop would
+    take that one and leave the moved-aside files hidden.
+    """
     if not stashed:
         return ()
-    return stashed if git.run("stash", "pop", check=False).ok else ()
+    if stash_ref is not None:
+        entry = _stash_index(git, stash_ref)
+        if entry is None:
+            return ()  # gone; not our place to take someone else's stash
+        ok = git.run("stash", "pop", f"stash@{{{entry}}}", check=False).ok
+    else:
+        ok = git.run("stash", "pop", check=False).ok
+    return stashed if ok else ()
+
+
+def _stash_index(git: Git, sha: str) -> int | None:
+    """Where in the stash stack the entry with this sha sits."""
+    count = len(git.lines("stash", "list"))
+    for index in range(count):
+        if git.out("rev-parse", f"stash@{{{index}}}") == sha:
+            return index
+    return None
 
 
 def main() -> None:
