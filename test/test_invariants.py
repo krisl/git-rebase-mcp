@@ -177,6 +177,24 @@ def test_has_markers_checks_resolved_content() -> None:
     assert not has_markers("Heading\n=======\n")
 
 
+def test_a_marker_with_its_label_stripped_is_still_a_marker() -> None:
+    """Half-resolving by hand leaves `<<<<<<<` with no trailing space, and
+    that has to be refused as loudly as git's own spelling."""
+    assert has_markers("<<<<<<<HEAD\n")
+    assert has_markers(">>>>>>>abc123\n")
+    assert has_markers("|||||||parent\n")
+    assert has_markers("<<<<<<<\n")
+
+
+def test_a_marker_without_a_trailing_space_is_found(scratch: Scratch) -> None:
+    scratch.commit("base", a="one\n")
+    scratch.commit("resolved badly", a="<<<<<<<HEAD\nmine\n>>>>>>>abc\n")
+
+    hits = commits_with_markers(scratch.git, "HEAD~1..HEAD")
+    assert [hit.subject for hit in hits] == ["resolved badly"]
+    assert hits[0].paths == ("a",)
+
+
 def test_a_session_survives_being_written_and_read(scratch: Scratch) -> None:
     scratch.commit("base", a="one\n")
     backup = record_backup(scratch.git, label="test")

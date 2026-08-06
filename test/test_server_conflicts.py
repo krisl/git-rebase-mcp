@@ -82,6 +82,12 @@ def test_a_refused_resolve_leaves_the_file_alone(conflicted: Scratch) -> None:
     assert conflicted.read("f") == before
 
 
+def test_a_marker_with_its_label_stripped_is_refused(conflicted: Scratch) -> None:
+    """Git always writes a space after `<<<<<<<`; a hand edit can strip it."""
+    with pytest.raises(ValueError, match="still contains conflict markers"):
+        resolve("f", "<<<<<<<HEAD\none\n=======\nthree\n", str(conflicted.path))
+
+
 def test_remaining_conflicts_are_named(scratch: Scratch) -> None:
     scratch.commit("base", f="one\n", g="one\n")
     scratch.commit("second", f="two\n", g="two\n")

@@ -23,11 +23,12 @@ from datetime import datetime, timezone
 
 from .git import Git
 
-# What git writes at the start of a conflict block. The label after the space is
-# required on purpose: `=======` alone is a markdown heading underline, and
-# `<<<<<<<` on its own turns up in prose about conflicts -- including in this
-# project's own documentation.
-MARKER_PREFIXES = ("<<<<<<< ", "||||||| ", ">>>>>>> ")
+# What git writes at the start of a conflict block. No trailing space is
+# required: a marker someone has half-resolved by hand is `<<<<<<<` with the
+# label stripped, and it has to be refused as loudly as git's own spelling.
+# `=======` alone stays out on purpose -- it is a markdown heading underline,
+# and a markdown file would trip the scan in every commit of every rebase.
+MARKER_PREFIXES = ("<<<<<<<", "|||||||", ">>>>>>>")
 
 # Escaped, because `|` is alternation in extended regular expressions: the
 # ancestor marker written literally reads as "empty or empty or ...", which
