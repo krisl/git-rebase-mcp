@@ -704,6 +704,26 @@ def rebase_start(
     )
 
 
+class StartMovedBranch(GitError):
+    """Git failed after rewriting the branch, so the start was not withdrawn.
+
+    Not a ValueError: nothing the caller passed was wrong, the repository simply
+    did not end up where a start should leave it. The tip beforehand, the
+    session and anything moved aside are the only record of where the branch was
+    -- the one thing somebody needs when a rewrite goes wrong -- so none of it
+    is taken back, and the failure says so.
+    """
+
+    def __init__(self, result: GitResult, backup: Backup, head: str) -> None:
+        super().__init__(result)
+        self.args = (
+            f"{self}\n\nHEAD moved from {backup.sha[:9]} to {head[:9]} before git "
+            "gave up, so the branch was rewritten. Nothing has been taken back: "
+            f"the tip beforehand is tagged {backup.ref}, anything moved aside is "
+            "still stashed, and rebase_finish checks what is here now against it.",
+        )
+
+
 def _withdraw_start(
     git: Git,
     backup: Backup,
@@ -729,13 +749,7 @@ def _withdraw_start(
     """
     head = git.out("rev-parse", "HEAD")
     if head != backup.sha:
-        raise ValueError(
-            f"{GitError(result)}\n\nHEAD moved from {backup.sha[:9]} to {head[:9]} "
-            "before git gave up, so the branch was rewritten. Nothing has been "
-            f"taken back: the tip beforehand is tagged {backup.ref}, anything "
-            "moved aside is still stashed, and rebase_finish checks what is here "
-            "now against it."
-        )
+        raise StartMovedBranch(result, backup, head)
     _unstash(git, stashed, stash_ref)
     clear_session(git)
     git.run("tag", "-d", backup.ref, check=False)

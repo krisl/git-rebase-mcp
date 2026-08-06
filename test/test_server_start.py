@@ -9,7 +9,12 @@ import pytest
 
 from git_rebase_mcp.git import GitError, GitResult
 from git_rebase_mcp.invariants import load_session, record_backup
-from git_rebase_mcp.server import _withdraw_start, rebase_start, status
+from git_rebase_mcp.server import (
+    StartMovedBranch,
+    _withdraw_start,
+    rebase_start,
+    status,
+)
 
 from scratch import Scratch
 
@@ -249,7 +254,7 @@ def test_a_failed_start_that_moved_the_branch_keeps_its_backup(scratch: Scratch)
     scratch.commit("rewritten by git before it gave up", c="three\n")
     failed = GitResult(args=("rebase",), returncode=1, stdout="", stderr="something broke")
 
-    with pytest.raises(ValueError, match="HEAD moved"):
+    with pytest.raises(StartMovedBranch, match="HEAD moved"):
         _withdraw_start(scratch.git, backup, (), None, failed)
 
     assert scratch.git.succeeds("rev-parse", "--verify", backup.ref)  # tag kept
