@@ -113,7 +113,7 @@ Same 21-commit branch, same todo, driven again after items 1--4.
 | | Second run | Third run |
 | --- | --- | --- |
 | Conflicts needing a hand-written resolution | 9 | **2** |
-| Conflicts composed without asking | 0 | **4** (5 files) |
+| Conflicts composed when asked to (see the correction below) | 0 | **4** (5 files) |
 | Conflicts resolved by naming a side | 0 | **2** |
 | False alarms from `rebase_finish` | 1 of 1 | **0** |
 
@@ -126,6 +126,28 @@ The run also fed back a fix. The first attempt composed only one conflict,
 because every insertion was widened to a line for the overlap test and so an
 insertion at the *boundary* of another edit read as a collision. That is the
 common shape, not an edge case: it took the count from one to five.
+
+## Correction: what the measurement was measuring
+
+The table above counts hand-written resolutions avoided, which presumes that
+resolving conflicts automatically is the goal. It is not.
+
+The purpose is to make a conflict understandable enough to resolve
+*confidently*, and to offer whatever makes acting on that understanding cheap --
+naming a side, asking for more context. Composing is a judgement the server
+cannot actually make: the guard proves the two sides touched different *lines*,
+not that they agree. One side adding a call and the other removing the helper it
+needs passes that test and is still wrong. And a conflict resolved without being
+read must be reviewed afterwards, so nothing is saved; the reading has moved
+somewhere easier to skip.
+
+So composing is opt-in, for replaying a branch whose conflicts are already
+understood, and the numbers to watch are different:
+
+- were the conflicts that reached a person **understandable from the payload
+  alone**? In the third run, yes -- both structural conflicts were resolved from
+  the two diffs without opening the file.
+- how many calls did **acting** on that understanding take? `take=` made it one.
 
 ## What would move it further
 
