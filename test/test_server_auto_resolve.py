@@ -29,7 +29,7 @@ def test_a_conflict_over_different_lines_is_composed_and_the_rebase_carries_on(
     """Replaying "adds c" without "adds b" conflicts: the branch never got b,
     and c is appended past it. Both sides applied is the only answer."""
     adds_c = stacked.git.out("rev-parse", "HEAD")
-    report = rebase_start("HEAD~2", str(stacked.path), [f"pick {adds_c}"], force=True)
+    report = rebase_start("HEAD~2", str(stacked.path), [f"pick {adds_c}"], auto_resolve=True, force=True)
 
     assert report.status.state == "not_rebasing"  # never came back to ask
     assert report.status.auto_resolved == ("f",)
@@ -39,15 +39,14 @@ def test_a_conflict_over_different_lines_is_composed_and_the_rebase_carries_on(
 def test_the_composition_is_named_not_silent(stacked: Scratch) -> None:
     """An automatic resolution is still a resolution and is worth a look."""
     adds_c = stacked.git.out("rev-parse", "HEAD")
-    report = rebase_start("HEAD~2", str(stacked.path), [f"pick {adds_c}"], force=True)
+    report = rebase_start("HEAD~2", str(stacked.path), [f"pick {adds_c}"], auto_resolve=True, force=True)
     assert "f" in report.status.auto_resolved
 
 
-def test_switching_it_off_leaves_the_conflict_to_the_caller(stacked: Scratch) -> None:
+def test_it_is_off_unless_asked_for(stacked: Scratch) -> None:
+    """Deciding a conflict without reading it is not the default behaviour."""
     adds_c = stacked.git.out("rev-parse", "HEAD")
-    report = rebase_start(
-        "HEAD~2", str(stacked.path), [f"pick {adds_c}"], auto_resolve=False, force=True
-    )
+    report = rebase_start("HEAD~2", str(stacked.path), [f"pick {adds_c}"], force=True)
     assert report.status.state == "conflicted"
     assert report.status.auto_resolved == ()
 
@@ -72,7 +71,9 @@ def test_several_composable_conflicts_in_one_run_are_all_taken(scratch: Scratch)
     scratch.commit("adds c to g", f="a\nb\nc\n", g="a\nb\nc\n")
     to_f, to_g = scratch.git.out("rev-parse", "HEAD~1"), scratch.git.out("rev-parse", "HEAD")
 
-    report = rebase_start("HEAD~3", str(scratch.path), [f"pick {to_f}", f"pick {to_g}"], force=True)
+    report = rebase_start(
+        "HEAD~3", str(scratch.path), [f"pick {to_f}", f"pick {to_g}"], auto_resolve=True, force=True
+    )
     assert report.status.state == "not_rebasing"
     assert set(report.status.auto_resolved) == {"f", "g"}
     assert scratch.read("f") == "a\nc\n"
@@ -83,7 +84,8 @@ def test_a_check_command_still_guards_an_automatic_resolution(stacked: Scratch) 
     """Composing is a judgement, so it is checked like any other resolution."""
     adds_c = stacked.git.out("rev-parse", "HEAD")
     report = rebase_start(
-        "HEAD~2", str(stacked.path), [f"pick {adds_c}"], check_command="grep -q b f", force=True
+        "HEAD~2", str(stacked.path), [f"pick {adds_c}"], check_command="grep -q b f",
+        auto_resolve=True, force=True
     )
     assert report.status.state == "stopped_without_apply"  # the check refused it
     assert report.status.action == "exec"
@@ -103,5 +105,5 @@ def test_continuing_also_composes(scratch: Scratch) -> None:
     scratch.git.run("add", "f", "g")
     scratch.git.run("-c", "core.editor=true", "commit", "-q", "--amend", "--no-edit")
 
-    assert rebase_continue(str(scratch.path)).state == "not_rebasing"
+    assert rebase_continue(str(scratch.path), auto_resolve=True).state == "not_rebasing"
     assert scratch.read("f") == "a\nc\n"

@@ -465,7 +465,7 @@ def rebase_start(
     todo: list[str] | None = None,
     autosquash: bool = False,
     check_command: str | None = None,
-    auto_resolve: bool = True,
+    auto_resolve: bool = False,
     force: bool = False,
 ) -> StartReport:
     """Begin a rebase onto `base`, and report where it stops.
@@ -480,6 +480,13 @@ def rebase_start(
 
     `check_command` is run after every commit, which is the only thing that
     catches a step that applies cleanly but leaves the tree broken.
+
+    `auto_resolve` composes conflicts where the two sides touched different
+    lines and carries on without stopping. Off by default: lines that do not
+    overlap can still contradict each other -- one side adding a call, the other
+    removing the helper it needs -- and a conflict resolved without being read
+    has to be reviewed afterwards anyway. Use it when replaying a branch whose
+    conflicts you already understand.
     """
     if autosquash and todo is not None:
         raise ValueError("autosquash generates the todo, so it cannot be given one.")
@@ -615,11 +622,14 @@ def _why_not_amendable(report: StatusReport) -> str:
 
 
 @mcp.tool()
-def rebase_continue(repo: str = ".", auto_resolve: bool = True) -> StatusReport:
+def rebase_continue(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     """Carry on with the rebase, and report where it stops next.
 
     Refused while any path is still unmerged, which is the other way a marker
     reaches a commit.
+
+    `auto_resolve` behaves as it does in rebase_start, and is off for the same
+    reason: deciding a conflict without reading it is not this tool's job.
     """
     git = _git(repo)
     state = read_state(git)
@@ -676,10 +686,10 @@ AUTO_STEPS = 200
 def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
     """Read where the rebase stopped, composing the decidable conflicts on the way.
 
-    Git stops on a conflict whenever the two sides edited near each other, not
-    only when they edited the same thing. Where the edits are to different lines
-    there is one answer both sides would recognise, so it is applied and the
-    rebase carries on rather than handing back a question with a known answer.
+    Composing is opt-in. Where the two sides edited different lines there is
+    usually one answer both would recognise, but "usually" is doing work there:
+    lines that do not overlap can still contradict each other, and this cannot
+    tell. So it happens only when asked for.
     """
     resolved: list[str] = []
     for _ in range(AUTO_STEPS):

@@ -46,13 +46,14 @@ it reports what each side did to the common base:
 leaves the wrap alone". Composing those needs no reasoning about which of three
 interleaved blocks belongs to whom.
 
-**Composes the conflicts that have one answer.** Git stops whenever the two
-sides edited *near* each other, not only when they edited the same thing. Where
-the edits are to different lines — the branch has not reached a block a later
-commit adds, and the replayed commit appends beside it — both sides applied is
-the only answer either would recognise, so it is applied and the rebase carries
-on. Nine of eleven conflicts in a real run were that shape. Anything genuinely
-ambiguous still stops and asks; `auto_resolve=False` turns it off entirely.
+**Offers the resolution rather than making it.** `rebase_resolve` takes
+`take="both" | "branch" | "replaying"` for the cases the two diffs make obvious,
+so answering costs one call instead of sending a whole file back. `auto_resolve`
+will compose conflicts where the two sides touched different lines and carry on
+without stopping, but it is **off by default**: lines that do not overlap can
+still contradict each other — one side adding a call, the other removing the
+helper it needs — and a conflict resolved without being read has to be reviewed
+afterwards anyway.
 
 **Records where the branch was, and checks the result against it.** What must
 stay the same is the change the branch makes to its base -- not the resulting
