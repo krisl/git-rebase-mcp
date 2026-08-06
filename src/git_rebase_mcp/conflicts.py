@@ -126,10 +126,12 @@ class CollisionUnit:
     """One region both sides edited.
 
     `base_range` is 1-based and inclusive of its first line, matching what a
-    diff header reports, so it can be quoted straight back to a person.
+    diff header reports, so it can be quoted straight back to a person. It is
+    None for a block whose text the base file does not contain: there is no
+    position to report, and the previous block's would be an invention.
     """
 
-    base_range: tuple[int, int]
+    base_range: tuple[int, int] | None
     branch_so_far_diff: str
     replaying_diff: str
     # One sentence for what each side did, with lines that only moved or changed
@@ -183,25 +185,25 @@ def read_conflict(
     # overlap, so each search starts where the last block ended. Worked out for
     # all of them before any unit is built, because naming what a region sits
     # inside is one question asked of git about the whole file.
-    starts: list[int] = []
+    # A block whose base text the file does not contain has no position, and
+    # says so rather than borrowing the previous block's -- but it keeps its two
+    # diffs, which are what the region is read for. Refusing the whole file over
+    # it would take every other region down with it, in the one call somebody
+    # makes when they are stuck.
+    starts: list[int | None] = []
     search_from = 0
     for block in blocks:
         found = _locate(base_lines, block.base, search_from)
-        if found is None:
-            raise ValueError(
-                f"{path}: a contested region has no matching lines in the base file, "
-                "so its position cannot be reported"
-            )
-        search_from = found
         starts.append(found)
-        search_from += len(block.base)
+        if found is not None:
+            search_from = found + len(block.base)
     enclosings = _enclosing(git, path, base_lines, starts)
 
     units: list[CollisionUnit] = []
     for block, start, enclosing in zip(blocks, starts, enclosings, strict=True):
         units.append(
             CollisionUnit(
-                base_range=(start + 1, start + len(block.base)),
+                base_range=None if start is None else (start + 1, start + len(block.base)),
                 branch_so_far_diff=_render(
                     base_lines, block.base, block.branch_so_far, start, context, enclosing
                 ),
@@ -522,7 +524,9 @@ def _opcodes(base: list[str], other: list[str]) -> list[Opcode]:
     return cast("list[Opcode]", PatienceSequenceMatcher(None, base, other).get_opcodes())
 
 
-def _enclosing(git: Git, path: str, file_base: list[str], starts: Sequence[int]) -> list[str]:
+def _enclosing(
+    git: Git, path: str, file_base: list[str], starts: Sequence[int | None]
+) -> list[str]:
     """Which definition each region sits inside, named the way git names it.
 
     Git already works this out for its own hunk headers, using the language's
@@ -536,10 +540,13 @@ def _enclosing(git: Git, path: str, file_base: list[str], starts: Sequence[int])
     not change when the caller asks for more surrounding lines: it is where the
     contested region lives, not a property of how much of the file is on show.
     """
-    if not starts:
-        return []
+    # A region with no position has nothing to be inside, so it gets no marker
+    # and keeps the empty label it starts with.
+    placed = [(index, start) for index, start in enumerate(starts) if start is not None]
+    if not placed:
+        return [""] * len(starts)
     marked = list(file_base)
-    for index, start in sorted(enumerate(starts), key=lambda pair: pair[1], reverse=True):
+    for index, start in sorted(placed, key=lambda pair: pair[1], reverse=True):
         marked.insert(start, f"{MARKER}{index}")
 
     labels = [""] * len(starts)
@@ -590,7 +597,7 @@ def _render(
     file_base: list[str],
     base: list[str],
     side: list[str],
-    start: int,
+    start: int | None,
     context: int,
     enclosing: str = "",
 ) -> str:
@@ -606,14 +613,32 @@ def _render(
     with nothing to place it by. The header names the definition the region is
     inside, as git's does; asking for more context is how you find out whether
     the lines above already do what the replayed commit is adding.
+
+    A `start` of None is a block the base file does not contain, so there are no
+    surrounding lines to show and no numbers to put in the header. It says that,
+    rather than counting from a line it had to pick.
     """
     opcodes = _opcodes(base, side)
     if all(tag == "equal" for tag, *_ in opcodes):
         return "(unchanged in this region)"
 
+    changes = _changes(opcodes, base, side, context)
+    if start is None:
+        header = f"@@ not found in the base file @@ {enclosing}"
+        return "\n".join([header.rstrip(), *changes])
+
     leading = file_base[max(0, start - context) : start]
     trailing = file_base[start + len(base) : start + len(base) + context]
-    body: list[str] = [" " + line for line in leading]
+    body = [" " + line for line in leading] + changes + [" " + line for line in trailing]
+    first = start - len(leading) + 1
+    span = len(leading) + len(trailing)
+    header = f"@@ -{first},{len(base) + span} +{first},{len(side) + span} @@ {enclosing}"
+    return "\n".join([header.rstrip(), *body])
+
+
+def _changes(opcodes: list[Opcode], base: list[str], side: list[str], context: int) -> list[str]:
+    """The block itself, as diff lines: what one side did to the base section."""
+    body: list[str] = []
     for index, (tag, i1, i2, j1, j2) in enumerate(opcodes):
         if tag == "equal":
             kept = _trim(base[i1:i2], context, first=index == 0, last=index == len(opcodes) - 1)
@@ -621,11 +646,7 @@ def _render(
         else:
             body += _changed(base[i1:i2], "-", context)
             body += _changed(side[j1:j2], "+", ADDED_LIMIT // 2)
-    body += [" " + line for line in trailing]
-    first = start - len(leading) + 1
-    span = len(leading) + len(trailing)
-    header = f"@@ -{first},{len(base) + span} +{first},{len(side) + span} @@ {enclosing}"
-    return "\n".join([header.rstrip(), *body])
+    return body
 
 
 def _changed(lines: list[str], prefix: str, keep: int) -> list[str]:

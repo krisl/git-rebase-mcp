@@ -138,9 +138,14 @@ def status(repo: str = ".") -> StatusReport:
 
 @dataclass(frozen=True)
 class UnitReport:
-    """One region both sides edited, as what each side did to the base."""
+    """One region both sides edited, as what each side did to the base.
 
-    base_range: tuple[int, int]
+    `base_range` is None where the base file does not contain the block's text,
+    so the region has no position to report. Its two diffs still say what each
+    side did, which is what the region is read for.
+    """
+
+    base_range: tuple[int, int] | None
     branch_so_far_diff: str
     replaying_diff: str
     # One sentence for what each side did. A block wrapped in an `if` and
@@ -320,6 +325,13 @@ def _conflict_guidance(
             "file independently, so there is nothing to diff against and no "
             "regions are listed. The whole text of each side is included instead; "
             "decide between them, or write the combination you want."
+        )
+    unplaced = [f.path for f in files if any(u.base_range is None for u in f.units)]
+    if unplaced:
+        advice += (
+            f" A region in {', '.join(unplaced)} has no base_range: its text is not "
+            "in the base file, so there is no position to give and none is guessed "
+            "at. Its two diffs still say what each side did; find it by that."
         )
     return advice
 

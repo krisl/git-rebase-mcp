@@ -84,6 +84,20 @@ def test_a_block_that_is_not_in_the_base_is_reported_as_missing():
     assert _locate(["a", "b", "c"], ["c"], 4) is None  # search window past the end
 
 
+def test_a_region_with_no_position_still_says_what_each_side_did():
+    """Refusing to place it is not a reason to refuse to describe it. The two
+    diffs are what the region is read for; only the line numbers are missing."""
+    rendered = _render([], ["old"], ["new"], None, 3, "def render(self):")
+
+    assert rendered.splitlines()[0] == "@@ not found in the base file @@ def render(self):"
+    assert "-old" in rendered and "+new" in rendered
+
+
+def test_a_region_with_no_position_borrows_no_line_numbers():
+    """A header counting from anywhere would be the invention this avoids."""
+    assert "@@ -" not in _render(["a", "b"], ["old"], ["new"], None, 3)
+
+
 def test_a_block_whose_lines_are_not_in_the_branch_is_not_attributed(
     scratch: Scratch,
 ) -> None:
@@ -173,6 +187,15 @@ def test_each_region_is_named_independently(scratch: Scratch):
 
 def test_a_region_with_nothing_above_it_is_named_by_nothing(scratch: Scratch):
     assert _enclosing(scratch.git, "m.py", ["a = 1", "b = 2"], [1]) == [""]
+
+
+def test_a_region_with_no_position_is_named_by_nothing(scratch: Scratch):
+    """It is nowhere in the file, so it is inside nothing -- and the regions
+    that do have a position are still answered around it."""
+    lines = ["class Report:", "    def a(self):", "        x = 1", "",
+             "    def b(self):", "        y = 2"]
+
+    assert _enclosing(scratch.git, "m.py", lines, [None, 5, None]) == ["", "def b(self):", ""]
 
 
 def test_the_definition_a_region_starts_on_is_not_its_own_enclosing(scratch: Scratch):
