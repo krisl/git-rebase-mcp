@@ -8,12 +8,16 @@ from pathlib import Path
 import pytest
 
 from git_rebase_mcp.server import (
+    FileReport,
+    UnitReport,
+    _conflict_guidance,
     _contained,
     conflicts,
     rebase_start,
     resolve,
     status,
 )
+from git_rebase_mcp.state import Commit, Conflicted, Step
 
 from scratch import Scratch
 
@@ -387,3 +391,33 @@ def test_the_containment_check_still_refuses_an_outside_path(tmp_path: Path) -> 
     real.mkdir()
     with pytest.raises(ValueError, match="not inside"):
         _contained(real, "../outside")
+
+
+def test_the_guidance_names_a_file_with_a_region_it_cannot_place() -> None:
+    """A region with no base_range is found by its two diffs, and the guidance
+    says so -- otherwise the only thing distinguishing it would be silence."""
+    state = Conflicted(
+        step=Step(index=1, total=1),
+        action="pick abc123",
+        replaying=Commit(sha="a" * 40, subject="replayed"),
+        head=Commit(sha="b" * 40, subject="before"),
+        unmerged=("f",),
+    )
+    files = (
+        FileReport(
+            path="f",
+            units=(
+                UnitReport(
+                    base_range=None,
+                    branch_so_far_diff="@@ not found in the base file @@",
+                    replaying_diff="@@ not found in the base file @@",
+                ),
+            ),
+        ),
+    )
+
+    advice = _conflict_guidance(files, state)
+    assert "f" in advice
+    assert "no base_range" in advice
+    assert "none is guessed" in advice
+    assert "two diffs" in advice
