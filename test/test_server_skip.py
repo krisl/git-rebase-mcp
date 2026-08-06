@@ -36,9 +36,9 @@ def test_skipping_reports_where_it_stops_next(scratch: Scratch) -> None:
     assert rebase_skip(str(scratch.path)).state in ("conflicted", "not_rebasing")
 
 
-def test_skipping_with_no_rebase_is_refused(scratch: Scratch) -> None:
+def test_skipping_with_nothing_in_progress_is_refused(scratch: Scratch) -> None:
     scratch.commit("base", f="one\n")
-    with pytest.raises(ValueError, match="No rebase in progress"):
+    with pytest.raises(ValueError, match="Nothing in progress"):
         rebase_skip(str(scratch.path))
 
 

@@ -1,4 +1,4 @@
-"""What a rebase is currently doing, as a closed set of states.
+"""What the repository is currently doing, as a closed set of states.
 
 The distinction this module exists for: when a rebase stops at an `edit` step it
 normally leaves HEAD on the commit just applied, but when it stops *because that
@@ -8,14 +8,37 @@ two apart.
 
 So the states are separate types rather than fields on one object, and the
 operations that are only safe in one of them accept only that type.
+
+A rebase is not the only thing that leaves a conflicted index, and for a while
+this module reported everything else as "no rebase in progress" -- which callers
+above it turned into "nothing is conflicted", said of a repository with unmerged
+paths sitting in the index. A false negative on the one question this server
+exists to answer. So a conflict from a cherry-pick, a revert, a merge, or from
+something that left no record of itself at all, is a state of its own rather
+than an absence.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from .git import Git
+
+Operation = Literal["rebase", "cherry-pick", "revert", "merge", "unknown"]
+
+# The ref git writes for the commit it was applying, per operation. A conflicted
+# index does not say what produced it, and the answer decides which command
+# carries on from here -- `git merge --continue` cannot finish a cherry-pick.
+# `unknown` is not in here on purpose: a stash that popped into a conflict, or a
+# `checkout -m`, leaves stages in the index and no record of where they came
+# from, and the honest report of that is the regions themselves.
+INCOMING_REFS: tuple[tuple[Operation, str], ...] = (
+    ("cherry-pick", "CHERRY_PICK_HEAD"),
+    ("revert", "REVERT_HEAD"),
+    ("merge", "MERGE_HEAD"),
+)
 
 @dataclass(frozen=True)
 class Commit:
@@ -72,6 +95,31 @@ class StoppedAfterApply:
 
 
 @dataclass(frozen=True)
+class Applying:
+    """Something other than a rebase is part-way through applying a commit.
+
+    Its own type rather than a flag on `Conflicted`, because what is safe here
+    is different in kind: there is no todo and no step, nothing has been half
+    created, and the command that carries on is named after the operation. What
+    it shares with a rebase conflict is the only part that matters for reading
+    one -- the three stages in the index, which is how git records every
+    conflict, whatever made it.
+
+    `unmerged` can be empty: a cherry-pick whose conflicts have all been staged
+    is still in progress, and still needs its own `--continue` to commit. That
+    was reported as "no rebase in progress" before this type existed, which left
+    a caller who had done everything right with nowhere to go.
+
+    `incoming` is what was being applied, and is None when nothing recorded it.
+    """
+
+    operation: Operation
+    incoming: Commit | None
+    head: Commit
+    unmerged: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class StoppedWithoutApply:
     """Stopped at a `break`, or by a failing `exec`.
 
@@ -84,7 +132,16 @@ class StoppedWithoutApply:
     head: Commit
 
 
-RebaseState = NotRebasing | Conflicted | StoppedAfterApply | StoppedWithoutApply
+RebaseState = NotRebasing | Conflicted | Applying | StoppedAfterApply | StoppedWithoutApply
+
+# The states a rebase specifically is in. A conflicted cherry-pick is a conflict
+# but not a rebase, and the tools that read `.git/rebase-merge/` need the
+# difference: without it they answer a question about a file that is not there.
+REBASING = (Conflicted, StoppedAfterApply, StoppedWithoutApply)
+
+
+def is_rebasing(state: RebaseState) -> bool:
+    return isinstance(state, REBASING)
 
 
 class UnsupportedRebase(Exception):
@@ -99,7 +156,7 @@ def read_state(git: Git) -> RebaseState:
                 "this is an am-based rebase (git rebase --apply); "
                 "only interactive/merge rebases are supported"
             )
-        return NotRebasing(head=_commit(git, "HEAD"))
+        return _outside_rebase(git)
 
     step = Step(index=_number(directory / "msgnum"), total=_number(directory / "end"))
     action = _last_action(directory / "done")
@@ -131,6 +188,30 @@ def read_state(git: Git) -> RebaseState:
             fixups_pending=tuple(_read(directory / "current-fixups").splitlines()),
         )
     return StoppedWithoutApply(step=step, action=action, head=head)
+
+
+def _outside_rebase(git: Git) -> RebaseState:
+    """What the repository is doing when no rebase is.
+
+    The ref is asked about before the index, because an operation with every
+    conflict already staged is still in progress and still needs finishing --
+    whereas a conflicted index nothing claims is the last thing to check, and
+    the one that must not come back as a clean tree.
+    """
+    unmerged = tuple(git.lines("diff", "--name-only", "--diff-filter=U"))
+    for operation, ref in INCOMING_REFS:
+        if git.succeeds("rev-parse", "--verify", "--quiet", ref):
+            return Applying(
+                operation=operation,
+                incoming=_commit(git, ref),
+                head=_commit(git, "HEAD"),
+                unmerged=unmerged,
+            )
+    if unmerged:
+        return Applying(
+            operation="unknown", incoming=None, head=_commit(git, "HEAD"), unmerged=unmerged
+        )
+    return NotRebasing(head=_commit(git, "HEAD"))
 
 
 def _commit(git: Git, revision: str) -> Commit:

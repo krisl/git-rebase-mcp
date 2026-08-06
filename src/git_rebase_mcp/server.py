@@ -18,7 +18,7 @@ from typing import Literal, assert_never
 
 from mcp.server.mcpserver import MCPServer
 
-from .conflicts import FileConflict, auto_resolve_file, read_conflict, take_side
+from .conflicts import FileConflict, auto_resolve_file, plural, read_conflict, take_side
 from .git import Git, GitResult
 from .invariants import (
     Session,
@@ -32,22 +32,28 @@ from .invariants import (
 )
 from .plan import DROPPING_ACTIONS, TODO_LINE, check_plan
 from .state import (
+    Applying,
     Commit,
     Conflicted,
     NotRebasing,
+    Operation,
     RebaseState,
     StoppedAfterApply,
     StoppedWithoutApply,
+    is_rebasing,
     read_state,
 )
 
 mcp = MCPServer(
     "git-rebase",
     instructions=(
-        "Drives an interactive git rebase safely. Call rebase_status before "
-        "acting: it reports whether the commit being replayed has actually been "
-        "created yet, which decides whether amending would rewrite the commit "
-        "you mean or the one before it."
+        "Drives an interactive git rebase safely, and reads any conflict -- a "
+        "cherry-pick, revert or merge that stopped, or a rebase somebody started "
+        "by hand -- as what each side did rather than as markers. Call "
+        "rebase_status before acting: it names the operation in progress, and "
+        "reports whether the commit being replayed has actually been created "
+        "yet, which decides whether amending would rewrite the commit you mean "
+        "or the one before it."
     ),
 )
 
@@ -63,7 +69,13 @@ mcp = MCPServer(
 RERERE = ("-c", "rerere.enabled=true")
 
 StateName = Literal[
-    "not_rebasing", "conflicted", "stopped_after_apply", "stopped_without_apply"
+    "not_rebasing",
+    "conflicted",
+    # Mid cherry-pick, revert or merge with nothing unmerged: the conflicts are
+    # resolved and staged, and the operation still has to be told to commit them.
+    "applying",
+    "stopped_after_apply",
+    "stopped_without_apply",
 ]
 
 
@@ -86,6 +98,12 @@ class StatusReport:
     head_is_replaying_commit: bool
     can_amend: bool
     guidance: str
+    # What left the index in this state: "rebase", "cherry-pick", "revert",
+    # "merge", or "unknown" for a conflict nothing recorded -- a stash popped
+    # into one, say. `state` stays "conflicted" for all of them, because what a
+    # caller does first is the same in every case, and a second state name would
+    # only be a way for a caller checking the old one to miss a real conflict.
+    operation: Operation | None = None
     step: StepInfo | None = None
     action: str | None = None
     replaying: CommitInfo | None = None
@@ -103,11 +121,16 @@ class StatusReport:
 
 @mcp.tool()
 def rebase_status(repo: str = ".") -> StatusReport:
-    """Report what the rebase in `repo` is currently doing.
+    """Report what `repo` is currently doing.
 
-    Call this before amending, continuing or resolving. In particular
-    `head_is_replaying_commit` distinguishes a stop where the commit was applied
-    from one where it conflicted part-way, which git's own output does not.
+    Call this before amending, continuing or resolving. `operation` names what
+    is in progress -- a rebase, cherry-pick, revert or merge, or "unknown" for a
+    conflicted index nothing recorded -- and `head_is_replaying_commit`
+    distinguishes a stop where the commit was applied from one where it
+    conflicted part-way, which git's own output does not.
+
+    `state` is "conflicted" for every operation that left unmerged paths, so
+    that one check answers the question whatever produced them.
     """
     return _report(read_state(_git(repo)))
 
@@ -173,47 +196,80 @@ def rebase_conflicts(
 ) -> ConflictReport:
     """Report each conflict as what the two sides did, rather than as markers.
 
-    Per contested region you get two diffs from the common base: one for the
-    branch built so far, one for the commit being replayed. Read them as two
-    intents and compose them -- "wrap this block in an `if`" plus "swap this
-    call" is usually just both.
+    Works on any conflict git has recorded, not only a rebase this server
+    started: a cherry-pick, a revert, a merge, a rebase begun by hand, or a
+    stash that popped into one. All of them leave the same three stages in the
+    index, which is what this reads.
+
+    Per contested region you get two diffs from the common base: `branch_so_far`
+    is what is already here, `replaying` is what is being applied over it -- the
+    replayed or cherry-picked commit, the revert, or the branch being merged in.
+    Read them as two intents and compose them -- "wrap this block in an `if`"
+    plus "swap this call" is usually just both.
 
     Regions only one side changed are not listed: git merged those already.
 
     `context` is how many unchanged lines to show around each change. Raise it
-    when the region is hard to place -- which function it is in, whether the
-    lines above already do what the replayed commit is adding.
+    when the region is hard to place -- whether the lines above already do what
+    the incoming side is adding.
 
-    `include_file_diffs` adds everything the replayed commit did to each file,
-    not only the contested part, which is how you tell whether the region in
-    front of you is the whole of its intent. `include_full_sides` gives the
-    three whole texts when even that is not enough.
+    `include_file_diffs` adds everything the incoming side did to each file, not
+    only the contested part, which is how you tell whether the region in front
+    of you is the whole of its intent. `include_full_sides` gives the three
+    whole texts when even that is not enough.
     """
     git = _git(repo)
     state = read_state(git)
-    if not isinstance(state, Conflicted):
+    if not isinstance(state, (Conflicted, Applying)):
         return ConflictReport(
             replaying=None,
             replaying_body="",
             files=(),
             guidance="Nothing is conflicted.",
         )
+    incoming = _incoming(state)
     files = tuple(
         _file_report(
             read_conflict(git, path, context, _branch_base(git)),
             include_full_sides,
-            git.out("show", "--format=", state.replaying.sha, "--", path)
-            if include_file_diffs
-            else None,
+            _incoming_file_diff(git, state, path) if include_file_diffs else None,
         )
         for path in state.unmerged
     )
     return ConflictReport(
-        replaying=_info(state.replaying),
-        replaying_body=git.out("log", "-1", "--format=%B", state.replaying.sha).strip(),
+        replaying=_info(incoming) if incoming else None,
+        replaying_body=(
+            git.out("log", "-1", "--format=%B", incoming.sha).strip() if incoming else ""
+        ),
         files=files,
-        guidance=_conflict_guidance(files),
+        guidance=_conflict_guidance(files, state),
     )
+
+
+def _incoming(state: Conflicted | Applying) -> Commit | None:
+    """The side being applied, whatever is applying it.
+
+    A rebase always names it; a merge, cherry-pick or revert names it too, in a
+    ref of its own; and a conflict nothing recorded has no name for it at all,
+    which is the case the None is for.
+    """
+    return state.replaying if isinstance(state, Conflicted) else state.incoming
+
+
+def _incoming_file_diff(
+    git: Git, state: Conflicted | Applying, path: str
+) -> str:
+    """Everything the incoming side did to one file, not only the contested part."""
+    incoming = _incoming(state)
+    if incoming is None:
+        return ""
+    if isinstance(state, Applying) and state.operation == "merge":
+        # The incoming side of a merge is a branch, not a commit. What its tip
+        # did on its own is rarely what is being merged in, so the comparison
+        # runs from where the two sides parted.
+        base = git.out("merge-base", "HEAD", incoming.sha)
+        return git.out("diff", f"{base}..{incoming.sha}", "--", path)
+    return git.out("show", "--format=", incoming.sha, "--", path)
 
 
 def _branch_base(git: Git) -> str | None:
@@ -222,12 +278,28 @@ def _branch_base(git: Git) -> str | None:
     return session.base_sha if session else None
 
 
-def _conflict_guidance(files: tuple[FileReport, ...]) -> str:
+def _conflict_guidance(
+    files: tuple[FileReport, ...], state: Conflicted | Applying
+) -> str:
+    # The field names read from a rebase, where they were built: what is here
+    # already against what is being applied over it. Every other operation has
+    # the same two sides, so the names hold and only what fills them changes.
+    incoming = (
+        "the replayed commit"
+        if isinstance(state, Conflicted)
+        else {
+            "cherry-pick": "the cherry-picked commit",
+            "revert": "the revert",
+            "merge": "the branch being merged in",
+            "unknown": "the incoming side",
+        }[state.operation]
+    )
     advice = (
-        "Each region lists what the branch did to the base and what the replayed "
-        "commit did to the same base. The replayed commit's message states its "
-        "intent, and branch_so_far_commits names the commits behind the other "
-        "side, which is the nearest it has to one. Read both, then resolve: "
+        f"Each region lists what the branch did to the base and what {incoming} did "
+        "to the same base -- `branch_so_far` is what is here already, `replaying` is "
+        "what is being applied over it. branch_so_far_commits names the commits "
+        "behind the first side, which is the nearest it has to a stated intent. "
+        "Read both, then resolve: "
         'rebase_resolve(path, take="both"/"branch"/"replaying") where that says '
         "it, or edit the file and call rebase_resolve(path) with no content. "
         "Raise `context` if a region is hard to place."
@@ -341,9 +413,14 @@ def rebase_resolve(
         path=path,
         still_conflicted=remaining,
         guidance=(
-            "All paths resolved; call rebase_continue."
-            if not remaining
-            else f"Still conflicted: {', '.join(remaining)}."
+            f"Still conflicted: {', '.join(remaining)}."
+            if remaining
+            else "All paths resolved; call rebase_continue."
+            if _carry_on_command(read_state(git)) is not None
+            # A conflict nothing recorded has nothing to continue, and saying so
+            # here saves the caller finding out from a refusal one call later.
+            else "All paths resolved. Nothing is mid-operation, so there is nothing "
+            "to continue: commit them as you would any other change."
         ),
     )
 
@@ -372,7 +449,9 @@ def rebase_todo(
     the per-commit check, so that is called out rather than assumed.
     """
     git = _git(repo)
-    if isinstance(read_state(git), NotRebasing):
+    # Specifically a rebase: a todo is a thing only a rebase has, and a
+    # conflicted cherry-pick is emphatically not "no operation in progress".
+    if not is_rebasing(read_state(git)):
         raise ValueError("No rebase in progress, so there are no steps left.")
     path = git.git_path("rebase-merge/git-rebase-todo")
     current = [
@@ -480,8 +559,11 @@ def rebase_preflight(
 def _blocking(git: Git) -> tuple[str, ...]:
     """Conditions that must be cleared before a rebase can start."""
     problems: list[str] = []
-    if not isinstance(read_state(git), NotRebasing):
+    state = read_state(git)
+    if is_rebasing(state):
         problems.append("a rebase is already in progress")
+    elif isinstance(state, Applying):
+        problems.append(f"a {state.operation} is already in progress")
     if git.lines("status", "--porcelain", "--untracked-files=no"):
         problems.append("the working tree has uncommitted changes")
     return tuple(problems)
@@ -674,7 +756,10 @@ def _why_not_amendable(report: StatusReport) -> str:
 
 @mcp.tool()
 def rebase_continue(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
-    """Carry on with the rebase, and report where it stops next.
+    """Carry on with whatever is in progress, and report where it stops next.
+
+    Calls the operation's own continue -- a cherry-pick is not finished by
+    `git rebase --continue` -- so this is the one call whatever stopped.
 
     Refused while any path is still unmerged, which is the other way a marker
     reaches a commit.
@@ -684,17 +769,42 @@ def rebase_continue(repo: str = ".", auto_resolve: bool = False) -> StatusReport
     """
     git = _git(repo)
     state = read_state(git)
-    if isinstance(state, Conflicted):
+    if isinstance(state, (Conflicted, Applying)) and state.unmerged:
         raise ValueError(
             "Refusing to continue: still unmerged: "
             f"{', '.join(state.unmerged)}. Resolve them with rebase_resolve first."
         )
-    if isinstance(state, NotRebasing):
-        raise ValueError("No rebase in progress.")
+    command = _carry_on_command(state)
+    if command is None:
+        raise ValueError(_nothing_to_carry_on(state))
     # Stopping again on the next conflict is an ordinary outcome, not a failure,
     # so the exit status is read from the state rather than from git.
-    result = git.run("-c", "core.editor=true", *RERERE, "rebase", "--continue", check=False)
+    result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
     return _advance(git, _git_said(result), auto_resolve)
+
+
+def _carry_on_command(state: RebaseState) -> str | None:
+    """The git command that carries this operation on, if one can.
+
+    The operation names its own command in every case -- `git cherry-pick
+    --continue` finishes a cherry-pick and nothing else does -- so the mapping
+    is the identity, and the only real question is whether there is one at all.
+    """
+    if is_rebasing(state):
+        return "rebase"
+    if isinstance(state, Applying) and state.operation != "unknown":
+        return state.operation
+    return None
+
+
+def _nothing_to_carry_on(state: RebaseState, verb: str = "continue") -> str:
+    if isinstance(state, Applying):  # the unknown operation: nothing owns it
+        return (
+            f"Nothing to {verb}: the conflict came from something that left no "
+            "record of itself -- a stash popped into one, or `checkout -m` -- so "
+            "there is no operation to finish. Resolve the paths and commit as usual."
+        )
+    return f"Nothing in progress: no rebase, cherry-pick, revert or merge to {verb}."
 
 
 def _commit_info(git: Git, revision: str) -> CommitInfo:
@@ -745,7 +855,10 @@ def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
     resolved: list[str] = []
     for _ in range(AUTO_STEPS):
         state = read_state(git)
-        if not isinstance(state, Conflicted) or not auto_resolve:
+        command = _carry_on_command(state)
+        if not isinstance(state, (Conflicted, Applying)) or not auto_resolve:
+            return _report(state, git_said, tuple(resolved))
+        if not state.unmerged or command is None:
             return _report(state, git_said, tuple(resolved))
 
         composed = {path: auto_resolve_file(git, path) for path in state.unmerged}
@@ -757,9 +870,38 @@ def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
             (git.repo / path).write_text(text)
             git.run("add", "--", path)
             resolved.append(path)
-        result = git.run("-c", "core.editor=true", *RERERE, "rebase", "--continue", check=False)
+        result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
         git_said = _git_said(result)
     return _report(read_state(git), git_said, tuple(resolved))
+
+
+def _outside_guidance(state: Applying) -> str:
+    """Say what is going on, when it is not a rebase doing it."""
+    if not state.unmerged:
+        return (
+            f"A {state.operation} is in progress with nothing unmerged: the conflicts "
+            "are resolved and staged, and it has still to be told to commit them. "
+            "Call rebase_continue."
+        )
+    count = plural(len(state.unmerged), "path")
+    next_step = (
+        " Read them with rebase_conflicts, resolve with rebase_resolve, then "
+        "rebase_continue."
+    )
+    if state.operation == "unknown":
+        return (
+            f"{count} conflicted, from something that left no record of itself -- a "
+            "stash popped into a conflict, or `checkout -m`. The stages are in the "
+            "index either way, so the regions read the same as any other conflict. "
+            "Read them with rebase_conflicts and resolve with rebase_resolve; there "
+            "is nothing to continue afterwards, since nothing is mid-operation."
+        )
+    if state.incoming is None:
+        return f"A {state.operation} left {count} conflicted." + next_step
+    return (
+        f"A {state.operation} of {state.incoming.sha[:9]} ({state.incoming.subject}) "
+        f"left {count} conflicted. Nothing has been committed yet." + next_step
+    )
 
 
 def _report(
@@ -781,6 +923,7 @@ def _report(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
                 state="conflicted",
+                operation="rebase",
                 head=_info(state.head),
                 head_is_replaying_commit=False,
                 can_amend=False,
@@ -793,6 +936,19 @@ def _report(
                 step=StepInfo(state.step.index, state.step.total),
                 action=state.action,
                 replaying=_info(state.replaying),
+                conflicted_files=state.unmerged,
+            )
+        case Applying():
+            return StatusReport(
+                git_said=git_said,
+                auto_resolved=auto_resolved,
+                state="conflicted" if state.unmerged else "applying",
+                operation=state.operation,
+                head=_info(state.head),
+                head_is_replaying_commit=False,
+                can_amend=False,
+                guidance=_outside_guidance(state),
+                replaying=_info(state.incoming) if state.incoming else None,
                 conflicted_files=state.unmerged,
             )
         case StoppedAfterApply():
@@ -940,36 +1096,58 @@ class AbortReport:
 
 @mcp.tool()
 def rebase_skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
-    """Drop the commit being replayed and carry on.
+    """Drop the commit being applied and carry on.
 
     For a commit whose change is already in the base under a different sha, or
     one whose conflict resolves to "the branch already says this". Git offers it
     at every conflict; without it here the only way to take that offer is to
     reach past these tools and run git by hand, which is how a rebase ends up
-    half driven from each side.
+    half driven from each side. Works for a cherry-pick and a revert too.
 
-    Refused when nothing is being replayed: skipping is a decision about a
+    Refused when nothing is being applied: skipping is a decision about a
     commit, and at a `break` or a failing `exec` there is no commit in question.
+    A merge applies a branch rather than a commit, so git offers it nothing to
+    skip with.
     """
     git = _git(repo)
     state = read_state(git)
-    if isinstance(state, NotRebasing):
-        raise ValueError("No rebase in progress.")
     if isinstance(state, StoppedWithoutApply):
         raise ValueError(
             f"Refusing to skip: stopped at `{state.action}`, which is not replaying a "
             "commit, so there is nothing to skip. Continue instead."
         )
-    result = git.run("-c", "core.editor=true", *RERERE, "rebase", "--skip", check=False)
+    if isinstance(state, Applying) and state.operation == "merge":
+        raise ValueError(
+            "Refusing to skip: a merge applies a whole branch, not a commit, so git "
+            "offers nothing to skip it with. Resolve the conflicts, or abort."
+        )
+    command = _carry_on_command(state)
+    if command is None:
+        raise ValueError(_nothing_to_carry_on(state, "skip"))
+    result = git.run("-c", "core.editor=true", *RERERE, command, "--skip", check=False)
     return _advance(git, _git_said(result), auto_resolve)
 
 
 @mcp.tool()
 def rebase_abort(repo: str = ".") -> AbortReport:
-    """Abandon the rebase and put back anything that was moved aside."""
+    """Abandon whatever is in progress and put back anything that was moved aside.
+
+    Refused for a conflict nothing recorded -- a stash popped into one, say --
+    because there is no operation to abort, and guessing at `reset` or
+    `checkout` would throw away work this tool never put there.
+    """
     git = _git(repo)
-    if not isinstance(read_state(git), NotRebasing):
-        git.run("rebase", "--abort", check=False)
+    state = read_state(git)
+    command = _carry_on_command(state)
+    if isinstance(state, Applying) and command is None:
+        raise ValueError(
+            "Refusing to abort: the conflict came from something that left no record "
+            "of itself, so there is no operation to abandon and no way to tell what "
+            "undoing it would discard. Resolve the paths, or undo it the way it was "
+            "started."
+        )
+    if command is not None:
+        git.run(command, "--abort", check=False)
     session = load_session(git)
     restored = _unstash(git, session.stashed) if session else ()
     if session:
@@ -977,7 +1155,7 @@ def rebase_abort(repo: str = ".") -> AbortReport:
     return AbortReport(
         head=_commit_info(git, "HEAD"),
         restored=restored,
-        guidance="Rebase abandoned."
+        guidance=f"{(command or 'rebase').capitalize()} abandoned."
         + (f" Restored: {', '.join(restored)}." if restored else ""),
     )
 
