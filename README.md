@@ -68,7 +68,7 @@ three errors above.
 | `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. |
 | `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in. |
 | `rebase_status` | Typed state, and whether `HEAD` is the commit being replayed. |
-| `rebase_conflicts` | Each contested region as two diffs, plus the replayed commit's message. Only the ones that needed asking about. |
+| `rebase_conflicts` | Each contested region as two diffs, plus the replayed commit's message. `context=` for more surrounding lines. |
 | `rebase_resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers. |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. |
 | `rebase_continue` | Carries on. Refuses while anything is unmerged. |

@@ -78,8 +78,8 @@ def test_a_block_adding_lines_the_base_never_had_sits_at_the_search_point():
 
 def test_each_diff_describes_only_its_own_side():
     base = ["keep", "old", "tail"]
-    branch = _render(base, ["keep", "branch", "tail"], 0, 3)
-    replaying = _render(base, ["keep", "replayed", "tail"], 0, 3)
+    branch = _render(base, base, ["keep", "branch", "tail"], 0, 3)
+    replaying = _render(base, base, ["keep", "replayed", "tail"], 0, 3)
 
     assert "-old" in branch and "+branch" in branch and "replayed" not in branch
     assert "-old" in replaying and "+replayed" in replaying and "branch" not in replaying
@@ -89,19 +89,19 @@ def test_a_side_that_did_not_touch_the_region_says_so_in_one_line():
     """It used to repeat the region back as context. On a real branch that was
     104 lines of output conveying nothing."""
     base = ["a", "b", "c"]
-    assert _render(base, list(base), 0, 3) == "(unchanged in this region)"
+    assert _render(base, base, list(base), 0, 3) == "(unchanged in this region)"
 
 
 def test_line_numbers_are_absolute_in_the_base_file():
     base = ["one", "two"]
-    assert _render(base, ["one", "CHANGED"], 40, 3).splitlines()[0].startswith("@@ -41,2 +41,2 @@")
+    assert _render(base, base, ["one", "CHANGED"], 40, 3).splitlines()[0].startswith("@@ -41,2 +41,2 @@")
 
 
 def test_a_long_run_of_removed_lines_is_summarised_by_count():
     """A hundred removed lines are a hundred lines saying one thing: the branch
     has not reached them yet."""
     base = ["keep"] + [f"missing{i}" for i in range(100)]
-    rendered = _render(base, ["keep"], 0, 3)
+    rendered = _render(base, base, ["keep"], 0, 3)
     assert "... 94 more lines ..." in rendered
     assert len(rendered.splitlines()) < 12
     assert "-missing0" in rendered and "-missing99" in rendered
@@ -110,7 +110,7 @@ def test_a_long_run_of_removed_lines_is_summarised_by_count():
 def test_long_runs_of_unchanged_text_are_elided():
     base = [f"line{i}" for i in range(60)] + ["target"]
     side = [f"line{i}" for i in range(60)] + ["changed"]
-    rendered = _render(base, side, 0, 3)
+    rendered = _render(base, base, side, 0, 3)
     assert "..." in rendered
     assert len(rendered.splitlines()) < 15
     assert "-target" in rendered and "+changed" in rendered
@@ -123,8 +123,8 @@ def test_the_reindent_versus_token_change_reads_as_two_intents():
     branch = ["if current:", "    rows = []", "    for p in packages:", "        rows.append(delta(p))"]
     replaying = ["rows = []", "for p in packages:", "    rows.append(delta_count(p))"]
 
-    branch_diff = _render(base, branch, 0, 3)
-    replaying_diff = _render(base, replaying, 0, 3)
+    branch_diff = _render(base, base, branch, 0, 3)
+    replaying_diff = _render(base, base, replaying, 0, 3)
 
     assert "+if current:" in branch_diff
     assert "delta_count" not in branch_diff
@@ -203,7 +203,7 @@ def test_added_lines_survive_where_removed_ones_are_summarised():
     instead of them makes the region unusable rather than merely long."""
     base = [f"missing{i}" for i in range(30)]
     side = [f"new{i}" for i in range(30)]
-    rendered = _render(base, side, 0, 3)
+    rendered = _render(base, base, side, 0, 3)
 
     assert "... 24 more lines ..." in rendered  # the removals
     for i in range(30):
@@ -213,7 +213,7 @@ def test_added_lines_survive_where_removed_ones_are_summarised():
 def test_a_very_large_addition_is_still_capped():
     base = ["x"]
     side = [f"new{i}" for i in range(200)]
-    rendered = _render(base, side, 0, 3)
+    rendered = _render(base, base, side, 0, 3)
     assert "more lines ..." in rendered
     assert len(rendered.splitlines()) < 50
 

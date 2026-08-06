@@ -118,8 +118,12 @@ def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
         units.append(
             CollisionUnit(
                 base_range=(start + 1, start + len(block.base)),
-                branch_so_far_diff=_render(block.base, block.branch_so_far, start, context),
-                replaying_diff=_render(block.base, block.replaying, start, context),
+                branch_so_far_diff=_render(
+                    base_lines, block.base, block.branch_so_far, start, context
+                ),
+                replaying_diff=_render(
+                    base_lines, block.base, block.replaying, start, context
+                ),
             )
         )
     return FileConflict(
@@ -348,19 +352,29 @@ def _opcodes(base: list[str], other: list[str]) -> list[Opcode]:
     return cast("list[Opcode]", PatienceSequenceMatcher(None, base, other).get_opcodes())
 
 
-def _render(base: list[str], side: list[str], start: int, context: int) -> str:
+def _render(
+    file_base: list[str], base: list[str], side: list[str], start: int, context: int
+) -> str:
     """A unified diff of one side of a block, against the block's base.
 
     Line numbers are absolute in the base file, so they can be checked against
     it. A side that did not touch this block says so in one line instead of
     repeating it: the region was chosen because *some* side changed it, and
     printing unchanged text for the other is what made this output unreadable.
+
+    The surrounding lines come from the file rather than the block: git marks
+    only what could not be merged, so a block on its own can be a single line
+    with nothing to place it by. Asking for more context is how you find out
+    which function it is in, or whether the lines above already do what the
+    replayed commit is adding.
     """
     opcodes = _opcodes(base, side)
     if all(tag == "equal" for tag, *_ in opcodes):
         return "(unchanged in this region)"
 
-    body: list[str] = []
+    leading = file_base[max(0, start - context) : start]
+    trailing = file_base[start + len(base) : start + len(base) + context]
+    body: list[str] = [" " + line for line in leading]
     for index, (tag, i1, i2, j1, j2) in enumerate(opcodes):
         if tag == "equal":
             kept = _trim(base[i1:i2], context, first=index == 0, last=index == len(opcodes) - 1)
@@ -368,7 +382,10 @@ def _render(base: list[str], side: list[str], start: int, context: int) -> str:
         else:
             body += _changed(base[i1:i2], "-", context)
             body += _changed(side[j1:j2], "+", ADDED_LIMIT // 2)
-    header = f"@@ -{start + 1},{len(base)} +{start + 1},{len(side)} @@"
+    body += [" " + line for line in trailing]
+    first = start - len(leading) + 1
+    span = len(leading) + len(trailing)
+    header = f"@@ -{first},{len(base) + span} +{first},{len(side) + span} @@"
     return "\n".join([header, *body])
 
 

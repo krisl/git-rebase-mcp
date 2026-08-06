@@ -153,7 +153,9 @@ class ResolveReport:
 
 
 @mcp.tool()
-def rebase_conflicts(repo: str = ".", include_full_sides: bool = False) -> ConflictReport:
+def rebase_conflicts(
+    repo: str = ".", context: int = 3, include_full_sides: bool = False
+) -> ConflictReport:
     """Report each conflict as what the two sides did, rather than as markers.
 
     Per contested region you get two diffs from the common base: one for the
@@ -162,7 +164,11 @@ def rebase_conflicts(repo: str = ".", include_full_sides: bool = False) -> Confl
     call" is usually just both.
 
     Regions only one side changed are not listed: git merged those already.
-    Set `include_full_sides` to also get the three whole texts.
+
+    `context` is how many unchanged lines to show around each change. Raise it
+    when the region is hard to place -- which function it is in, whether the
+    lines above already do what the replayed commit is adding. Set
+    `include_full_sides` for the three whole texts when even that is not enough.
     """
     git = _git(repo)
     state = read_state(git)
@@ -174,7 +180,8 @@ def rebase_conflicts(repo: str = ".", include_full_sides: bool = False) -> Confl
             guidance="Nothing is conflicted.",
         )
     files = tuple(
-        _file_report(read_conflict(git, path), include_full_sides) for path in state.unmerged
+        _file_report(read_conflict(git, path, context), include_full_sides)
+        for path in state.unmerged
     )
     return ConflictReport(
         replaying=_info(state.replaying),

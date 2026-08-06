@@ -199,3 +199,23 @@ def test_an_ordinary_conflict_is_not_named_that_way(conflicted: Scratch) -> None
     report = rebase_conflicts(str(conflicted.path))
     assert not report.files[0].both_inserted
     assert "take=" not in report.guidance
+
+
+def test_more_context_can_be_asked_for(scratch: Scratch) -> None:
+    """Raise it when the region is hard to place: which function it is in, or
+    whether the lines above already do what the replayed commit is adding."""
+    body = [f"line {i}" for i in range(30)]
+    scratch.write("f", "\n".join(body + ["target"]) + "\n")
+    scratch.commit("base")
+    scratch.write("f", "\n".join(body + ["from branch"]) + "\n")
+    scratch.commit("branch edits it")
+    scratch.write("f", "\n".join(body + ["from replaying"]) + "\n")
+    scratch.commit("replaying edits it")
+    last = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {last}"], onto="HEAD~2")
+
+    tight = rebase_conflicts(str(scratch.path), context=1).files[0].units[0]
+    wide = rebase_conflicts(str(scratch.path), context=10).files[0].units[0]
+    assert len(wide.branch_so_far_diff) > len(tight.branch_so_far_diff)
+    assert "line 21" in wide.branch_so_far_diff
+    assert "line 21" not in tight.branch_so_far_diff
