@@ -119,6 +119,9 @@ class UnitReport:
     base_range: tuple[int, int]
     branch_so_far_diff: str
     replaying_diff: str
+    # The commits behind the branch's lines here. The replayed commit states its
+    # intent in its message; this is the nearest the other side has to one.
+    branch_so_far_commits: tuple[CommitInfo, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -180,7 +183,7 @@ def rebase_conflicts(
             guidance="Nothing is conflicted.",
         )
     files = tuple(
-        _file_report(read_conflict(git, path, context), include_full_sides)
+        _file_report(read_conflict(git, path, context, _branch_base(git)), include_full_sides)
         for path in state.unmerged
     )
     return ConflictReport(
@@ -191,12 +194,21 @@ def rebase_conflicts(
     )
 
 
+def _branch_base(git: Git) -> str | None:
+    """Where the branch this rebase is rewriting starts, if the session knows."""
+    session = load_session(git)
+    return session.base_sha if session else None
+
+
 def _conflict_guidance(files: tuple[FileReport, ...]) -> str:
     advice = (
         "Each region lists what the branch did to the base and what the replayed "
         "commit did to the same base. The replayed commit's message states its "
-        "intent; reapply that intent on top of what the branch already has. Then "
-        "call rebase_resolve with the finished file."
+        "intent, and branch_so_far_commits names the commits behind the other "
+        "side, which is the nearest it has to one. Read both, then resolve: "
+        'rebase_resolve(path, take="both"/"branch"/"replaying") where that says '
+        "it, or edit the file and call rebase_resolve(path) with no content. "
+        "Raise `context` if a region is hard to place."
     )
     appended = [f.path for f in files if f.both_inserted]
     if appended:
@@ -225,6 +237,11 @@ def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport
                 base_range=unit.base_range,
                 branch_so_far_diff=unit.branch_so_far_diff,
                 replaying_diff=unit.replaying_diff,
+                branch_so_far_commits=tuple(
+                    CommitInfo(sha=c.sha, subject=c.subject)
+                    for c in unit.branch_so_far_commits
+                    if c.from_this_branch
+                ),
             )
             for unit in conflict.units
         ),

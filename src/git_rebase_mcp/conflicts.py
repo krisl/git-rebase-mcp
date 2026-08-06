@@ -68,6 +68,17 @@ class Sides:
 
 
 @dataclass(frozen=True)
+class Attribution:
+    """A commit that last touched some of the branch's lines in a region."""
+
+    sha: str
+    subject: str
+    # False when the commit predates the rebase: the lines are upstream code the
+    # branch never touched, which is a different thing from the branch's intent.
+    from_this_branch: bool
+
+
+@dataclass(frozen=True)
 class CollisionUnit:
     """One region both sides edited.
 
@@ -78,6 +89,10 @@ class CollisionUnit:
     base_range: tuple[int, int]
     branch_so_far_diff: str
     replaying_diff: str
+    # What the branch side of this region came from. The replayed commit states
+    # its intent in its message; the branch so far is an accumulation with no
+    # message, so the commits behind these lines are the nearest equivalent.
+    branch_so_far_commits: tuple[Attribution, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -97,7 +112,9 @@ class FileConflict:
     both_inserted: bool = False
 
 
-def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
+def read_conflict(
+    git: Git, path: str, context: int = CONTEXT, branch_base: str | None = None
+) -> FileConflict:
     """Describe one conflicted path, one region per block git could not merge."""
     base = _stage(git, BASE, path)
     branch = _stage(git, BRANCH_SO_FAR, path)
@@ -111,6 +128,7 @@ def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
         return FileConflict(path=path, units=(), sides=sides, no_common_base=True)
 
     base_lines = base.splitlines()
+    branch_lines = branch.splitlines()
     blocks = _blocks(git, branch, base, replaying)
     units: list[CollisionUnit] = []
     for block in blocks:
@@ -123,6 +141,9 @@ def read_conflict(git: Git, path: str, context: int = CONTEXT) -> FileConflict:
                 ),
                 replaying_diff=_render(
                     base_lines, block.base, block.replaying, start, context
+                ),
+                branch_so_far_commits=_attribution(
+                    git, path, branch_lines, block.branch_so_far, branch_base
                 ),
             )
         )
@@ -328,6 +349,51 @@ def _ambiguous(a: tuple[int, int], b: tuple[int, int]) -> bool:
     if b_inserts:
         return a[0] < b[0] < a[1]
     return a[0] < b[1] and b[0] < a[1]  # two real ranges: plain overlap
+
+
+def _attribution(
+    git: Git,
+    path: str,
+    branch_lines: list[str],
+    block_lines: list[str],
+    branch_base: str | None,
+) -> tuple[Attribution, ...]:
+    """Which commits last touched the branch's lines in this region.
+
+    During a rebase HEAD is the branch built so far, so blaming it answers the
+    question the replayed commit's message answers for the other side. A region
+    the branch left empty has no lines to attribute, and says so by being empty
+    rather than by attributing something next to it.
+    """
+    if not block_lines:
+        return ()
+    first = _locate(branch_lines, block_lines, 0) + 1
+    blamed = git.run(
+        "blame", "--line-porcelain", "-L", f"{first},{first + len(block_lines) - 1}",
+        "HEAD", "--", path, check=False,
+    )
+    if not blamed.ok:
+        return ()
+
+    found: dict[str, str] = {}
+    sha = ""
+    for line in blamed.stdout.splitlines():
+        head = line.split(" ", 1)[0]
+        if len(head) == 40 and all(c in "0123456789abcdef" for c in head):
+            sha = head
+        elif line.startswith("summary ") and sha:
+            found.setdefault(sha, line[len("summary ") :])
+    return tuple(
+        Attribution(sha=sha, subject=subject, from_this_branch=_within(git, branch_base, sha))
+        for sha, subject in found.items()
+    )
+
+
+def _within(git: Git, branch_base: str | None, sha: str) -> bool:
+    """Whether a commit is part of what this rebase is replaying."""
+    if branch_base is None:
+        return False
+    return not git.succeeds("merge-base", "--is-ancestor", sha, branch_base)
 
 
 def _stage(git: Git, stage: str, path: str) -> str:

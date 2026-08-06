@@ -46,6 +46,11 @@ it reports what each side did to the common base:
 leaves the wrap alone". Composing those needs no reasoning about which of three
 interleaved blocks belongs to whom.
 
+Both sides get to state their intent. The replayed commit has its message; the
+branch so far is an accumulation with no message, so each region names the
+commits behind its lines — which is the nearest equivalent, and is left empty
+rather than guessed when the lines predate the rebase.
+
 **Offers the resolution rather than making it.** `rebase_resolve` takes
 `take="both" | "branch" | "replaying"` for the cases the two diffs make obvious,
 so answering costs one call instead of sending a whole file back. `auto_resolve`

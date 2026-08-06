@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from git_rebase_mcp.server import rebase_conflicts, rebase_resolve, rebase_status
+from git_rebase_mcp.server import (
+    rebase_conflicts,
+    rebase_resolve,
+    rebase_start,
+    rebase_status,
+)
 
 from scratch import Scratch
 
@@ -198,7 +203,7 @@ def test_both_sides_appending_is_named_with_the_answer(both_appended: Scratch) -
 def test_an_ordinary_conflict_is_not_named_that_way(conflicted: Scratch) -> None:
     report = rebase_conflicts(str(conflicted.path))
     assert not report.files[0].both_inserted
-    assert "take=" not in report.guidance
+    assert "Both sides inserted at the same point" not in report.guidance
 
 
 def test_more_context_can_be_asked_for(scratch: Scratch) -> None:
@@ -219,3 +224,54 @@ def test_more_context_can_be_asked_for(scratch: Scratch) -> None:
     assert len(wide.branch_so_far_diff) > len(tight.branch_so_far_diff)
     assert "line 21" in wide.branch_so_far_diff
     assert "line 21" not in tight.branch_so_far_diff
+
+
+def test_the_branch_side_names_the_commits_behind_it(scratch: Scratch) -> None:
+    """The replayed commit states its intent in its message; the branch so far
+    is an accumulation with no message, and these are the nearest equivalent.
+
+    It only says anything once commits have actually been replayed: at the first
+    conflict the branch so far is still just the base, and those lines are not
+    something this branch meant.
+    """
+    scratch.commit("base", f="shared\n")
+    scratch.commit("teach it to greet", f="shared\nhello\n")
+    scratch.commit("and add a farewell", f="shared\nhello\nbye\n")
+    scratch.commit("shout the greeting", f="shared\nHELLO\nbye\n")
+    greet, farewell, shout = (scratch.git.out("rev-parse", f"HEAD~{n}") for n in (2, 1, 0))
+
+    # Reordering so the farewell comes last: "shout the greeting" then lands on
+    # a branch that has the greeting but not the farewell, and conflicts over
+    # lines a replayed commit put there.
+    rebase_start("HEAD~3", str(scratch.path),
+                 [f"pick {greet}", f"pick {shout}", f"pick {farewell}"])
+
+    unit = rebase_conflicts(str(scratch.path)).files[0].units[0]
+    assert [c.subject for c in unit.branch_so_far_commits] == ["teach it to greet"]
+
+
+def test_the_base_is_not_claimed_as_the_branch_s_intent(scratch: Scratch) -> None:
+    """Lines that were there before the rebase started are upstream code."""
+    scratch.commit("base", f="shared\n")
+    scratch.commit("teach it to greet", f="shared\nhello from the branch\n")
+    branch_tip = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "-b", "side", "HEAD~1")
+    scratch.commit("greet differently", f="shared\nhi from the replayed commit\n")
+    side = scratch.git.out("rev-parse", "HEAD")
+    rebase_start(branch_tip, str(scratch.path), [f"pick {side}"])
+
+    # Nothing has been replayed yet, so the branch so far is the base itself.
+    unit = rebase_conflicts(str(scratch.path)).files[0].units[0]
+    assert unit.branch_so_far_commits == ()
+
+
+def test_a_region_the_branch_left_empty_attributes_nothing(scratch: Scratch) -> None:
+    """No lines to attribute, so it says so rather than blaming the neighbours."""
+    scratch.commit("base", f="a\n")
+    scratch.commit("adds b", f="a\nb\n")
+    scratch.commit("adds c", f="a\nb\nc\n")
+    adds_c = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {adds_c}"], onto="HEAD~2")
+
+    unit = rebase_conflicts(str(scratch.path)).files[0].units[0]
+    assert unit.branch_so_far_commits == ()
