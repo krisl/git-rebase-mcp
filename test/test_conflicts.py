@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from git_rebase_mcp.conflicts import (
     _Block,
+    _enclosing,
     _locate,
     _parse_diff3,
     _render,
@@ -96,6 +97,70 @@ def test_a_side_that_did_not_touch_the_region_says_so_in_one_line():
 def test_line_numbers_are_absolute_in_the_base_file():
     base = ["one", "two"]
     assert _render(base, base, ["one", "CHANGED"], 40, 3).splitlines()[0].startswith("@@ -41,2 +41,2 @@")
+
+
+# ── which definition the region is inside ────────────────────────────────────
+
+
+def test_the_header_names_the_definition_the_region_is_inside():
+    base = ["class Report:", "    def render(self):", "        return rows"]
+    header = _render(base, base[2:], ["        return []"], 2, 3, "def render(self):")
+
+    assert header.splitlines()[0] == "@@ -1,3 +1,3 @@ def render(self):"
+
+
+def test_a_region_with_no_definition_above_it_leaves_the_header_bare():
+    base = ["one", "two"]
+    assert _render(base, base, ["one", "CHANGED"], 0, 3).splitlines()[0] == "@@ -1,2 +1,2 @@"
+
+
+def test_an_indented_definition_beats_the_class_it_is_in(scratch: Scratch):
+    """Git's fallback recognises a definition at column 0 only, so on Python it
+    names the class every time and the method never -- the answer nobody needs.
+    Naming the language is the whole of what this module contributes."""
+    lines = ["class Report:", "    def unrelated(self):", "        pass", "",
+             "    def render(self):", "        rows = []"]
+
+    assert _enclosing(scratch.git, "report.py", lines, [5]) == ["def render(self):"]
+    assert _enclosing(scratch.git, "report.txt", lines, [5]) == ["class Report:"]
+
+
+def test_a_language_this_module_has_never_heard_of_still_gets_git_s_answer(scratch: Scratch):
+    """The patterns are git's twenty-five, not this module's, so a language it
+    was never taught is named as well as one it was."""
+    lines = ["class Report {", "    fun unrelated() {}", "", "    fun render(): List<Row> {",
+             "        val rows = mutableListOf<Row>()"]
+
+    assert _enclosing(scratch.git, "Report.kt", lines, [4]) == ["fun render(): List<Row> {"]
+
+
+def test_a_repository_that_states_its_own_driver_is_obeyed(scratch: Scratch):
+    """A project may know better than an extension does -- a bespoke funcname
+    driver, or a language served by a driver its extension does not imply."""
+    scratch.write(".gitattributes", "*.inc diff=python\n")
+    lines = ["class Report:", "    def render(self):", "        rows = []"]
+
+    assert _enclosing(scratch.git, "report.inc", lines, [2]) == ["def render(self):"]
+
+
+def test_each_region_is_named_independently(scratch: Scratch):
+    """One question is asked of git per file, so the regions have to be told
+    apart within its answer rather than by the order they come back in."""
+    lines = ["def first():", "    a = 1", "", "def second():", "    b = 2"]
+
+    assert _enclosing(scratch.git, "m.py", lines, [1, 4]) == ["def first():", "def second():"]
+
+
+def test_a_region_with_nothing_above_it_is_named_by_nothing(scratch: Scratch):
+    assert _enclosing(scratch.git, "m.py", ["a = 1", "b = 2"], [1]) == [""]
+
+
+def test_the_definition_a_region_starts_on_is_not_its_own_enclosing(scratch: Scratch):
+    """The line is about to be shown as part of the region; naming it as the
+    surroundings too would say nothing about where in the file that is."""
+    lines = ["class Report:", "    def render(self):", "        pass"]
+
+    assert _enclosing(scratch.git, "report.py", lines, [1]) == ["class Report:"]
 
 
 def test_a_long_run_of_removed_lines_is_summarised_by_count():

@@ -51,6 +51,15 @@ against "adds 1 line and removes 1 line" — because a block wrapped in an `if`
 produces a diff the size of the block and a change of one line, and the diff
 alone does not say which you are looking at.
 
+Each region is headed by the definition it sits in — `@@ -662,13 +662,12 @@ def
+counts_render(self, ctx):` — worked out by git's own funcname driver for the
+language, of which it ships twenty-five. Git applies one only where a repository
+asked for it in `.gitattributes`, and most have not; its fallback then recognises
+a definition at column 0 only, which in any language whose definitions nest names
+the class every time and the method never. So this server picks the driver, and
+picks nothing else: the patterns stay git's, and a language it has never heard of
+is named as well as one it has.
+
 Both sides get to state their intent. The replayed commit has its message; the
 branch so far is an accumulation with no message, so each region names the
 commits behind its lines — which is the nearest equivalent, and is left empty
@@ -78,7 +87,7 @@ three errors above.
 | `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. |
 | `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in. |
 | `rebase_status` | Typed state, and whether `HEAD` is the commit being replayed. |
-| `rebase_conflicts` | Each contested region as two diffs, plus the replayed commit's message. `context=` for more surrounding lines. |
+| `rebase_conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the replayed commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the replayed commit did to each file. |
 | `rebase_resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers. |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. |
 | `rebase_continue` | Carries on. Refuses while anything is unmerged. |
@@ -136,6 +145,9 @@ conflict to 289.
 - [docs/decisions/0001-python-rather-than-rust.md](docs/decisions/0001-python-rather-than-rust.md)
   — including the two things Rust would have done better, and how each is
   recovered here.
+- [docs/decisions/0002-git-s-funcname-drivers-rather-than-tree-sitter.md](docs/decisions/0002-git-s-funcname-drivers-rather-than-tree-sitter.md)
+  — why naming what a region sits inside did not need a parser, and why the
+  language patterns are git's rather than this server's.
 
 Rebase state is a closed union of four types rather than fields on one object,
 so `rebase_amend` accepts one type instead of testing a set of conditions that

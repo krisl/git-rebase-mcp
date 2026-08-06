@@ -56,6 +56,48 @@ ADDED_LIMIT = 40
 # Index stages of a conflicted path, as git records them.
 BASE, BRANCH_SO_FAR, REPLAYING = "1", "2", "3"
 
+# Which of git's own funcname drivers to ask for, by extension. Git ships
+# twenty-five and maintains them; what it does not do is pick one, because
+# `diff=python` is something a repository states in .gitattributes. Most do not,
+# and git's fallback then recognises a definition at column 0 only -- which in
+# any language whose definitions nest names the class every time and the method
+# never. So the choice is made here, and only the choice: the patterns stay
+# git's. A repository that has stated its own driver is asked first, and a
+# language with no entry falls back to git's rule, as it does for git.
+FUNCNAME_DRIVER = {
+    "adb": "ada", "ads": "ada",
+    "bash": "bash", "sh": "bash",
+    "bib": "bibtex",
+    "c": "cpp", "cc": "cpp", "cpp": "cpp", "cxx": "cpp", "c++": "cpp",
+    "h": "cpp", "hh": "cpp", "hpp": "cpp", "hxx": "cpp",
+    "cs": "csharp",
+    "css": "css",
+    "dts": "dts", "dtsi": "dts",
+    "ex": "elixir", "exs": "elixir",
+    "f": "fortran", "f90": "fortran", "f95": "fortran", "for": "fortran",
+    "fountain": "fountain",
+    "go": "golang",
+    "htm": "html", "html": "html", "xhtml": "html",
+    "java": "java",
+    "kt": "kotlin", "kts": "kotlin",
+    "markdown": "markdown", "md": "markdown",
+    "mm": "objc",
+    "pas": "pascal", "pp": "pascal",
+    "pl": "perl", "pm": "perl",
+    "php": "php",
+    "py": "python",
+    "rb": "ruby",
+    "rs": "rust",
+    "scm": "scheme", "ss": "scheme",
+    "tex": "tex",
+}
+
+# Inserted at each region to make git produce a hunk there, and to say which
+# region a hunk answers for. A private-use character cannot occur in source and
+# cannot match a funcname pattern, so it neither collides with the file nor is
+# mistaken for a definition by the region below it.
+MARKER = "region "
+
 Opcode = tuple[str, int, int, int, int]
 
 
@@ -136,17 +178,29 @@ def read_conflict(
     base_lines = base.splitlines()
     branch_lines = branch.splitlines()
     blocks = _blocks(git, branch, base, replaying)
-    units: list[CollisionUnit] = []
+
+    # Where each block sits in the base file. Blocks come in order and do not
+    # overlap, so each search starts where the last block ended. Worked out for
+    # all of them before any unit is built, because naming what a region sits
+    # inside is one question asked of git about the whole file.
+    starts: list[int] = []
+    search_from = 0
     for block in blocks:
-        start = _locate(base_lines, block.base, len(units) and units[-1].base_range[1] or 0)
+        search_from = _locate(base_lines, block.base, search_from)
+        starts.append(search_from)
+        search_from += len(block.base)
+    enclosings = _enclosing(git, path, base_lines, starts)
+
+    units: list[CollisionUnit] = []
+    for block, start, enclosing in zip(blocks, starts, enclosings, strict=True):
         units.append(
             CollisionUnit(
                 base_range=(start + 1, start + len(block.base)),
                 branch_so_far_diff=_render(
-                    base_lines, block.base, block.branch_so_far, start, context
+                    base_lines, block.base, block.branch_so_far, start, context, enclosing
                 ),
                 replaying_diff=_render(
-                    base_lines, block.base, block.replaying, start, context
+                    base_lines, block.base, block.replaying, start, context, enclosing
                 ),
                 branch_so_far_summary=_summarise(block.base, block.branch_so_far),
                 replaying_summary=_summarise(block.base, block.replaying),
@@ -457,8 +511,77 @@ def _opcodes(base: list[str], other: list[str]) -> list[Opcode]:
     return cast("list[Opcode]", PatienceSequenceMatcher(None, base, other).get_opcodes())
 
 
+def _enclosing(git: Git, path: str, file_base: list[str], starts: Sequence[int]) -> list[str]:
+    """Which definition each region sits inside, named the way git names it.
+
+    Git already works this out for its own hunk headers, using the language's
+    funcname driver, and it ships twenty-five of them. So rather than keep
+    patterns here, a marker is inserted at each region and git is asked to diff
+    the file against itself: what comes back on each hunk header is the answer
+    for the region whose marker that hunk contains, from the language's own
+    driver rather than from a pattern this module guessed at.
+
+    Answered from the region rather than from the first line shown, so it does
+    not change when the caller asks for more surrounding lines: it is where the
+    contested region lives, not a property of how much of the file is on show.
+    """
+    if not starts:
+        return []
+    marked = list(file_base)
+    for index, start in sorted(enumerate(starts), key=lambda pair: pair[1], reverse=True):
+        marked.insert(start, f"{MARKER}{index}")
+
+    labels = [""] * len(starts)
+    with tempfile.TemporaryDirectory() as directory:
+        # Named for the real file, because the funcname driver is chosen by
+        # matching the path against the attributes file's pattern.
+        name = Path(path).name
+        written: list[str] = []
+        for folder, text in (("before", file_base), ("after", marked)):
+            target = Path(directory) / folder / name
+            target.parent.mkdir()
+            target.write_text("\n".join(text) + "\n")
+            written.append(str(target))
+        attributes = Path(directory) / "attributes"
+        attributes.write_text(f"* diff={_driver(git, path)}\n")
+        diff = git.run(
+            "-c", f"core.attributesFile={attributes}",
+            "diff", "--no-index", "--unified=0", *written,
+            check=False,
+        )
+
+    label = ""
+    for line in diff.stdout.splitlines():
+        if line.startswith("@@"):
+            # `@@ -1,0 +2,1 @@ def render(self):` -- everything past the second
+            # marker is what git decided the hunk sits inside.
+            label = line.split("@@", 2)[2].strip()
+        elif line.startswith(f"+{MARKER}"):
+            labels[int(line[len(MARKER) + 1 :])] = label
+    return labels
+
+
+def _driver(git: Git, path: str) -> str:
+    """The funcname driver to ask git for, on this path.
+
+    A repository that has stated its own in .gitattributes gets that, including
+    a custom one it defined itself; otherwise the language is taken from the
+    extension. `default` is git's own fallback, which is what an unknown
+    extension should get -- and is a real driver name, so it is safe to set.
+    """
+    stated = git.out("check-attr", "diff", "--", path).rpartition(": ")[2]
+    if stated not in ("unspecified", "unset", "set", ""):
+        return stated
+    return FUNCNAME_DRIVER.get(path.rpartition(".")[2].lower(), "default")
+
+
 def _render(
-    file_base: list[str], base: list[str], side: list[str], start: int, context: int
+    file_base: list[str],
+    base: list[str],
+    side: list[str],
+    start: int,
+    context: int,
+    enclosing: str = "",
 ) -> str:
     """A unified diff of one side of a block, against the block's base.
 
@@ -469,9 +592,9 @@ def _render(
 
     The surrounding lines come from the file rather than the block: git marks
     only what could not be merged, so a block on its own can be a single line
-    with nothing to place it by. Asking for more context is how you find out
-    which function it is in, or whether the lines above already do what the
-    replayed commit is adding.
+    with nothing to place it by. The header names the definition the region is
+    inside, as git's does; asking for more context is how you find out whether
+    the lines above already do what the replayed commit is adding.
     """
     opcodes = _opcodes(base, side)
     if all(tag == "equal" for tag, *_ in opcodes):
@@ -490,8 +613,8 @@ def _render(
     body += [" " + line for line in trailing]
     first = start - len(leading) + 1
     span = len(leading) + len(trailing)
-    header = f"@@ -{first},{len(base) + span} +{first},{len(side) + span} @@"
-    return "\n".join([header, *body])
+    header = f"@@ -{first},{len(base) + span} +{first},{len(side) + span} @@ {enclosing}"
+    return "\n".join([header.rstrip(), *body])
 
 
 def _changed(lines: list[str], prefix: str, keep: int) -> list[str]:
