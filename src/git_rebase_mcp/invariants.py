@@ -98,15 +98,24 @@ def _changed_lines(git: Git, base: str, tip: str) -> dict[str, list[str]]:
 
     Two rebases that produce the same lines in a different order agree on this
     and disagree on the patch-id, which is exactly the distinction wanted.
+
+    `--- a/f` and `+++ b/f` are headers only outside a hunk. A removed line
+    whose content starts with `-- ` renders as `--- `, and an added line whose
+    content starts with `++ ` renders as `+++ `, so a header can only be told
+    from a body line by where it sits.
     """
     per_file: dict[str, list[str]] = {}
     path = ""
+    in_hunk = False
     for line in git.run("diff", base, tip).stdout.splitlines():
-        if line.startswith("+++ "):
-            path = line[6:] if line.startswith("+++ b/") else line[4:]
-        elif line.startswith("--- ") or line.startswith("@@"):
+        if line.startswith("diff --git ") or line.startswith("@@"):
+            in_hunk = line.startswith("@@")
             continue
-        elif line[:1] in "+-" and path:
+        if not in_hunk and (line.startswith("--- ") or line.startswith("+++ ")):
+            if line.startswith("+++ "):
+                path = line[6:] if line.startswith("+++ b/") else line[4:]
+            continue
+        if line[:1] in "+-" and path:
             per_file.setdefault(path, []).append(line)
     return {path: sorted(lines) for path, lines in per_file.items()}
 

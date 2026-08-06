@@ -15,6 +15,7 @@ from git_rebase_mcp.invariants import (
     has_markers,
     record_backup,
     branch_change,
+    _changed_lines,
 )
 
 from scratch import Scratch
@@ -193,6 +194,33 @@ def test_a_marker_without_a_trailing_space_is_found(scratch: Scratch) -> None:
     hits = commits_with_markers(scratch.git, "HEAD~1..HEAD")
     assert [hit.subject for hit in hits] == ["resolved badly"]
     assert hits[0].paths == ("a",)
+
+
+def test_a_removed_line_that_looks_like_a_diff_header_is_counted(
+    scratch: Scratch,
+) -> None:
+    """A removed line whose content starts with `-- ` renders as `--- ` in the
+    diff, exactly like a `--- a/f` header. It is still a body line: dropping it
+    made a rebase that deleted such a line look identical to one that did not."""
+    scratch.commit("base", f="x\n-- removed\n")
+    base = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("tip", f="x\n")
+
+    changed = _changed_lines(scratch.git, base, scratch.git.out("rev-parse", "HEAD"))
+    assert changed == {"f": ["--- removed"]}
+
+
+def test_an_added_line_that_looks_like_a_diff_header_is_counted(
+    scratch: Scratch,
+) -> None:
+    """An added line whose content starts with `++ ` renders as `+++ `, which
+    the parser must not take for the `+++ b/f` header and read a path from."""
+    scratch.commit("base", f="x\n")
+    base = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("tip", f="x\n++ b/added\n")
+
+    changed = _changed_lines(scratch.git, base, scratch.git.out("rev-parse", "HEAD"))
+    assert changed == {"f": ["+++ b/added"]}
 
 
 def test_a_session_survives_being_written_and_read(scratch: Scratch) -> None:
