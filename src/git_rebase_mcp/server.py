@@ -12,6 +12,7 @@ discriminator, because a stable schema is easier for a caller to rely on.
 from __future__ import annotations
 
 import re
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Never, assert_never
@@ -676,13 +677,10 @@ def rebase_start(
         lines = _with_checks(todo, check_command)
         todo_file = git.git_path("rebase-mcp-todo")
         todo_file.write_text("\n".join(lines) + "\n")
-        # Git runs this through a shell, so the path is quoted the way a shell
-        # would quote it, and a quote inside the path is escaped the same way:
-        # `'` becomes `'\''` (close, escaped quote, reopen). A repo named `re'po`
-        # used to make the editor command fail to parse, and the rebase then
-        # silently did nothing with the todo.
-        quoted = "'" + str(todo_file).replace("'", "'\\''") + "'"
-        config += ["-c", f"sequence.editor=cp {quoted}"]
+        # Git runs this through a shell, so the path is quoted for one. A repo
+        # named `re'po` used to make the editor command fail to parse, and the
+        # rebase then silently did nothing with the todo.
+        config += ["-c", f"sequence.editor=cp {shlex.quote(str(todo_file))}"]
     else:
         if autosquash:
             args.append("--autosquash")
