@@ -912,6 +912,32 @@ class AbortReport:
 
 
 @mcp.tool()
+def rebase_skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
+    """Drop the commit being replayed and carry on.
+
+    For a commit whose change is already in the base under a different sha, or
+    one whose conflict resolves to "the branch already says this". Git offers it
+    at every conflict; without it here the only way to take that offer is to
+    reach past these tools and run git by hand, which is how a rebase ends up
+    half driven from each side.
+
+    Refused when nothing is being replayed: skipping is a decision about a
+    commit, and at a `break` or a failing `exec` there is no commit in question.
+    """
+    git = _git(repo)
+    state = read_state(git)
+    if isinstance(state, NotRebasing):
+        raise ValueError("No rebase in progress.")
+    if isinstance(state, StoppedWithoutApply):
+        raise ValueError(
+            f"Refusing to skip: stopped at `{state.action}`, which is not replaying a "
+            "commit, so there is nothing to skip. Continue instead."
+        )
+    result = git.run("-c", "core.editor=true", *RERERE, "rebase", "--skip", check=False)
+    return _advance(git, _git_said(result), auto_resolve)
+
+
+@mcp.tool()
 def rebase_abort(repo: str = ".") -> AbortReport:
     """Abandon the rebase and put back anything that was moved aside."""
     git = _git(repo)
