@@ -8,9 +8,11 @@ from pathlib import Path
 import pytest
 
 from git_rebase_mcp.git import GitError, GitResult
-from git_rebase_mcp.invariants import load_session, record_backup
+from git_rebase_mcp.invariants import Session, load_session, record_backup, save_session
 from git_rebase_mcp.server import (
     StartMovedBranch,
+    _stash,
+    _stash_index,
     _withdraw_start,
     rebase_start,
     status,
@@ -244,20 +246,40 @@ def test_a_resolution_is_replayed_when_the_same_conflict_comes_back(scratch: Scr
     assert scratch.read("f") == "resolved by hand\n"  # replayed, no markers
 
 
-def test_a_failed_start_that_moved_the_branch_keeps_its_backup(scratch: Scratch) -> None:
+def test_a_failed_start_that_moved_the_branch_keeps_its_records(
+    scratch: Scratch,
+) -> None:
     """"No rebase in progress" also describes one that ran, rewrote the branch
     and then failed. Taking the record back there would delete the only note of
-    where the branch had been, at the one moment somebody needs it."""
+    where the branch had been, at the one moment somebody needs it -- the
+    backup tag, the session and the stash that hold what was moved aside."""
     scratch.commit("base", a="one\n")
     scratch.commit("second", b="two\n")
+    scratch.write("pytest.ini", "[pytest]\n")
+    stashed, stash_ref = _stash(scratch.git, ("pytest.ini",))
     backup = record_backup(scratch.git, label="test")
+    save_session(
+        scratch.git,
+        Session(
+            backup_ref=backup.ref,
+            backup_sha=backup.sha,
+            backup_tree=backup.tree,
+            base="HEAD~1",
+            base_sha=backup.sha,
+            stashed=stashed,
+            stash_ref=stash_ref,
+            check_command="pytest -q",
+        ),
+    )
     scratch.commit("rewritten by git before it gave up", c="three\n")
     failed = GitResult(args=("rebase",), returncode=1, stdout="", stderr="something broke")
 
     with pytest.raises(StartMovedBranch, match="HEAD moved"):
-        _withdraw_start(scratch.git, backup, (), None, failed)
+        _withdraw_start(scratch.git, backup, stashed, stash_ref, failed)
 
     assert scratch.git.succeeds("rev-parse", "--verify", backup.ref)  # tag kept
+    assert load_session(scratch.git) is not None  # session kept
+    assert stash_ref is not None and _stash_index(scratch.git, stash_ref) is not None
 
 
 def test_a_failed_start_that_left_the_branch_alone_takes_its_backup_back(
