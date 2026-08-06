@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -342,3 +343,22 @@ def test_the_replayed_commit_s_whole_file_diff_can_be_asked_for(scratch: Scratch
     assert without.replaying_file_diff is None
     assert with_it.replaying_file_diff is not None
     assert "changed elsewhere too" in with_it.replaying_file_diff
+
+
+def test_a_repo_reached_through_a_symlink_is_still_its_own_inside(tmp_path: Path) -> None:
+    """The containment check resolves the path it is given, so it has to resolve
+    what it compares against too -- or every path in a repository reached
+    through a symlink is refused as though it were outside one."""
+    real = tmp_path / "real"
+    subprocess.run(["git", "init", "-q", "-b", "main", str(real)], check=True)
+    scratch = Scratch(real)
+    for name, value in (("user.name", "T"), ("user.email", "t@e.com")):
+        scratch.git.run("config", name, value)
+    scratch.git.run("config", "commit.gpgsign", "false")
+    scratch.commit("base", f="one\n")
+    link = tmp_path / "link"
+    link.symlink_to(real)
+
+    report = resolve("f", "resolved\n", str(link))
+    assert report.path == "f"
+    assert scratch.read("f") == "resolved\n"

@@ -395,15 +395,19 @@ def resolve(
     git = _git(repo)
     if take is not None and content is not None:
         raise ValueError("take and content are two ways to say the same thing; pass one.")
-    target = (git.repo / path).resolve()
-    if not target.is_relative_to(git.repo):
+    # Both sides resolved, so the comparison holds however the Git was built.
+    # `_git` hands over a resolved path today; a repository reached through a
+    # symlink and compared against an unresolved one would be refused outright.
+    root = git.repo.resolve()
+    target = (root / path).resolve()
+    if not target.is_relative_to(root):
         raise ValueError(f"{path} is not inside {git.repo}")
     # Inside the repository is not the same as inside the working tree. `.git`
     # holds the hooks, which run during the rebase this tool is driving, so a
     # write there is a write to something that executes. Git will not track a
     # path under `.git` either -- but it declines by ignoring it and exiting
     # zero, which is how such a write would otherwise go unmentioned.
-    if ".git" in target.relative_to(git.repo).parts:
+    if ".git" in target.relative_to(root).parts:
         raise ValueError(
             f"{path} is under .git, which holds the repository itself rather than "
             "the work in it. Nothing there is a conflicted path, and writing to it "
