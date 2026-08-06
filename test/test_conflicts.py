@@ -13,6 +13,7 @@ from git_rebase_mcp.conflicts import (
     _locate,
     _parse_diff3,
     _render,
+    _summarise,
     auto_resolution,
     read_conflict,
 )
@@ -302,3 +303,35 @@ def test_an_insertion_at_the_end_boundary_composes_too():
         theirs="head\nkept\nblock\nnew\ntail\n",
     ))
     assert resolved == ["head", "new", "tail"]
+
+
+# ── saying what each side did, in a sentence ─────────────────────────────────
+
+
+def test_wrapping_a_block_reads_as_one_added_line_not_a_rewrite():
+    """The shape that cost the most time on a real branch: the diff is the size
+    of the block and the change is one line."""
+    base = ["rows = []", "for p in packages:", "    rows.append(delta(p))"]
+    wrapped = ["if current:", "    rows = []", "    for p in packages:",
+               "        rows.append(delta(p))"]
+    assert _summarise(base, wrapped) == "adds 1 line and reindents or moves 3 lines"
+
+
+def test_a_changed_call_reads_as_one_line_each_way():
+    base = ["rows = []", "    rows.append(delta(p))"]
+    swapped = ["rows = []", "    rows.append(delta_count(p))"]
+    assert _summarise(base, swapped) == "adds 1 line and removes 1 line"
+
+
+def test_identical_lines_are_not_counted_as_moved():
+    base = ["a", "b", "c"]
+    assert _summarise(base, base) == "unchanged in this region"
+
+
+def test_an_append_reads_as_an_append():
+    base = ["a", "b"]
+    assert _summarise(base, base + ["c"]) == "adds 1 line"
+
+
+def test_a_region_the_branch_never_reached_reads_as_a_removal():
+    assert _summarise(["a", "b", "c"], []) == "removes 3 lines"

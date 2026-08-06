@@ -46,6 +46,11 @@ it reports what each side did to the common base:
 leaves the wrap alone". Composing those needs no reasoning about which of three
 interleaved blocks belongs to whom.
 
+Each side also gets a sentence — "adds 1 line and reindents or moves 3 lines"
+against "adds 1 line and removes 1 line" — because a block wrapped in an `if`
+produces a diff the size of the block and a change of one line, and the diff
+alone does not say which you are looking at.
+
 Both sides get to state their intent. The replayed commit has its message; the
 branch so far is an accumulation with no message, so each region names the
 commits behind its lines — which is the nearest equivalent, and is left empty

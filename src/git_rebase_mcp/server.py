@@ -119,6 +119,10 @@ class UnitReport:
     base_range: tuple[int, int]
     branch_so_far_diff: str
     replaying_diff: str
+    # One sentence for what each side did. A block wrapped in an `if` and
+    # reindented is a large diff and a small change; the diff does not say which.
+    branch_so_far_summary: str = ""
+    replaying_summary: str = ""
     # The commits behind the branch's lines here. The replayed commit states its
     # intent in its message; this is the nearest the other side has to one.
     branch_so_far_commits: tuple[CommitInfo, ...] = ()
@@ -237,6 +241,8 @@ def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport
                 base_range=unit.base_range,
                 branch_so_far_diff=unit.branch_so_far_diff,
                 replaying_diff=unit.replaying_diff,
+                branch_so_far_summary=unit.branch_so_far_summary,
+                replaying_summary=unit.replaying_summary,
                 branch_so_far_commits=tuple(
                     CommitInfo(sha=c.sha, subject=c.subject)
                     for c in unit.branch_so_far_commits

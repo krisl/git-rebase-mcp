@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import itertools
 import tempfile
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -89,6 +90,11 @@ class CollisionUnit:
     base_range: tuple[int, int]
     branch_so_far_diff: str
     replaying_diff: str
+    # One sentence for what each side did, with lines that only moved or changed
+    # indentation counted separately. A block wrapped in an `if` and reindented
+    # is a large diff and a small change, and the diff alone does not say which.
+    branch_so_far_summary: str = ""
+    replaying_summary: str = ""
     # What the branch side of this region came from. The replayed commit states
     # its intent in its message; the branch so far is an accumulation with no
     # message, so the commits behind these lines are the nearest equivalent.
@@ -142,6 +148,8 @@ def read_conflict(
                 replaying_diff=_render(
                     base_lines, block.base, block.replaying, start, context
                 ),
+                branch_so_far_summary=_summarise(block.base, block.branch_so_far),
+                replaying_summary=_summarise(block.base, block.replaying),
                 branch_so_far_commits=_attribution(
                     git, path, branch_lines, block.branch_so_far, branch_base
                 ),
@@ -349,6 +357,37 @@ def _ambiguous(a: tuple[int, int], b: tuple[int, int]) -> bool:
     if b_inserts:
         return a[0] < b[0] < a[1]
     return a[0] < b[1] and b[0] < a[1]  # two real ranges: plain overlap
+
+
+def _summarise(base: list[str], side: list[str]) -> str:
+    """What one side did to a region, in a sentence.
+
+    Lines whose content is unchanged apart from leading whitespace are counted
+    as reindented rather than as an addition and a removal. Wrapping a block in
+    an `if` produces a diff the size of the block and a change of one line, and
+    reading the diff is the slow way to find that out.
+    """
+    # Lines that are identical are not a change of any kind, so they come out
+    # before anything is counted; what is left is compared without indentation.
+    untouched = Counter(base) & Counter(side)
+    gone = Counter(line.strip() for line in (Counter(base) - untouched).elements() if line.strip())
+    arrived = Counter(line.strip() for line in (Counter(side) - untouched).elements() if line.strip())
+    moved = sum((gone & arrived).values())
+    added = sum((arrived - gone).values())
+    removed = sum((gone - arrived).values())
+
+    parts: list[str] = []
+    if added:
+        parts.append(f"adds {plural(added, 'line')}")
+    if removed:
+        parts.append(f"removes {plural(removed, 'line')}")
+    if moved:
+        parts.append(f"reindents or moves {plural(moved, 'line')}")
+    return " and ".join(parts) if parts else "unchanged in this region"
+
+
+def plural(count: int, noun: str) -> str:
+    return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
 
 
 def _attribution(
