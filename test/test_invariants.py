@@ -125,6 +125,40 @@ def test_every_commit_is_scanned_not_only_the_tip(scratch: Scratch) -> None:
     assert [hit.subject for hit in hits] == ["resolved badly"]
 
 
+def test_a_file_that_always_held_a_marker_is_not_blamed_on_the_rebase(scratch: Scratch) -> None:
+    """A fixture of git's merge output is a marker nobody put there by mistake.
+    Scanning trees flagged it in every commit of every rebase of the repository
+    -- including both commits of the rebase that found this, neither of which
+    had touched the file."""
+    fixture = "<<<<<<< ours\nmine\n||||||| base\nold\n>>>>>>> theirs\n"
+    scratch.commit("base", test_fixture=fixture, a="one\n")
+    scratch.commit("unrelated", test_fixture=fixture, a="two\n")
+
+    assert commits_with_markers(scratch.git, "HEAD~1..HEAD") == []
+
+
+def test_a_marker_arriving_in_such_a_file_is_still_caught(scratch: Scratch) -> None:
+    """Not flagging the file wholesale is not the same as trusting it."""
+    scratch.commit("base", a="one\n")
+    scratch.commit("resolved badly", a="<<<<<<< HEAD\nmine\n>>>>>>> abc123\n")
+
+    hits = commits_with_markers(scratch.git, "HEAD~1..HEAD")
+    assert [hit.paths for hit in hits] == [("a",)]
+
+
+def test_the_commit_that_introduced_a_marker_is_named_not_the_ones_after(
+    scratch: Scratch,
+) -> None:
+    """Every commit after it carries the marker too, and naming them all buries
+    the one commit anybody can do something about."""
+    scratch.commit("base", a="one\n")
+    scratch.commit("resolved badly", a="<<<<<<< HEAD\nmine\n>>>>>>> abc123\n")
+    scratch.commit("carries on", b="unrelated\n")
+
+    hits = commits_with_markers(scratch.git, "HEAD~2..HEAD")
+    assert [hit.subject for hit in hits] == ["resolved badly"]
+
+
 def test_prose_about_conflicts_is_not_mistaken_for_one(scratch: Scratch) -> None:
     """This project's own documentation would trip a looser pattern, and so
     would any markdown heading underlined with equals signs."""

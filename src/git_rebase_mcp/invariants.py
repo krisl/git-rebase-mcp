@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from typing import cast
 from datetime import datetime, timezone
@@ -121,27 +122,51 @@ def _fork_point(git: Git, tip: str, base: str) -> str:
 
 
 def commits_with_markers(git: Git, revision_range: str) -> list[MarkerHit]:
-    """Commits in the range whose tree still contains conflict markers.
+    """Commits in the range that brought a conflict marker to a path.
 
-    Scanning every commit rather than only the tip, because a marker committed
-    part-way through and tidied up later still leaves a commit nobody can build.
+    Every commit rather than only the tip, because a marker committed part-way
+    through and tidied up later still leaves a commit nobody can build.
+
+    A path that already had one is not this rebase's doing, and reporting it is
+    worse than saying nothing. Some files contain marker lines legitimately --
+    a fixture of git's merge output, documentation quoting one -- and a check
+    that scans whole trees flags those in every commit, of every rebase of that
+    repository, for as long as the file exists. This project's own test suite
+    is such a file: the warning fired on both commits of the rebase that found
+    this, neither of which had touched it. A warning nobody can act on is one
+    nobody reads, which costs more than the check was ever worth.
     """
     hits: list[MarkerHit] = []
     for sha in git.lines("rev-list", revision_range):
-        patterns: list[str] = []
-        for regex in MARKER_REGEXES:
-            patterns += ["-e", regex]
-        found = git.run("grep", "-l", "-E", *patterns, sha, check=False)
-        if not found.ok:
-            continue  # grep exits non-zero when it matches nothing
-        paths = tuple(
-            line.split(":", 1)[1] for line in found.stdout.splitlines() if ":" in line
-        )
-        if paths:
+        present = _marker_paths(git, sha)
+        if not present:
+            continue
+        # Only the candidates are re-scanned, so the parent costs nothing on the
+        # ordinary commit, which has no markers anywhere to begin with.
+        introduced = present - _marker_paths(git, f"{sha}^", sorted(present))
+        if introduced:
             hits.append(
-                MarkerHit(sha=sha, subject=git.out("log", "-1", "--format=%s", sha), paths=paths)
+                MarkerHit(
+                    sha=sha,
+                    subject=git.out("log", "-1", "--format=%s", sha),
+                    paths=tuple(sorted(introduced)),
+                )
             )
     return hits
+
+
+def _marker_paths(git: Git, revision: str, limit: Sequence[str] = ()) -> set[str]:
+    """Paths in one commit's tree holding a conflict marker, at or below `limit`."""
+    patterns: list[str] = []
+    for regex in MARKER_REGEXES:
+        patterns += ["-e", regex]
+    scope = ["--", *limit] if limit else []
+    found = git.run("grep", "-l", "-E", *patterns, revision, *scope, check=False)
+    # Non-zero is also how grep reports matching nothing, and how a root commit
+    # reports having no parent to compare against. Both mean the same here.
+    if not found.ok:
+        return set()
+    return {line.split(":", 1)[1] for line in found.stdout.splitlines() if ":" in line}
 
 
 def has_markers(text: str) -> bool:

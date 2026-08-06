@@ -93,7 +93,7 @@ three errors above.
 | `rebase_continue` | Carries on. Refuses while anything is unmerged. |
 | `rebase_skip` | Drops the commit being replayed — for one already in the base. |
 | `rebase_todo` | The steps left, and replaces them. Refuses to drop a commit. |
-| `rebase_finish` | Checks the branch still makes the same change to its base, and scans every commit for markers. |
+| `rebase_finish` | Checks the branch still makes the same change to its base, and names any commit that brought a conflict marker to a file. |
 | `rebase_abort` | Abandons the rebase and puts back what was moved aside. |
 
 `rebase_start` takes a `check_command`, run after every commit. It is the only
