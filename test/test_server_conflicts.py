@@ -275,3 +275,21 @@ def test_a_region_the_branch_left_empty_attributes_nothing(scratch: Scratch) -> 
 
     unit = rebase_conflicts(str(scratch.path)).files[0].units[0]
     assert unit.branch_so_far_commits == ()
+
+
+def test_the_replayed_commit_s_whole_file_diff_can_be_asked_for(scratch: Scratch) -> None:
+    """What a commit did elsewhere in a file is how you tell whether the region
+    in front of you is the whole of its intent. Fetching it meant leaving the
+    tool for `git show` about six times in one real run."""
+    scratch.commit("base", f="one\nfar away\n")
+    scratch.commit("second", f="two\nfar away\n")
+    scratch.commit("third", f="three\nchanged elsewhere too\n")
+    second, third = scratch.git.out("rev-parse", "HEAD~1"), scratch.git.out("rev-parse", "HEAD")
+    rebase_start("HEAD~2", str(scratch.path), [f"pick {third}", f"pick {second}"])
+
+    without = rebase_conflicts(str(scratch.path)).files[0]
+    with_it = rebase_conflicts(str(scratch.path), include_file_diffs=True).files[0]
+
+    assert without.replaying_file_diff is None
+    assert with_it.replaying_file_diff is not None
+    assert "changed elsewhere too" in with_it.replaying_file_diff

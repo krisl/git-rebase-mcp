@@ -142,6 +142,11 @@ class FileReport:
     base: str | None = None
     branch_so_far: str | None = None
     replaying: str | None = None
+    # Everything the replayed commit did to this file, not only the contested
+    # region. Wanted often enough in real use to be worth not leaving the tool
+    # for: what a commit did elsewhere in a file is how you tell whether the
+    # region in front of you is the whole of its intent.
+    replaying_file_diff: str | None = None
 
 
 @dataclass(frozen=True)
@@ -161,7 +166,10 @@ class ResolveReport:
 
 @mcp.tool()
 def rebase_conflicts(
-    repo: str = ".", context: int = 3, include_full_sides: bool = False
+    repo: str = ".",
+    context: int = 3,
+    include_full_sides: bool = False,
+    include_file_diffs: bool = False,
 ) -> ConflictReport:
     """Report each conflict as what the two sides did, rather than as markers.
 
@@ -174,8 +182,12 @@ def rebase_conflicts(
 
     `context` is how many unchanged lines to show around each change. Raise it
     when the region is hard to place -- which function it is in, whether the
-    lines above already do what the replayed commit is adding. Set
-    `include_full_sides` for the three whole texts when even that is not enough.
+    lines above already do what the replayed commit is adding.
+
+    `include_file_diffs` adds everything the replayed commit did to each file,
+    not only the contested part, which is how you tell whether the region in
+    front of you is the whole of its intent. `include_full_sides` gives the
+    three whole texts when even that is not enough.
     """
     git = _git(repo)
     state = read_state(git)
@@ -187,7 +199,13 @@ def rebase_conflicts(
             guidance="Nothing is conflicted.",
         )
     files = tuple(
-        _file_report(read_conflict(git, path, context, _branch_base(git)), include_full_sides)
+        _file_report(
+            read_conflict(git, path, context, _branch_base(git)),
+            include_full_sides,
+            git.out("show", "--format=", state.replaying.sha, "--", path)
+            if include_file_diffs
+            else None,
+        )
         for path in state.unmerged
     )
     return ConflictReport(
@@ -233,7 +251,9 @@ def _conflict_guidance(files: tuple[FileReport, ...]) -> str:
     return advice
 
 
-def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport:
+def _file_report(
+    conflict: FileConflict, include_full_sides: bool, file_diff: str | None = None
+) -> FileReport:
     return FileReport(
         path=conflict.path,
         units=tuple(
@@ -262,6 +282,7 @@ def _file_report(conflict: FileConflict, include_full_sides: bool) -> FileReport
         replaying=conflict.sides.replaying
         if include_full_sides or conflict.no_common_base
         else None,
+        replaying_file_diff=file_diff,
     )
 
 
