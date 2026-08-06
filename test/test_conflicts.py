@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from git_rebase_mcp.conflicts import (
     _Block,
+    _attribution,
     _enclosing,
     _locate,
     _parse_diff3,
@@ -73,6 +74,25 @@ def test_the_search_starts_after_the_previous_block():
 
 def test_a_block_adding_lines_the_base_never_had_sits_at_the_search_point():
     assert _locate(["a", "b"], [], 2) == 2
+
+
+def test_a_block_that_is_not_in_the_base_is_reported_as_missing():
+    """A block whose base text the file does not contain is not invented into
+    it. The search position is where the *previous* block ended, so returning
+    it as the answer would report the region at lines it does not occupy."""
+    assert _locate(["a", "b", "c"], ["z"], 0) is None
+    assert _locate(["a", "b", "c"], ["c"], 4) is None  # search window past the end
+
+
+def test_a_block_whose_lines_are_not_in_the_branch_is_not_attributed(
+    scratch: Scratch,
+) -> None:
+    """Blaming from line 1 because a region was not found would present the
+    top of the file as the region's authors. Saying nothing is the honest
+    answer, as it is for a region the branch left empty."""
+    scratch.commit("base", f="one\ntwo\n")
+
+    assert _attribution(scratch.git, "f", ["one", "two"], ["nothing", "here"], None) == ()
 
 
 # ── what each side's diff says ───────────────────────────────────────────────

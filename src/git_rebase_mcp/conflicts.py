@@ -186,8 +186,14 @@ def read_conflict(
     starts: list[int] = []
     search_from = 0
     for block in blocks:
-        search_from = _locate(base_lines, block.base, search_from)
-        starts.append(search_from)
+        found = _locate(base_lines, block.base, search_from)
+        if found is None:
+            raise ValueError(
+                f"{path}: a contested region has no matching lines in the base file, "
+                "so its position cannot be reported"
+            )
+        search_from = found
+        starts.append(found)
         search_from += len(block.base)
     enclosings = _enclosing(git, path, base_lines, starts)
 
@@ -270,19 +276,21 @@ def _parse_diff3(lines: Sequence[str]) -> list[_Block]:
     return blocks
 
 
-def _locate(base_lines: list[str], section: list[str], from_line: int) -> int:
+def _locate(base_lines: list[str], section: list[str], from_line: int) -> int | None:
     """Where a block's base section sits in the base file.
 
     Blocks come in order and do not overlap, so the search starts after the last
     one. An empty section belongs at the search position: the block adds lines
-    the base never had.
+    the base never had. Anything else that is not there is reported as None
+    rather than guessed at -- a base_range invented from the search position
+    would be shown to a person as fact.
     """
     if not section:
         return from_line
     for start in range(from_line, len(base_lines) - len(section) + 1):
         if base_lines[start : start + len(section)] == section:
             return start
-    return from_line
+    return None
 
 
 def take_side(git: Git, path: str, side: str) -> str:
@@ -460,7 +468,10 @@ def _attribution(
     """
     if not block_lines:
         return ()
-    first = _locate(branch_lines, block_lines, 0) + 1
+    located = _locate(branch_lines, block_lines, 0)
+    if located is None:
+        return ()
+    first = located + 1
     blamed = git.run(
         "blame", "--line-porcelain", "-L", f"{first},{first + len(block_lines) - 1}",
         "HEAD", "--", path, check=False,
