@@ -395,13 +395,7 @@ def resolve(
     git = _git(repo)
     if take is not None and content is not None:
         raise ValueError("take and content are two ways to say the same thing; pass one.")
-    # Both sides resolved, so the comparison holds however the Git was built.
-    # `_git` hands over a resolved path today; a repository reached through a
-    # symlink and compared against an unresolved one would be refused outright.
-    root = git.repo.resolve()
-    target = (root / path).resolve()
-    if not target.is_relative_to(root):
-        raise ValueError(f"{path} is not inside {git.repo}")
+    root, target = _contained(git.repo, path)
     # Inside the repository is not the same as inside the working tree. `.git`
     # holds the hooks, which run during the rebase this tool is driving, so a
     # write there is a write to something that executes. Git will not track a
@@ -917,6 +911,21 @@ def _git(repo: str) -> Git:
     if not path.is_dir():
         raise ValueError(f"{path} is not a directory")
     return Git(path)
+
+
+def _contained(repo: Path, path: str) -> tuple[Path, Path]:
+    """The repository's root and the path, both resolved, one inside the other.
+
+    The containment check only holds if the repository it is tested against is
+    resolved too. `_git` hands over a resolved path today, but a repository
+    reached through a symlink and compared against an unresolved one would have
+    every path in it refused as though it were outside.
+    """
+    root = repo.resolve()
+    target = (root / path).resolve()
+    if not target.is_relative_to(root):
+        raise ValueError(f"{path} is not inside {repo}")
+    return root, target
 
 
 def _info(commit: Commit) -> CommitInfo:

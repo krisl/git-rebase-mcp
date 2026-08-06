@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from git_rebase_mcp.server import (
+    _contained,
     conflicts,
     rebase_start,
     resolve,
@@ -362,3 +363,27 @@ def test_a_repo_reached_through_a_symlink_is_still_its_own_inside(tmp_path: Path
     report = resolve("f", "resolved\n", str(link))
     assert report.path == "f"
     assert scratch.read("f") == "resolved\n"
+
+
+def test_the_containment_check_resolves_the_repository_it_compares_against(
+    tmp_path: Path,
+) -> None:
+    """The path is resolved; the repository must be too. A symlinked repository
+    compared against unresolved would have every path refused, which is the
+    failure this guards: the check resolves both sides."""
+    real = tmp_path / "real"
+    real.mkdir()
+    (real / "f").write_text("one\n")
+    link = tmp_path / "link"
+    link.symlink_to(real)
+
+    root, target = _contained(link, "f")
+    assert root == real.resolve()
+    assert target == (real / "f").resolve()
+
+
+def test_the_containment_check_still_refuses_an_outside_path(tmp_path: Path) -> None:
+    real = tmp_path / "real"
+    real.mkdir()
+    with pytest.raises(ValueError, match="not inside"):
+        _contained(real, "../outside")
