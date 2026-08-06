@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import subprocess
+from pathlib import Path
+
 import pytest
 
 from git_rebase_mcp.invariants import load_session
@@ -24,6 +27,24 @@ def test_a_reorder_runs_to_completion(series: Scratch) -> None:
 
     assert report.status.state == "not_rebasing"
     assert series.subjects() == ["adds b", "adds c", "base"]
+
+
+def test_a_repo_path_containing_a_quote_still_drives_the_todo(tmp_path: Path) -> None:
+    """The todo is fed to git through a shell command, so the path has to be
+    quoted the way a shell would quote it. A repo named `re'po` used to make
+    the editor command fail to parse, and the rebase silently did nothing."""
+    repo = Scratch(tmp_path / "re'po")
+    subprocess.run(["git", "init", "-q", "-b", "main", str(repo.path)], check=True)
+    repo.git.run("config", "user.name", "Test")
+    repo.git.run("config", "user.email", "test@example.com")
+    repo.commit("base", a="one\n")
+    repo.commit("adds b", b="two\n")
+    repo.commit("adds c", c="three\n")
+    adds_b, adds_c = repo.git.out("rev-parse", "HEAD~1"), repo.git.out("rev-parse", "HEAD")
+
+    report = rebase_start("HEAD~2", str(repo.path), [f"pick {adds_c}", f"pick {adds_b}"])
+    assert report.status.state == "not_rebasing"
+    assert repo.subjects() == ["adds b", "adds c", "base"]  # the todo really was used
 
 
 def test_the_tip_is_tagged_before_anything_changes(series: Scratch) -> None:

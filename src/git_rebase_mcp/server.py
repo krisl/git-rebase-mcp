@@ -652,7 +652,13 @@ def rebase_start(
         lines = _with_checks(todo, check_command)
         todo_file = git.git_path("rebase-mcp-todo")
         todo_file.write_text("\n".join(lines) + "\n")
-        config += ["-c", f"sequence.editor=cp '{todo_file}'"]
+        # Git runs this through a shell, so the path is quoted the way a shell
+        # would quote it, and a quote inside the path is escaped the same way:
+        # `'` becomes `'\''` (close, escaped quote, reopen). A repo named `re'po`
+        # used to make the editor command fail to parse, and the rebase then
+        # silently did nothing with the todo.
+        quoted = "'" + str(todo_file).replace("'", "'\\''") + "'"
+        config += ["-c", f"sequence.editor=cp {quoted}"]
     else:
         if autosquash:
             args.append("--autosquash")
