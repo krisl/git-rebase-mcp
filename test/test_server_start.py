@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from git_rebase_mcp.git import GitError
-from git_rebase_mcp.invariants import load_session
-from git_rebase_mcp.server import rebase_start, status
+from git_rebase_mcp.git import GitError, GitResult
+from git_rebase_mcp.invariants import load_session, record_backup
+from git_rebase_mcp.server import _withdraw_start, rebase_start, status
 
 from scratch import Scratch
 
@@ -237,3 +237,32 @@ def test_a_resolution_is_replayed_when_the_same_conflict_comes_back(scratch: Scr
 
     assert rebase_start("HEAD~2", str(scratch.path), todo).status.state == "conflicted"
     assert scratch.read("f") == "resolved by hand\n"  # replayed, no markers
+
+
+def test_a_failed_start_that_moved_the_branch_keeps_its_backup(scratch: Scratch) -> None:
+    """"No rebase in progress" also describes one that ran, rewrote the branch
+    and then failed. Taking the record back there would delete the only note of
+    where the branch had been, at the one moment somebody needs it."""
+    scratch.commit("base", a="one\n")
+    scratch.commit("second", b="two\n")
+    backup = record_backup(scratch.git, label="test")
+    scratch.commit("rewritten by git before it gave up", c="three\n")
+    failed = GitResult(args=("rebase",), returncode=1, stdout="", stderr="something broke")
+
+    with pytest.raises(ValueError, match="HEAD moved"):
+        _withdraw_start(scratch.git, backup, (), None, failed)
+
+    assert scratch.git.succeeds("rev-parse", "--verify", backup.ref)  # tag kept
+
+
+def test_a_failed_start_that_left_the_branch_alone_takes_its_backup_back(
+    scratch: Scratch,
+) -> None:
+    scratch.commit("base", a="one\n")
+    backup = record_backup(scratch.git, label="test")
+    failed = GitResult(args=("rebase",), returncode=1, stdout="", stderr="something broke")
+
+    with pytest.raises(GitError, match="something broke"):
+        _withdraw_start(scratch.git, backup, (), None, failed)
+
+    assert not scratch.git.succeeds("rev-parse", "--verify", backup.ref)

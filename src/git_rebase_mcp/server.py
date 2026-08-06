@@ -14,13 +14,14 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal, assert_never
+from typing import Literal, Never, assert_never
 
 from mcp.server.mcpserver import MCPServer
 
 from .conflicts import FileConflict, auto_resolve_file, plural, read_conflict, take_side
 from .git import Git, GitError, GitResult
 from .invariants import (
+    Backup,
     Session,
     clear_session,
     commits_with_markers,
@@ -682,14 +683,7 @@ def rebase_start(
     # about why it stopped are kept, because nothing else can reconstruct them.
     result = git.run(*config, *args, check=False)
     if not result.ok and not is_rebasing(read_state(git)):
-        # Git failed before the rebase began -- a dirty tree, or a todo it
-        # would not take. Nothing was rewritten, so the files moved aside are
-        # put back, the session that existed to check a result is cleared, and
-        # git's own words are the failure rather than a claim that it started.
-        _unstash(git, stashed, stash_ref)
-        clear_session(git)
-        git.run("tag", "-d", backup.ref, check=False)
-        raise GitError(result)
+        _withdraw_start(git, backup, stashed, stash_ref, result)
     stopped = _advance(git, _git_said(result), auto_resolve)
     return StartReport(
         backup_ref=backup.ref,
@@ -700,6 +694,44 @@ def rebase_start(
             "checks the result against it. " + stopped.guidance
         ),
     )
+
+
+def _withdraw_start(
+    git: Git,
+    backup: Backup,
+    stashed: tuple[str, ...],
+    stash_ref: str | None,
+    result: GitResult,
+) -> Never:
+    """Take back a start git never made -- or refuse to, if it did make one.
+
+    Git failing with no rebase in progress almost always means it never began:
+    a dirty tree, or a todo it would not take. Then the right answer is to put
+    back what was moved aside, clear the session that existed to check a
+    result, and report git's own words rather than claim it started.
+
+    Almost always is not always, and the difference is the whole reason this
+    server exists. "No rebase in progress" also describes one that ran, rewrote
+    the branch and then failed, and withdrawing the record there would delete
+    the only note of where the branch had been -- at the one moment somebody
+    needs it. So the tip is checked before anything is taken back, and if it
+    moved, everything is kept and the report says so.
+
+    Raises either way: a start that did not start is not a result.
+    """
+    head = git.out("rev-parse", "HEAD")
+    if head != backup.sha:
+        raise ValueError(
+            f"{GitError(result)}\n\nHEAD moved from {backup.sha[:9]} to {head[:9]} "
+            "before git gave up, so the branch was rewritten. Nothing has been "
+            f"taken back: the tip beforehand is tagged {backup.ref}, anything "
+            "moved aside is still stashed, and rebase_finish checks what is here "
+            "now against it."
+        )
+    _unstash(git, stashed, stash_ref)
+    clear_session(git)
+    git.run("tag", "-d", backup.ref, check=False)
+    raise GitError(result)
 
 
 def _with_checks(todo: list[str], check_command: str | None) -> list[str]:
