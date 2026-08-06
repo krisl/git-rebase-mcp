@@ -19,7 +19,7 @@ from typing import Literal, assert_never
 from mcp.server.mcpserver import MCPServer
 
 from .conflicts import FileConflict, auto_resolve_file, plural, read_conflict, take_side
-from .git import Git, GitResult
+from .git import Git, GitError, GitResult
 from .invariants import (
     Session,
     clear_session,
@@ -670,6 +670,15 @@ def rebase_start(
     # so the result is read from the rebase state instead -- but git's own words
     # about why it stopped are kept, because nothing else can reconstruct them.
     result = git.run(*config, *args, check=False)
+    if not result.ok and not is_rebasing(read_state(git)):
+        # Git failed before the rebase began -- a dirty tree, or a todo it
+        # would not take. Nothing was rewritten, so the files moved aside are
+        # put back, the session that existed to check a result is cleared, and
+        # git's own words are the failure rather than a claim that it started.
+        _unstash(git, stashed, stash_ref)
+        clear_session(git)
+        git.run("tag", "-d", backup.ref, check=False)
+        raise GitError(result)
     stopped = _advance(git, _git_said(result), auto_resolve)
     return StartReport(
         backup_ref=backup.ref,

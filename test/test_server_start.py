@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from git_rebase_mcp.git import GitError
 from git_rebase_mcp.invariants import load_session
 from git_rebase_mcp.server import rebase_start, status
 
@@ -73,6 +74,22 @@ def test_an_unsafe_plan_is_refused(series: Scratch) -> None:
 
     assert status(str(series.path)).state == "not_rebasing"
     assert series.subjects() == ["adds c", "adds b", "base"]  # untouched
+
+
+def test_a_rebase_git_never_started_is_reported_as_a_failure(scratch: Scratch) -> None:
+    """A dirty tree stops git before the rebase begins, and force is the one
+    path past the preflight refusal -- so it is where git can fail having been
+    told to start. It used to report 'Started' with no rebase in progress, and
+    to leave a session behind for a rebase that never ran."""
+    scratch.commit("base", a="one\n")
+    scratch.commit("second", b="two\n")
+    scratch.write("a", "uncommitted\n")  # unstaged change in a tracked file
+
+    with pytest.raises(GitError, match="unstaged changes"):
+        rebase_start("HEAD~1", str(scratch.path), force=True)
+
+    assert load_session(scratch.git) is None  # nothing left to check later
+    assert scratch.read("a") == "uncommitted\n"  # and nothing was moved
 
 
 def test_force_overrides_the_refusal(series: Scratch) -> None:
