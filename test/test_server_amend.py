@@ -69,8 +69,11 @@ def test_amending_carries_whatever_is_staged(three_commits: Scratch) -> None:
     assert "extra" in three_commits.git.lines("show", "--name-only", "--format=", "HEAD")
 
 
-def test_amending_with_no_rebase_is_refused(three_commits: Scratch) -> None:
-    with pytest.raises(ValueError, match="not_rebasing"):
+def test_amending_with_nothing_in_progress_is_refused(three_commits: Scratch) -> None:
+    """Not because it would be unsafe -- HEAD is exactly what it looks like --
+    but because there is no step whose commit it would be, and amending an
+    ordinary HEAD needs none of what this tool guards."""
+    with pytest.raises(ValueError, match="ordinary `git commit --amend`"):
         rebase_amend(str(three_commits.path))
 
 

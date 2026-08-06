@@ -16,10 +16,11 @@ from git_rebase_mcp.server import (
     abort,
     conflicts,
     proceed,
+    rebase_amend,
+    rebase_todo,
     resolve,
     skip,
     status,
-    rebase_todo,
 )
 
 from scratch import Scratch
@@ -198,3 +199,14 @@ def test_a_cherry_pick_is_not_mistaken_for_a_rebase_with_a_todo(diverged: Scratc
 
     with pytest.raises(ValueError, match="No rebase in progress"):
         rebase_todo(repo=str(diverged.path))
+
+
+def test_the_amend_refusal_names_the_operation_that_is_actually_running(
+    diverged: Scratch,
+) -> None:
+    """It used to say "the rebase is conflicted" whatever had conflicted, which
+    is the same false claim this file exists to keep out of the replies."""
+    diverged.git.run("cherry-pick", "side", check=False)
+
+    with pytest.raises(ValueError, match="the cherry-pick is conflicted"):
+        rebase_amend(str(diverged.path))

@@ -747,8 +747,15 @@ def rebase_amend(
 
 def _why_not_amendable(report: StatusReport) -> str:
     """Say what is wrong and what to do instead, not just that it was refused."""
+    if report.operation is None:
+        return (
+            "Refusing to amend: nothing is in progress, so there is no step whose "
+            f"commit this would be. HEAD is {report.head.sha[:9]} "
+            f"({report.head.subject!r}); amending that is an ordinary "
+            "`git commit --amend`, which needs nothing this tool guards."
+        )
     return (
-        f"Refusing to amend: the rebase is {report.state}, and HEAD "
+        f"Refusing to amend: the {report.operation} is {report.state}, and HEAD "
         f"({report.head.sha[:9]} {report.head.subject!r}) is not a commit this "
         f"step created. {report.guidance}"
     )
@@ -957,6 +964,7 @@ def _report(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
                 state="stopped_after_apply",
+                operation="rebase",
                 head=_info(state.head),
                 head_is_replaying_commit=same,
                 can_amend=True,
@@ -982,6 +990,7 @@ def _report(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
                 state="stopped_without_apply",
+                operation="rebase",
                 head=_info(state.head),
                 head_is_replaying_commit=False,
                 can_amend=False,
