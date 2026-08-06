@@ -12,11 +12,11 @@ resolve, continue, and check the result against where the branch began.
 from __future__ import annotations
 
 from git_rebase_mcp.server import (
-    rebase_conflicts,
-    rebase_continue,
+    conflicts,
+    proceed,
     rebase_finish,
     rebase_start,
-    rebase_resolve,
+    resolve,
 )
 
 from scratch import Scratch
@@ -66,23 +66,23 @@ def test_a_fix_is_squashed_back_into_its_target(scratch: Scratch) -> None:
     assert started.status.state == "conflicted"
 
     # First conflict: the fix lands where the wrap has not happened yet.
-    unit = rebase_conflicts(repo).files[0].units[0]
+    unit = conflicts(repo).files[0].units[0]
     assert "-    if packages:" in unit.branch_so_far_diff  # the branch has no wrap here
     assert "+            rows.append(delta_count(package))" in unit.replaying_diff
     changed = [line for line in unit.replaying_diff.splitlines() if line[:1] in "+-"]
     assert not any("if packages" in line for line in changed)  # the fix left the wrap alone
 
-    rebase_resolve("counts.py", FIXED_ONLY, repo)
-    after_first = rebase_continue(repo)
+    resolve("counts.py", FIXED_ONLY, repo)
+    after_first = proceed(repo)
 
     # Second conflict: the wrap now lands on a body that already has the fix.
     assert after_first.state == "conflicted"
-    unit = rebase_conflicts(repo).files[0].units[0]
+    unit = conflicts(repo).files[0].units[0]
     assert "delta_count" in unit.branch_so_far_diff
     assert "+    if packages:" in unit.replaying_diff
 
-    rebase_resolve("counts.py", WRAPPED_AND_FIXED, repo)
-    assert rebase_continue(repo).state == "not_rebasing"
+    resolve("counts.py", WRAPPED_AND_FIXED, repo)
+    assert proceed(repo).state == "not_rebasing"
 
     finished = rebase_finish(repo)
     assert finished.ok, finished.guidance

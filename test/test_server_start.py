@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from git_rebase_mcp.invariants import load_session
-from git_rebase_mcp.server import rebase_start, rebase_status
+from git_rebase_mcp.server import rebase_start, status
 
 from scratch import Scratch
 
@@ -50,7 +50,7 @@ def test_an_unsafe_plan_is_refused(series: Scratch) -> None:
     with pytest.raises(ValueError, match="Refusing to start"):
         rebase_start("HEAD~2", str(series.path), [f"pick {c}"])  # "adds b" left out
 
-    assert rebase_status(str(series.path)).state == "not_rebasing"
+    assert status(str(series.path)).state == "not_rebasing"
     assert series.subjects() == ["adds c", "adds b", "base"]  # untouched
 
 
@@ -154,7 +154,7 @@ def test_progress_ticks_and_generic_advice_are_left_out(series: Scratch) -> None
 
 def test_a_plain_status_carries_no_git_output(series: Scratch) -> None:
     """Nothing was run, so there is nothing for git to have said."""
-    assert rebase_status(str(series.path)).git_said == ""
+    assert status(str(series.path)).git_said == ""
 
 
 def test_autosquash_folds_fixups_into_their_targets(scratch: Scratch) -> None:

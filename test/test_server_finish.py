@@ -6,7 +6,7 @@ import pytest
 
 from git_rebase_mcp.invariants import load_session
 from git_rebase_mcp.server import (
-    rebase_abort,
+    abort,
     rebase_finish,
     rebase_start,
 )
@@ -66,7 +66,7 @@ def test_a_deliberate_change_can_be_accepted(series: Scratch) -> None:
 
 
 def test_committed_markers_are_caught(scratch: Scratch) -> None:
-    """Someone can always resolve by hand and go around rebase_resolve, so the
+    """Someone can always resolve by hand and go around resolve, so the
     check at the end does not rely on having been the one to write the file."""
     scratch.commit("base", f="one\n")
     scratch.commit("second", f="two\n")
@@ -118,7 +118,7 @@ def test_aborting_restores_what_was_moved_aside(scratch: Scratch) -> None:
     adds_b, removes_b = two(scratch)
     rebase_start("HEAD~2", str(scratch.path), [f"pick {adds_b}", f"pick {removes_b}"])
 
-    report = rebase_abort(str(scratch.path))
+    report = abort(str(scratch.path))
     assert report.restored == ("b",)
     assert scratch.read("b") == "local scratch of my own\n"
     assert load_session(scratch.git) is None
@@ -132,7 +132,7 @@ def test_aborting_mid_conflict_returns_to_where_it_started(scratch: Scratch) -> 
     second, third = two(scratch)
     rebase_start("HEAD~2", str(scratch.path), [f"pick {third}", f"pick {second}"])
 
-    rebase_abort(str(scratch.path))
+    abort(str(scratch.path))
     assert scratch.git.out("rev-parse", "HEAD") == before
 
 

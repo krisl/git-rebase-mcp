@@ -50,7 +50,7 @@ mcp = MCPServer(
         "Drives an interactive git rebase safely, and reads any conflict -- a "
         "cherry-pick, revert or merge that stopped, or a rebase somebody started "
         "by hand -- as what each side did rather than as markers. Call "
-        "rebase_status before acting: it names the operation in progress, and "
+        "status before acting: it names the operation in progress, and "
         "reports whether the commit being replayed has actually been created "
         "yet, which decides whether amending would rewrite the commit you mean "
         "or the one before it."
@@ -120,7 +120,7 @@ class StatusReport:
 
 
 @mcp.tool()
-def rebase_status(repo: str = ".") -> StatusReport:
+def status(repo: str = ".") -> StatusReport:
     """Report what `repo` is currently doing.
 
     Call this before amending, continuing or resolving. `operation` names what
@@ -188,7 +188,7 @@ class ResolveReport:
 
 
 @mcp.tool()
-def rebase_conflicts(
+def conflicts(
     repo: str = ".",
     context: int = 3,
     include_full_sides: bool = False,
@@ -299,9 +299,9 @@ def _conflict_guidance(
         "to the same base -- `branch_so_far` is what is here already, `replaying` is "
         "what is being applied over it. branch_so_far_commits names the commits "
         "behind the first side, which is the nearest it has to a stated intent. "
-        "Read both, then resolve: "
-        'rebase_resolve(path, take="both"/"branch"/"replaying") where that says '
-        "it, or edit the file and call rebase_resolve(path) with no content. "
+        "Read both, then answer: "
+        'resolve(path, take="both"/"branch"/"replaying") where that says '
+        "it, or edit the file and call resolve(path) with no content. "
         "Raise `context` if a region is hard to place."
     )
     appended = [f.path for f in files if f.both_inserted]
@@ -309,7 +309,7 @@ def _conflict_guidance(
         advice += (
             f" Both sides inserted at the same point in {', '.join(appended)}, so"
             " nothing in the text says which order was meant. If it is two"
-            ' independent additions, `rebase_resolve(path, take="both")` keeps the'
+            ' independent additions, `resolve(path, take="both")` keeps the'
             " branch's first and the replayed commit's after."
         )
     rootless = [f.path for f in files if f.no_common_base]
@@ -359,7 +359,7 @@ def _file_report(
 
 
 @mcp.tool()
-def rebase_resolve(
+def resolve(
     path: str, content: str | None = None, repo: str = ".", take: str | None = None
 ) -> ResolveReport:
     """Stage the resolved content for one conflicted path.
@@ -415,7 +415,7 @@ def rebase_resolve(
         guidance=(
             f"Still conflicted: {', '.join(remaining)}."
             if remaining
-            else "All paths resolved; call rebase_continue."
+            else "All paths resolved; call proceed."
             if _carry_on_command(read_state(git)) is not None
             # A conflict nothing recorded has nothing to continue, and saying so
             # here saves the caller finding out from a refusal one call later.
@@ -478,7 +478,7 @@ def rebase_todo(
     return TodoReport(
         remaining=tuple(todo),
         dropped=dropped,
-        guidance=f"{len(todo)} steps now queued. Call rebase_continue."
+        guidance=f"{len(todo)} steps now queued. Call proceed."
         + (f" {lost_checks} fewer exec steps, so less is checked." if lost_checks > 0 else ""),
     )
 
@@ -663,14 +663,14 @@ def rebase_start(
     # so the result is read from the rebase state instead -- but git's own words
     # about why it stopped are kept, because nothing else can reconstruct them.
     result = git.run(*config, *args, check=False)
-    status = _advance(git, _git_said(result), auto_resolve)
+    stopped = _advance(git, _git_said(result), auto_resolve)
     return StartReport(
         backup_ref=backup.ref,
         stashed=stashed,
-        status=status,
+        status=stopped,
         guidance=(
             f"Started. The tip beforehand is tagged {backup.ref}; rebase_finish "
-            "checks the result against it. " + status.guidance
+            "checks the result against it. " + stopped.guidance
         ),
     )
 
@@ -741,7 +741,7 @@ def rebase_amend(
     return AmendReport(
         before=before,
         after=after,
-        guidance=f"Amended {before.sha[:9]} into {after.sha[:9]}. Call rebase_continue.",
+        guidance=f"Amended {before.sha[:9]} into {after.sha[:9]}. Call proceed.",
     )
 
 
@@ -755,7 +755,7 @@ def _why_not_amendable(report: StatusReport) -> str:
 
 
 @mcp.tool()
-def rebase_continue(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
+def proceed(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     """Carry on with whatever is in progress, and report where it stops next.
 
     Calls the operation's own continue -- a cherry-pick is not finished by
@@ -772,7 +772,7 @@ def rebase_continue(repo: str = ".", auto_resolve: bool = False) -> StatusReport
     if isinstance(state, (Conflicted, Applying)) and state.unmerged:
         raise ValueError(
             "Refusing to continue: still unmerged: "
-            f"{', '.join(state.unmerged)}. Resolve them with rebase_resolve first."
+            f"{', '.join(state.unmerged)}. Stage each answer with resolve first."
         )
     command = _carry_on_command(state)
     if command is None:
@@ -881,19 +881,19 @@ def _outside_guidance(state: Applying) -> str:
         return (
             f"A {state.operation} is in progress with nothing unmerged: the conflicts "
             "are resolved and staged, and it has still to be told to commit them. "
-            "Call rebase_continue."
+            "Call proceed."
         )
     count = plural(len(state.unmerged), "path")
     next_step = (
-        " Read them with rebase_conflicts, resolve with rebase_resolve, then "
-        "rebase_continue."
+        " Call conflicts to read them, resolve to stage each answer, then "
+        "proceed."
     )
     if state.operation == "unknown":
         return (
             f"{count} conflicted, from something that left no record of itself -- a "
             "stash popped into a conflict, or `checkout -m`. The stages are in the "
             "index either way, so the regions read the same as any other conflict. "
-            "Read them with rebase_conflicts and resolve with rebase_resolve; there "
+            "Call conflicts to read them and resolve to stage each answer; there "
             "is nothing to continue afterwards, since nothing is mid-operation."
         )
     if state.incoming is None:
@@ -1095,7 +1095,7 @@ class AbortReport:
 
 
 @mcp.tool()
-def rebase_skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
+def skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     """Drop the commit being applied and carry on.
 
     For a commit whose change is already in the base under a different sha, or
@@ -1129,7 +1129,7 @@ def rebase_skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
 
 
 @mcp.tool()
-def rebase_abort(repo: str = ".") -> AbortReport:
+def abort(repo: str = ".") -> AbortReport:
     """Abandon whatever is in progress and put back anything that was moved aside.
 
     Refused for a conflict nothing recorded -- a stash popped into one, say --

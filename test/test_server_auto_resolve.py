@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from git_rebase_mcp.server import rebase_continue, rebase_start, rebase_status
+from git_rebase_mcp.server import proceed, rebase_start, status
 
 from scratch import Scratch
 
@@ -105,5 +105,5 @@ def test_continuing_also_composes(scratch: Scratch) -> None:
     scratch.git.run("add", "f", "g")
     scratch.git.run("-c", "core.editor=true", "commit", "-q", "--amend", "--no-edit")
 
-    assert rebase_continue(str(scratch.path), auto_resolve=True).state == "not_rebasing"
+    assert proceed(str(scratch.path), auto_resolve=True).state == "not_rebasing"
     assert scratch.read("f") == "a\nc\n"

@@ -1,4 +1,4 @@
-"""Tests for the rebase_status tool.
+"""Tests for the status tool.
 
 The tools are ordinary functions with a decorator, so they are called directly
 here rather than over the protocol. What the protocol adds -- schemas, transport
@@ -11,7 +11,7 @@ import asyncio
 
 import pytest
 
-from git_rebase_mcp.server import mcp, rebase_status
+from git_rebase_mcp.server import mcp, status
 
 from scratch import Scratch
 
@@ -25,7 +25,7 @@ def three_commits(scratch: Scratch) -> Scratch:
 
 
 def test_reports_no_rebase(three_commits: Scratch) -> None:
-    report = rebase_status(str(three_commits.path))
+    report = status(str(three_commits.path))
     assert report.state == "not_rebasing"
     assert report.head.subject == "third"
     assert not report.can_amend
@@ -35,7 +35,7 @@ def test_a_conflicted_stop_refuses_to_encourage_amending(three_commits: Scratch)
     third = three_commits.git.out("rev-parse", "HEAD")
     three_commits.start_rebase("HEAD~1", [f"edit {third}"], onto="HEAD~2")
 
-    report = rebase_status(str(three_commits.path))
+    report = status(str(three_commits.path))
     assert report.state == "conflicted"
     assert not report.head_is_replaying_commit
     assert not report.can_amend
@@ -48,7 +48,7 @@ def test_an_applied_stop_says_amending_is_safe(three_commits: Scratch) -> None:
     second = three_commits.git.out("rev-parse", "HEAD~1")
     three_commits.start_rebase("HEAD~2", [f"edit {second}"])
 
-    report = rebase_status(str(three_commits.path))
+    report = status(str(three_commits.path))
     assert report.state == "stopped_after_apply"
     assert report.head_is_replaying_commit
     assert report.can_amend
@@ -61,22 +61,22 @@ def test_the_guidance_names_the_risk_rather_than_only_the_state(three_commits: S
     third = three_commits.git.out("rev-parse", "HEAD")
     three_commits.start_rebase("HEAD~1", [f"edit {third}"], onto="HEAD~2")
 
-    guidance = rebase_status(str(three_commits.path)).guidance
+    guidance = status(str(three_commits.path)).guidance
     assert "amending would rewrite the wrong commit" in guidance
     assert "does not exist yet" in guidance
 
 
 def test_a_missing_repository_is_rejected_clearly(tmp_path) -> None:
     with pytest.raises(ValueError, match="not a directory"):
-        rebase_status(str(tmp_path / "nowhere"))
+        status(str(tmp_path / "nowhere"))
 
 
 def test_the_tool_is_registered_with_a_description() -> None:
     tools = asyncio.run(mcp.list_tools())
     registered = {tool.name: tool for tool in tools}
-    assert "rebase_status" in registered
-    assert registered["rebase_status"].description
-    assert "repo" in registered["rebase_status"].input_schema["properties"]
+    assert "status" in registered
+    assert registered["status"].description
+    assert "repo" in registered["status"].input_schema["properties"]
 
 
 def test_a_stopped_fixup_chain_is_not_reported_as_the_replayed_commit(
@@ -92,7 +92,7 @@ def test_a_stopped_fixup_chain_is_not_reported_as_the_replayed_commit(
     scratch.write("f", "resolved\n")
     scratch.git.run("add", "f")
 
-    report = rebase_status(str(scratch.path))
+    report = status(str(scratch.path))
     assert report.state == "stopped_after_apply"
     assert not report.head_is_replaying_commit
     assert report.can_amend  # git does mean HEAD; it is just not the replayed commit

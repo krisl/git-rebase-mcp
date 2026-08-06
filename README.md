@@ -65,7 +65,7 @@ branch so far is an accumulation with no message, so each region names the
 commits behind its lines — which is the nearest equivalent, and is left empty
 rather than guessed when the lines predate the rebase.
 
-**Offers the resolution rather than making it.** `rebase_resolve` takes
+**Offers the resolution rather than making it.** `resolve` takes
 `take="both" | "branch" | "replaying"` for the cases the two diffs make obvious,
 so answering costs one call instead of sending a whole file back. `auto_resolve`
 will compose conflicts where the two sides touched different lines and carry on
@@ -90,20 +90,20 @@ conflict view reads. So the tools work on any of them:
 ```
 status:   state=conflicted operation=cherry-pick
           A cherry-pick of 47ba527eb (side change) left 1 path conflicted.
-          Nothing has been committed yet. Read them with rebase_conflicts…
-continue: calls `git cherry-pick --continue`, because `git rebase --continue`
+          Nothing has been committed yet. Call conflicts to read them…
+proceed:  runs `git cherry-pick --continue`, because `git rebase --continue`
           does not finish a cherry-pick
 ```
 
 `state` stays `conflicted` whatever produced it, so one check answers the
 question; `operation` says what to expect. This was a **false negative** until
 recently: anything that was not a rebase read as "no rebase in progress", which
-`rebase_conflicts` reported as *"Nothing is conflicted."* — of a repository with
+`conflicts` reported as *"Nothing is conflicted."* — of a repository with
 unmerged paths sitting in the index.
 
 A conflict nothing recorded — the popped stash — is reported as
 `operation="unknown"`, with its regions read exactly as any other. What it does
-not get is a `continue` or an `abort`, because there is no operation to finish
+not get is a `proceed` or an `abort`, because there is no operation to finish
 and no way to know what undoing it would discard.
 
 The rebase-specific safety stays rebase-specific: the backup tag, the
@@ -116,18 +116,20 @@ a cherry-pick is not doing.
 | --- | --- | --- |
 | `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. | rebase |
 | `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in. | rebase |
-| `rebase_status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. | any |
-| `rebase_conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the incoming side did to each file. | any |
-| `rebase_resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers. | any |
+| `status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. | any |
+| `conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the incoming side did to each file. | any |
+| `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers. | any |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. | rebase |
-| `rebase_continue` | Carries on, by the operation's own `--continue`. Refuses while anything is unmerged. | any |
-| `rebase_skip` | Drops the commit being applied — for one already in the base. | rebase, cherry-pick, revert |
+| `proceed` | Carries on, by the operation's own `--continue`. Refuses while anything is unmerged. | any |
+| `skip` | Drops the commit being applied — for one already in the base. | rebase, cherry-pick, revert |
 | `rebase_todo` | The steps left, and replaces them. Refuses to drop a commit. | rebase |
 | `rebase_finish` | Checks the branch still makes the same change to its base, and names any commit that brought a conflict marker to a file. | rebase started here |
-| `rebase_abort` | Abandons the operation and puts back what was moved aside. | rebase, cherry-pick, revert, merge |
+| `abort` | Abandons the operation and puts back what was moved aside. | rebase, cherry-pick, revert, merge |
 
-The names still say `rebase_` because that is what is in everybody's
-`.mcp.json`; what they do is no longer limited to one.
+The prefix carries the distinction: `rebase_` is for the tools that only make
+sense inside a rebase — a todo, an amend, a check against where the branch was —
+and the bare names are for the ones that read or drive a conflict whatever
+produced it. If a name has no prefix, it does not care how you got here.
 
 `rebase_start` takes a `check_command`, run after every commit. It is the only
 thing that catches a step which applies cleanly and still leaves the tree

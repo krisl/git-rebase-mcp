@@ -70,7 +70,7 @@ Two cases need no language knowledge and cover most of what was done by hand:
 - **Disjoint insertions.** Both sides insert at different points in the base with
   no overlap.
 
-Resolve these during `rebase_continue`, report them as resolved-automatically
+Resolve these during `proceed`, report them as resolved-automatically
 rather than silently, and leave anything else to the caller. Guard it with the
 existing `check_command`: an automatic resolution that fails the check should
 stop the rebase, not be trusted.
@@ -86,7 +86,7 @@ credibility, which is the reason to have it at all.
 
 ### 4. Compose a resolution from the payload
 
-`rebase_resolve(path, take="both" | "branch" | "replaying")` for the cases where
+`resolve(path, take="both" | "branch" | "replaying")` for the cases where
 the composition is obvious from the two diffs. Removes the round trip through
 `git show` (cost #3) for everything short-of-structural.
 

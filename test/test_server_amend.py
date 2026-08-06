@@ -9,10 +9,10 @@ from __future__ import annotations
 import pytest
 
 from git_rebase_mcp.server import (
+    proceed,
     rebase_amend,
-    rebase_continue,
-    rebase_resolve,
-    rebase_status,
+    resolve,
+    status,
 )
 
 from scratch import Scratch
@@ -88,15 +88,15 @@ def test_continuing_while_unmerged_is_refused(three_commits: Scratch) -> None:
     three_commits.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
 
     with pytest.raises(ValueError, match="still unmerged"):
-        rebase_continue(str(three_commits.path))
+        proceed(str(three_commits.path))
 
 
 def test_continuing_after_resolving_finishes_the_rebase(three_commits: Scratch) -> None:
     third = three_commits.git.out("rev-parse", "HEAD")
     three_commits.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
 
-    rebase_resolve("f", "resolved\n", str(three_commits.path))
-    report = rebase_continue(str(three_commits.path))
+    resolve("f", "resolved\n", str(three_commits.path))
+    report = proceed(str(three_commits.path))
 
     assert report.state == "not_rebasing"
     assert three_commits.read("f") == "resolved\n"
@@ -108,7 +108,7 @@ def test_continuing_reports_the_next_stop_rather_than_failing(three_commits: Scr
     third = three_commits.git.out("rev-parse", "HEAD")
     three_commits.start_rebase("HEAD~2", [f"edit {second}", f"edit {third}"])
 
-    report = rebase_continue(str(three_commits.path))
+    report = proceed(str(three_commits.path))
     assert report.state == "stopped_after_apply"
     assert report.replaying is not None and report.replaying.subject == "third"
 
@@ -120,7 +120,7 @@ def test_amending_stays_allowed_after_a_first_amend(three_commits: Scratch) -> N
     first = rebase_amend(str(three_commits.path), message="once")
     again = rebase_amend(str(three_commits.path), message="twice")
     assert first.after.sha != again.after.sha
-    assert rebase_status(str(three_commits.path)).can_amend
+    assert status(str(three_commits.path)).can_amend
 
 
 def test_amending_never_stages_untracked_files(three_commits: Scratch) -> None:

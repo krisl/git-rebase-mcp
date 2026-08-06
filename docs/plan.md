@@ -36,18 +36,18 @@ Python 3.12+, `uv`, official `mcp` SDK (FastMCP), distributed via `uvx`. Rationa
 | --- | --- |
 | `rebase_preflight` | Dry run. Validates the todo (dropped commits, unresolvable `fixup!` targets), reports which commits get rewritten, creates the backup tag, records the baseline tree hash, enables `rerere.enabled` and `rebase.missingCommitsCheck=error` for the run, stashes untracked files that a replayed commit would collide with. Starts nothing. |
 | `rebase_start` | Runs the rebase non-interactively with the supplied todo (`GIT_SEQUENCE_EDITOR`) or `--autosquash`. Takes an optional `check_command` wired to `--exec`. Refuses on a dirty index. |
-| `rebase_status` | The typed state below. |
-| `rebase_continue` | Refuses while any path is unmerged. |
+| `status` | The typed state below. |
+| `proceed` | Refuses while any path is unmerged. |
 | `rebase_amend` | **Refuses unless `head_is_replaying_commit`.** The single most valuable tool in the server. |
-| `rebase_abort` | Aborts, restores the stash, reports what was restored. |
+| `abort` | Aborts, restores the stash, reports what was restored. |
 | `rebase_finish` | Asserts the invariants and reports. |
 
 **Conflicts**
 
 | Tool | Behaviour |
 | --- | --- |
-| `rebase_conflicts` | All conflicted files, each split into collision units (below). |
-| `rebase_resolve` | Writes resolved content, **refuses if markers remain**, stages it. |
+| `conflicts` | All conflicted files, each split into collision units (below). |
+| `resolve` | Writes resolved content, **refuses if markers remain**, stages it. |
 
 ### The status payload
 
@@ -120,9 +120,9 @@ This is also what makes the not-yet-landed-symbol case self-describing: because 
 
 The three errors from this session are the specification. Each becomes a test built on a scratch repo:
 
-1. **Conflicted `edit` stop.** Construct a rebase where an `edit` step conflicts. Assert `rebase_status().head_is_replaying_commit is False` and that `rebase_amend()` raises rather than folding two commits.
+1. **Conflicted `edit` stop.** Construct a rebase where an `edit` step conflicts. Assert `status().head_is_replaying_commit is False` and that `rebase_amend()` raises rather than folding two commits.
 2. **Dropped commits.** Hand `rebase_preflight` a todo missing commits from the range. Assert it errors and names them, and that nothing has been started.
-3. **Markers committed.** Call `rebase_resolve` with content still containing `<<<<<<<`; assert refusal. Separately, force a marker-bearing commit into a scratch branch and assert `rebase_finish` reports it.
+3. **Markers committed.** Call `resolve` with content still containing `<<<<<<<`; assert refusal. Separately, force a marker-bearing commit into a scratch branch and assert `rebase_finish` reports it.
 
 Plus:
 

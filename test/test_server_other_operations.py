@@ -13,12 +13,12 @@ from __future__ import annotations
 import pytest
 
 from git_rebase_mcp.server import (
-    rebase_abort,
-    rebase_conflicts,
-    rebase_continue,
-    rebase_resolve,
-    rebase_skip,
-    rebase_status,
+    abort,
+    conflicts,
+    proceed,
+    resolve,
+    skip,
+    status,
     rebase_todo,
 )
 
@@ -39,7 +39,7 @@ def diverged(scratch: Scratch) -> Scratch:
 def test_a_cherry_pick_conflict_is_reported_as_a_conflict(diverged: Scratch) -> None:
     diverged.git.run("cherry-pick", "side", check=False)
 
-    report = rebase_status(str(diverged.path))
+    report = status(str(diverged.path))
     assert report.state == "conflicted"
     assert report.operation == "cherry-pick"
     assert report.conflicted_files == ("f",)
@@ -48,7 +48,7 @@ def test_a_cherry_pick_conflict_is_reported_as_a_conflict(diverged: Scratch) -> 
 def test_a_merge_conflict_is_reported_as_a_conflict(diverged: Scratch) -> None:
     diverged.git.run("merge", "side", check=False)
 
-    report = rebase_status(str(diverged.path))
+    report = status(str(diverged.path))
     assert report.state == "conflicted"
     assert report.operation == "merge"
 
@@ -59,7 +59,7 @@ def test_a_revert_conflict_is_reported_as_a_conflict(scratch: Scratch) -> None:
     scratch.commit("third", f="three\n")
     scratch.git.run("revert", "--no-edit", "HEAD~1", check=False)
 
-    report = rebase_status(str(scratch.path))
+    report = status(str(scratch.path))
     assert report.state == "conflicted"
     assert report.operation == "revert"
 
@@ -73,7 +73,7 @@ def test_a_conflict_nothing_recorded_is_still_a_conflict(scratch: Scratch) -> No
     scratch.commit("moved on", f="moved\n")
     scratch.git.run("stash", "pop", check=False)
 
-    report = rebase_status(str(scratch.path))
+    report = status(str(scratch.path))
     assert report.state == "conflicted"
     assert report.operation == "unknown"
     assert report.replaying is None
@@ -82,7 +82,7 @@ def test_a_conflict_nothing_recorded_is_still_a_conflict(scratch: Scratch) -> No
 def test_the_regions_read_the_same_whatever_applied_them(diverged: Scratch) -> None:
     diverged.git.run("cherry-pick", "side", check=False)
 
-    report = rebase_conflicts(str(diverged.path))
+    report = conflicts(str(diverged.path))
     assert report.replaying is not None
     assert report.replaying.subject == "side change"
     unit = report.files[0].units[0]
@@ -98,7 +98,7 @@ def test_the_incoming_side_of_a_merge_is_the_branch_not_its_tip(diverged: Scratc
     diverged.git.run("checkout", "-q", "main")
     diverged.git.run("merge", "side", check=False)
 
-    report = rebase_conflicts(str(diverged.path), include_file_diffs=True)
+    report = conflicts(str(diverged.path), include_file_diffs=True)
     diff = report.files[0].replaying_file_diff
     assert diff is not None
     assert "+    return side" in diff  # from the tip's parent, not the tip
@@ -109,18 +109,18 @@ def test_a_cherry_pick_is_carried_on_by_its_own_continue(diverged: Scratch) -> N
     would leave the conflict where it was while reporting that something
     happened."""
     diverged.git.run("cherry-pick", "side", check=False)
-    rebase_resolve("f", repo=str(diverged.path), take="replaying")
+    resolve("f", repo=str(diverged.path), take="replaying")
 
-    after = rebase_continue(str(diverged.path))
+    after = proceed(str(diverged.path))
     assert after.state == "not_rebasing"
     assert diverged.subjects()[0] == "side change"
 
 
 def test_a_merge_is_carried_on_by_its_own_continue(diverged: Scratch) -> None:
     diverged.git.run("merge", "side", check=False)
-    rebase_resolve("f", repo=str(diverged.path), take="replaying")
+    resolve("f", repo=str(diverged.path), take="replaying")
 
-    after = rebase_continue(str(diverged.path))
+    after = proceed(str(diverged.path))
     assert after.state == "not_rebasing"
     assert after.head.subject.startswith("Merge branch")
 
@@ -129,12 +129,12 @@ def test_an_operation_with_everything_staged_is_still_in_progress(diverged: Scra
     """It has still to be told to commit. Reporting "no rebase in progress"
     here left a caller who had done everything right with nowhere to go."""
     diverged.git.run("cherry-pick", "side", check=False)
-    rebase_resolve("f", repo=str(diverged.path), take="replaying")
+    resolve("f", repo=str(diverged.path), take="replaying")
 
-    report = rebase_status(str(diverged.path))
+    report = status(str(diverged.path))
     assert report.state == "applying"
     assert report.operation == "cherry-pick"
-    assert "rebase_continue" in report.guidance
+    assert "proceed" in report.guidance
 
 
 def test_resolving_a_conflict_nothing_owns_does_not_promise_a_continue(
@@ -146,11 +146,11 @@ def test_resolving_a_conflict_nothing_owns_does_not_promise_a_continue(
     scratch.commit("moved on", f="moved\n")
     scratch.git.run("stash", "pop", check=False)
 
-    report = rebase_resolve("f", repo=str(scratch.path), take="replaying")
+    report = resolve("f", repo=str(scratch.path), take="replaying")
     assert report.still_conflicted == ()
     assert "nothing" in report.guidance.lower()
     with pytest.raises(ValueError, match="Nothing in progress"):
-        rebase_continue(str(scratch.path))
+        proceed(str(scratch.path))
 
 
 def test_a_merge_offers_nothing_to_skip(diverged: Scratch) -> None:
@@ -158,13 +158,13 @@ def test_a_merge_offers_nothing_to_skip(diverged: Scratch) -> None:
     diverged.git.run("merge", "side", check=False)
 
     with pytest.raises(ValueError, match="a merge applies a whole branch"):
-        rebase_skip(str(diverged.path))
+        skip(str(diverged.path))
 
 
 def test_a_cherry_pick_can_be_skipped(diverged: Scratch) -> None:
     diverged.git.run("cherry-pick", "side", check=False)
 
-    after = rebase_skip(str(diverged.path))
+    after = skip(str(diverged.path))
     assert after.state == "not_rebasing"
     assert diverged.subjects()[0] == "main change"  # the pick was dropped
 
@@ -172,7 +172,7 @@ def test_a_cherry_pick_can_be_skipped(diverged: Scratch) -> None:
 def test_a_cherry_pick_is_abandoned_by_its_own_abort(diverged: Scratch) -> None:
     diverged.git.run("cherry-pick", "side", check=False)
 
-    report = rebase_abort(str(diverged.path))
+    report = abort(str(diverged.path))
     assert report.head.subject == "main change"
     assert diverged.git.lines("diff", "--name-only", "--diff-filter=U") == []
 
@@ -187,7 +187,7 @@ def test_aborting_a_conflict_nothing_owns_is_refused(scratch: Scratch) -> None:
     scratch.git.run("stash", "pop", check=False)
 
     with pytest.raises(ValueError, match="no operation to abandon"):
-        rebase_abort(str(scratch.path))
+        abort(str(scratch.path))
 
 
 def test_a_cherry_pick_is_not_mistaken_for_a_rebase_with_a_todo(diverged: Scratch) -> None:
