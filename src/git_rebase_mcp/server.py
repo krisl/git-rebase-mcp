@@ -381,11 +381,11 @@ def resolve(
     git = _git(repo)
     if take is not None and content is not None:
         raise ValueError("take and content are two ways to say the same thing; pass one.")
+    target = (git.repo / path).resolve()
+    if not target.is_relative_to(git.repo):
+        raise ValueError(f"{path} is not inside {git.repo}")
     if take is not None:
         content = take_side(git, path, take)
-    target = git.repo / path
-    if not target.parent.is_dir():
-        raise ValueError(f"{path} is not inside {git.repo}")
 
     from_disk = content is None
     if from_disk:

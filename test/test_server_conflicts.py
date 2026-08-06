@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from git_rebase_mcp.server import (
@@ -145,6 +147,28 @@ def test_staging_a_file_that_is_not_there_says_so(scratch: Scratch) -> None:
     scratch.commit("base", f="one\n")
     with pytest.raises(ValueError, match="nothing to stage"):
         resolve("absent", repo=str(scratch.path))
+
+
+def test_resolve_refuses_an_absolute_path_outside_the_repo(scratch: Scratch) -> None:
+    """A path is resolved before it is trusted, or `resolve` could write
+    anywhere the process can. The write happens after this check."""
+    scratch.commit("base", f="one\n")
+    with pytest.raises(ValueError, match="not inside"):
+        resolve("/etc/passwd", "owned\n", str(scratch.path))
+    assert not Path("/etc/passwd").read_text().startswith("owned")
+
+
+def test_resolve_refuses_a_relative_path_that_leaves_the_repo(scratch: Scratch) -> None:
+    scratch.commit("base", f="one\n")
+    with pytest.raises(ValueError, match="not inside"):
+        resolve("../owned", "owned\n", str(scratch.path))
+
+
+def test_take_refuses_a_path_outside_the_repo(scratch: Scratch) -> None:
+    """The `take` route writes a file too, so it is refused by the same check."""
+    scratch.commit("base", f="one\n")
+    with pytest.raises(ValueError, match="not inside"):
+        resolve("/etc/passwd", take="both", repo=str(scratch.path))
 
 
 @pytest.fixture
