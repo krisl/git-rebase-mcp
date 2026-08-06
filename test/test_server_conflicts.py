@@ -177,6 +177,25 @@ def test_take_refuses_a_path_outside_the_repo(scratch: Scratch) -> None:
         resolve("/etc/passwd", take="both", repo=str(scratch.path))
 
 
+def test_resolve_refuses_a_path_under_dot_git(scratch: Scratch) -> None:
+    """Inside the repository is not inside the working tree. A hook written
+    there runs during the rebase this tool is driving, and git declines to
+    track such a path by ignoring it and exiting zero -- so the write would
+    otherwise happen and be reported as an ordinary resolution."""
+    scratch.commit("base", f="one\n")
+    hook = scratch.path / ".git" / "hooks" / "pre-commit"
+
+    with pytest.raises(ValueError, match="under .git"):
+        resolve(".git/hooks/pre-commit", "#!/bin/sh\ntouch owned\n", str(scratch.path))
+    assert not hook.exists()
+
+
+def test_resolve_refuses_a_path_that_reaches_dot_git_the_long_way(scratch: Scratch) -> None:
+    scratch.commit("base", f="one\n")
+    with pytest.raises(ValueError, match="under .git"):
+        resolve("subdir/../.git/config", "[core]\n", str(scratch.path))
+
+
 @pytest.fixture
 def both_appended(scratch: Scratch) -> Scratch:
     """Both sides added at the same point, which composing refuses on purpose."""
