@@ -98,6 +98,23 @@ FUNCNAME_DRIVER = {
 # mistaken for a definition by the region below it.
 MARKER = "region "
 
+# What the markers of the merges *this module runs* say. `merge-file` takes the
+# labels, so they can be made into something no file contains -- the same
+# private-use character as above -- and a marker git wrote here is then telling
+# from one the file holds as content: a README explaining conflicts, a fixture
+# of git's own output. Told apart by prefix instead, such a line opens a region
+# that does not exist, and take_side replaces the documented example with one
+# of its sides, quietly, in a file somebody asked to resolve for a conflict
+# elsewhere.
+#
+# Only these three take a label. The separator git writes is a bare `=======`,
+# so it is honoured only where one is due: inside a block a label opened, after
+# the ancestor marker.
+OPENS = "<<<<<<< branch-so-far"
+ANCESTOR = "||||||| base"
+SEPARATOR = "======="
+CLOSES = ">>>>>>> replaying"
+
 Opcode = tuple[str, int, int, int, int]
 
 
@@ -297,14 +314,27 @@ def _merged(git: Git, branch: str, base: str, replaying: str) -> str:
     `merge-file` runs the same merge as the rebase did, so the regions match the
     ones already marked in the working file -- but it writes to stdout, so
     nothing the caller may have started editing is disturbed.
+
+    Labelled, so the markers of this merge are distinguishable from marker lines
+    the file itself contains. Without `-L` git labels them with the temporary
+    paths it was handed, which say nothing and differ every run.
     """
     with tempfile.TemporaryDirectory() as directory:
         paths: list[str] = []
-        for name, text in (("ours", branch), ("base", base), ("theirs", replaying)):
+        labels: list[str] = []
+        sides = (
+            ("ours", branch, OPENS),
+            ("base", base, ANCESTOR),
+            ("theirs", replaying, CLOSES),
+        )
+        for name, text, marker in sides:
             written = Path(directory) / name
             written.write_text(text)
             paths.append(str(written))
-        return git.run("merge-file", "-p", "--diff3", *paths, check=False).stdout
+            labels += ["-L", marker.split(" ", 1)[1]]
+        return git.run(
+            "merge-file", "-p", "--diff3", *labels, *paths, check=False
+        ).stdout
 
 
 def _diff_hunks(git: Git, base: str, merged: str) -> list[tuple[int, int, int, int]]:
@@ -358,15 +388,15 @@ def _parse_diff3(lines: Sequence[str]) -> list[_Block]:
     theirs: list[str] = []
     opened_at = 0
     for index, line in enumerate(lines):
-        if line.startswith("<<<<<<<"):
+        if line == OPENS:
             ours, base, theirs = [], [], []
             side = ours
             opened_at = index
-        elif line.startswith("|||||||") and side is not None:
+        elif line == ANCESTOR and side is not None:
             side = base
-        elif line.startswith("=======") and side is not None:
+        elif line == SEPARATOR and side is base and side is not None:
             side = theirs
-        elif line.startswith(">>>>>>>") and side is not None:
+        elif line == CLOSES and side is not None:
             blocks.append(
                 _Block(
                     branch_so_far=ours, base=base, replaying=theirs, marker_line=opened_at
@@ -409,11 +439,11 @@ def take_side(git: Git, path: str, side: str) -> str:
     block_lines: list[str] = []
     inside = False
     for line in merged.splitlines():
-        if line.startswith("<<<<<<<"):
+        if line == OPENS:
             inside, block_lines = True, [line]
         elif inside:
             block_lines.append(line)
-            if line.startswith(">>>>>>>"):
+            if line == CLOSES:
                 block = _parse_diff3(block_lines)[0]
                 resolved.extend(_chosen(block, side))
                 inside = False
@@ -449,11 +479,11 @@ def auto_resolve_file(git: Git, path: str) -> str | None:
     block_lines: list[str] = []
     inside = False
     for line in merged.splitlines():
-        if line.startswith("<<<<<<<"):
+        if line == OPENS:
             inside, block_lines = True, [line]
         elif inside:
             block_lines.append(line)
-            if line.startswith(">>>>>>>"):
+            if line == CLOSES:
                 blocks = _parse_diff3(block_lines)
                 composed = auto_resolution(blocks[0]) if blocks else None
                 if composed is None:

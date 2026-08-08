@@ -17,6 +17,7 @@ from git_rebase_mcp.server import (
     resolve,
     status,
 )
+from git_rebase_mcp.conflicts import take_side
 from git_rebase_mcp.state import Commit, Conflicted, Step
 
 from scratch import Scratch
@@ -267,6 +268,44 @@ def test_a_block_whose_base_is_a_repeated_line_is_placed_at_the_conflict(
     assert unit.base_range == (4, 4)
     assert "+import ours" in unit.branch_so_far_diff
     assert "+import theirs" in unit.replaying_diff
+
+
+def test_a_file_documenting_a_conflict_keeps_its_documentation(
+    scratch: Scratch,
+) -> None:
+    """A README explaining conflicts shows the markers, in prose. Read by
+    prefix that is a region of its own, so the file reports a conflict nobody
+    has, and taking a side rewrites the explanation -- silently, in a file
+    somebody asked to resolve for the real conflict further down.
+    """
+    doc = [
+        "# Resolving conflicts",
+        "",
+        "When git stops, the file looks like this:",
+        "",
+        "<<<<<<< HEAD",
+        "the version on your branch",
+        "=======",
+        "the version being applied",
+        ">>>>>>> feature",
+        "",
+        "Pick one, delete the markers, and carry on.",
+        "",
+    ]
+    scratch.commit("first", f="\n".join(doc + ["status = 'ours'", ""]))
+    scratch.commit("second", f="\n".join(doc + ["status = 'base'", ""]))
+    scratch.commit("third", f="\n".join(doc + ["status = 'theirs'", ""]))
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = conflicts(str(scratch.path))
+    units = report.files[0].units
+    assert len(units) == 1, "the documented example is not a second conflict"
+    assert units[0].base_range == (13, 13)
+
+    taken = take_side(scratch.git, "f", "branch")
+    assert "\n".join(doc) in taken, "the explanation must survive being resolved"
+    assert taken.endswith("status = 'ours'\n")
 
 
 def test_resolving_can_stage_what_is_already_in_the_working_tree(scratch: Scratch) -> None:

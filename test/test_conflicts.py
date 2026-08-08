@@ -9,6 +9,10 @@ branch; the last test here is that case, kept as a measurement.
 from __future__ import annotations
 
 from git_rebase_mcp.conflicts import (
+    ANCESTOR,
+    CLOSES,
+    OPENS,
+    SEPARATOR,
     _Block,
     _anchor,
     _attribution,
@@ -30,16 +34,32 @@ from scratch import Scratch
 
 # ── splitting git's output into blocks ───────────────────────────────────────
 
-MERGED = """unchanged head
-<<<<<<< ours
-mine
-||||||| base
-original
-=======
-theirs
->>>>>>> theirs
-unchanged tail
-"""
+# Built from the markers themselves rather than written out: they carry a
+# label this module chose, and only a line bearing it opens a block.
+MERGED = "\n".join(
+    [
+        "unchanged head",
+        OPENS,
+        "mine",
+        ANCESTOR,
+        "original",
+        SEPARATOR,
+        "theirs",
+        CLOSES,
+        "unchanged tail",
+        "",
+    ]
+)
+
+# The same shape, as a file might carry it in prose: git's spelling, without
+# the label. This is documentation, not a conflict.
+DOCUMENTED = [
+    "<<<<<<< HEAD",
+    "the version on your branch",
+    "=======",
+    "the version being applied",
+    ">>>>>>> feature",
+]
 
 
 def test_a_block_is_split_into_its_three_sides():
@@ -75,6 +95,21 @@ def test_a_marker_line_of_the_file_s_own_does_not_shift_a_block():
     assert len(blocks) == 1
     assert blocks[0].marker_line == 4
     assert blocks[0].base == ["original"]
+
+
+def test_a_whole_documented_conflict_is_not_a_block():
+    """A file may show a complete conflict, markers and all, as prose. Read by
+    prefix it is a region that does not exist, whose sides are the surrounding
+    paragraphs -- and composing it rewrites the documentation."""
+    assert _parse_diff3(["# for example:", "", *DOCUMENTED, "", "Pick one."]) == []
+
+
+def test_documentation_around_a_real_conflict_is_left_alone():
+    """The dangerous pairing: prose showing a conflict, in a file that has one."""
+    blocks = _parse_diff3(DOCUMENTED + MERGED.splitlines() + DOCUMENTED)
+    assert len(blocks) == 1
+    assert blocks[0].base == ["original"]
+    assert blocks[0].branch_so_far == ["mine"]
 
 
 # ── locating a block in the base ─────────────────────────────────────────────
