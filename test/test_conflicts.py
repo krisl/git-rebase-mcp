@@ -107,6 +107,13 @@ def test_anchor_names_the_hunk_holding_the_marker(scratch: Scratch) -> None:
     assert _anchor(hunks, 6) is None  # merged line 7, past the hunk
 
 
+def test_anchor_reads_an_insertion_as_starting_after_the_line_it_names() -> None:
+    """`@@ -3,0 +4,3 @@` puts its lines *after* base line 3, so the block
+    begins at line 4. Marker hunks are nearly always this shape: diff3 repeats
+    the base section verbatim, leaving only the markers themselves as new."""
+    assert _anchor([(3, 0, 4, 3)], 3) == 4
+
+
 def test_a_region_with_no_position_still_says_what_each_side_did():
     """Refusing to place it is not a reason to refuse to describe it. The two
     diffs are what the region is read for; only the line numbers are missing."""

@@ -267,10 +267,19 @@ def _anchor(hunks: list[tuple[int, int, int, int]], marker_line: int) -> int | N
     contains it is where git's own merge placed the conflict; that hunk's base
     side names the corresponding line in the base file. None when no hunk
     covers the marker, which a caller treats as "no position to report".
+
+    A hunk that removes nothing is an insertion, and git numbers those by the
+    line the text goes *after*: `@@ -3,0 +4,3 @@` means the new lines follow
+    base line 3, so the block itself begins at line 4. This is the ordinary
+    case rather than a corner of one -- diff3 writes the base section into the
+    merged file verbatim, so those lines match and only the markers around
+    them are ever new. Reading such a hunk as starting at line 3 begins the
+    search one line early, which is wrong exactly when the line before the
+    block repeats the block's own first line: the case anchoring is for.
     """
-    for base_start, _, merged_start, merged_count in hunks:
+    for base_start, base_count, merged_start, merged_count in hunks:
         if merged_start - 1 <= marker_line < merged_start - 1 + merged_count:
-            return base_start
+            return base_start + 1 if base_count == 0 else base_start
     return None
 
 
