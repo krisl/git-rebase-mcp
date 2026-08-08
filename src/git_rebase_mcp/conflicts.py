@@ -179,21 +179,28 @@ def read_conflict(
 
     base_lines = base.splitlines()
     branch_lines = branch.splitlines()
-    blocks = _blocks(git, branch, base, replaying)
+    merged = _merged(git, branch, base, replaying)
+    blocks = _parse_diff3(merged.splitlines())
 
-    # Where each block sits in the base file. Blocks come in order and do not
-    # overlap, so each search starts where the last block ended. Worked out for
-    # all of them before any unit is built, because naming what a region sits
-    # inside is one question asked of git about the whole file.
+    # Where each block sits in the base file. The block's own base text cannot
+    # say: a single line repeated through the file (a moved import, a common
+    # fixture line) matches the wrong occurrence when searched from the start.
+    # git's own merge already placed each block -- the markers are in the merged
+    # file -- so diffing the base against that file yields hunks whose base side
+    # names where each block lives, and the search starts from there.
     # A block whose base text the file does not contain has no position, and
-    # says so rather than borrowing the previous block's -- but it keeps its two
-    # diffs, which are what the region is read for. Refusing the whole file over
-    # it would take every other region down with it, in the one call somebody
+    # says so rather than borrowing a neighbour's -- but it keeps its two diffs,
+    # which are what the region is read for. Refusing the whole file over it
+    # would take every other region down with it, in the one call somebody
     # makes when they are stuck.
     starts: list[int | None] = []
+    hunks = _diff_hunks(git, base, merged)
     search_from = 0
-    for block in blocks:
-        found = _locate(base_lines, block.base, search_from)
+    for block, marker_line in zip(blocks, _marker_lines(merged)):
+        anchor = _anchor(hunks, marker_line)
+        # `anchor` is a 1-based base line; `_locate` counts from 0 and starts
+        # its search at from_line, so anchor - 1 is where to look first.
+        found = _locate(base_lines, block.base, max(0, anchor - 1) if anchor else search_from)
         starts.append(found)
         if found is not None:
             search_from = found + len(block.base)
@@ -234,18 +241,34 @@ class _Block:
     replaying: list[str]
 
 
-def _blocks(git: Git, branch: str, base: str, replaying: str) -> list[_Block]:
-    """Ask git which regions could not be merged, and return their three sides.
+def _marker_lines(merged: str) -> list[int]:
+    """0-based line numbers of each conflict block's opening marker."""
+    return [
+        i for i, line in enumerate(merged.splitlines()) if line.startswith("<<<<<<<")
+    ]
+
+
+def _anchor(hunks: list[tuple[int, int, int, int]], marker_line: int) -> int | None:
+    """The base line a block sits at, from the hunk containing its marker.
+
+    `marker_line` is 0-based in the merged file. The hunk whose merged side
+    contains it is where git's own merge placed the conflict; that hunk's base
+    side names the corresponding line in the base file. None when no hunk
+    covers the marker, which a caller treats as "no position to report".
+    """
+    for base_start, _, merged_start, merged_count in hunks:
+        if merged_start - 1 <= marker_line < merged_start - 1 + merged_count:
+            return base_start
+    return None
+
+
+def _merged(git: Git, branch: str, base: str, replaying: str) -> str:
+    """git's own merge of the three sides, with conflict markers, as text.
 
     `merge-file` runs the same merge as the rebase did, so the regions match the
     ones already marked in the working file -- but it writes to stdout, so
     nothing the caller may have started editing is disturbed.
     """
-    return _parse_diff3(_merged(git, branch, base, replaying).splitlines())
-
-
-def _merged(git: Git, branch: str, base: str, replaying: str) -> str:
-    """git's own merge of the three sides, with conflict markers, as text."""
     with tempfile.TemporaryDirectory() as directory:
         paths: list[str] = []
         for name, text in (("ours", branch), ("base", base), ("theirs", replaying)):
@@ -253,6 +276,48 @@ def _merged(git: Git, branch: str, base: str, replaying: str) -> str:
             written.write_text(text)
             paths.append(str(written))
         return git.run("merge-file", "-p", "--diff3", *paths, check=False).stdout
+
+
+def _diff_hunks(git: Git, base: str, merged: str) -> list[tuple[int, int, int, int]]:
+    """Where the merged file differs from the base, as diff hunks.
+
+    One tuple per hunk: (base_start, base_count, merged_start, merged_count),
+    1-based inclusive starts, in the order git emitted them. git's own merge
+    placed the conflict markers in the merged file, so a hunk whose merged side
+    contains a `<<<<<<<` marker is where a conflict block sits; its base side
+    names where that block lives in the base file.
+    """
+    with tempfile.TemporaryDirectory() as directory:
+        base_path = Path(directory) / "base"
+        merged_path = Path(directory) / "merged"
+        base_path.write_text(base)
+        merged_path.write_text(merged)
+        diff = git.run(
+            "diff", "--no-index", "--unified=0",
+            str(base_path), str(merged_path), check=False,
+        ).stdout
+
+    hunks: list[tuple[int, int, int, int]] = []
+    for line in diff.splitlines():
+        if not line.startswith("@@"):
+            continue
+        header = line[2:].split("@@", 1)[0]
+
+        def side(section: str) -> tuple[int, int]:
+            section = section.strip()
+            if "," in section:
+                start, count = section.split(",", 1)
+                return int(start), int(count)
+            return int(section), 1
+
+        base = header.split("+", 1)[0].split("-", 1)[1]
+        merged = header.split("+", 1)[1]
+        base_start, base_count = side(base)
+        merged_start, merged_count = side(merged)
+        hunks.append(
+            (base_start, base_count, merged_start, max(merged_count, 1))
+        )
+    return hunks
 
 
 def _parse_diff3(lines: Sequence[str]) -> list[_Block]:

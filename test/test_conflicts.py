@@ -10,7 +10,9 @@ from __future__ import annotations
 
 from git_rebase_mcp.conflicts import (
     _Block,
+    _anchor,
     _attribution,
+    _diff_hunks,
     _enclosing,
     _locate,
     _parse_diff3,
@@ -82,6 +84,25 @@ def test_a_block_that_is_not_in_the_base_is_reported_as_missing():
     it as the answer would report the region at lines it does not occupy."""
     assert _locate(["a", "b", "c"], ["z"], 0) is None
     assert _locate(["a", "b", "c"], ["c"], 4) is None  # search window past the end
+
+
+# ── anchoring a block by git's own diff ──────────────────────────────────────
+
+
+def test_diff_hunks_parse_asymmetric_counts(scratch: Scratch) -> None:
+    """git omits a count of 1 and can pair an unnumbered side with a numbered
+    one, so `-19 +19` and `-448 +544,5` and `-449,0 +550` all parse."""
+    assert _diff_hunks(scratch.git, "a\nb\n", "a\nb\nc\n") == [(2, 0, 3, 1)]
+    assert _diff_hunks(scratch.git, "a\n", "a\nb\n") == [(1, 0, 2, 1)]
+
+
+def test_anchor_names_the_hunk_holding_the_marker(scratch: Scratch) -> None:
+    """A marker at merged line 4 sits in the hunk that starts at merged line 3,
+    whose base side names where the block lives."""
+    hunks = [(10, 2, 3, 4)]
+    assert _anchor(hunks, 3) == 10   # merged line 4, inside the hunk
+    assert _anchor(hunks, 2) == 10   # merged line 3, the hunk's first line
+    assert _anchor(hunks, 6) is None  # merged line 7, past the hunk
 
 
 def test_a_region_with_no_position_still_says_what_each_side_did():
