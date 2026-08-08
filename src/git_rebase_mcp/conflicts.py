@@ -208,8 +208,8 @@ def read_conflict(
     starts: list[int | None] = []
     hunks = _diff_hunks(git, base, merged)
     search_from = 0
-    for block, marker_line in zip(blocks, _marker_lines(merged)):
-        anchor = _anchor(hunks, marker_line)
+    for block in blocks:
+        anchor = _anchor(hunks, block.marker_line)
         # `anchor` is a 1-based base line; `_locate` counts from 0 and starts
         # its search at from_line, so anchor - 1 is where to look first. Only
         # None means "no hunk covered the marker" -- testing the number itself
@@ -258,13 +258,14 @@ class _Block:
     branch_so_far: list[str]
     base: list[str]
     replaying: list[str]
-
-
-def _marker_lines(merged: str) -> list[int]:
-    """0-based line numbers of each conflict block's opening marker."""
-    return [
-        i for i, line in enumerate(merged.splitlines()) if line.startswith("<<<<<<<")
-    ]
+    # 0-based line of this block's `<<<<<<<` in the text it was parsed from,
+    # which is what places it against a diff of that text. Carried on the block
+    # rather than collected by a second scan for markers: the two lists have to
+    # correspond one to one, and a file may hold a marker line of its own --
+    # documentation quoting one, a fixture of git's output. Such a line is not
+    # a block, so a separate scan finds more markers than there are blocks and
+    # pairs every later block with the wrong line.
+    marker_line: int
 
 
 def _anchor(hunks: list[tuple[int, int, int, int]], marker_line: int) -> int | None:
@@ -355,16 +356,22 @@ def _parse_diff3(lines: Sequence[str]) -> list[_Block]:
     ours: list[str] = []
     base: list[str] = []
     theirs: list[str] = []
-    for line in lines:
+    opened_at = 0
+    for index, line in enumerate(lines):
         if line.startswith("<<<<<<<"):
             ours, base, theirs = [], [], []
             side = ours
+            opened_at = index
         elif line.startswith("|||||||") and side is not None:
             side = base
         elif line.startswith("=======") and side is not None:
             side = theirs
         elif line.startswith(">>>>>>>") and side is not None:
-            blocks.append(_Block(branch_so_far=ours, base=base, replaying=theirs))
+            blocks.append(
+                _Block(
+                    branch_so_far=ours, base=base, replaying=theirs, marker_line=opened_at
+                )
+            )
             side = None
         elif side is not None:
             side.append(line)

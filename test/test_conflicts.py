@@ -61,6 +61,22 @@ def test_no_blocks_when_nothing_conflicted():
     assert _parse_diff3(["just", "some", "lines"]) == []
 
 
+def test_a_block_carries_the_line_its_marker_opened_on():
+    assert _parse_diff3(MERGED.splitlines())[0].marker_line == 1
+
+
+def test_a_marker_line_of_the_file_s_own_does_not_shift_a_block():
+    """A file may hold a marker line legitimately -- documentation quoting one,
+    a fixture of git's output. It opens no block, so counting markers across
+    the file finds more of them than there are blocks; the real block must
+    still carry the line it actually opened on."""
+    documented = ["# a conflict opens with", "<<<<<<< HEAD", ""]
+    blocks = _parse_diff3(documented + MERGED.splitlines())
+    assert len(blocks) == 1
+    assert blocks[0].marker_line == 4
+    assert blocks[0].base == ["original"]
+
+
 # ── locating a block in the base ─────────────────────────────────────────────
 
 
@@ -464,6 +480,7 @@ def block(ours: str, base: str, theirs: str) -> _Block:
         branch_so_far=ours.splitlines(),
         base=base.splitlines(),
         replaying=theirs.splitlines(),
+        marker_line=0,
     )
 
 
