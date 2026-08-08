@@ -244,30 +244,29 @@ def test_a_block_whose_base_is_a_repeated_line_is_placed_at_the_conflict(
 ) -> None:
     """A block whose base section is a single line repeated through the file
     (a moved import, a common fixture line) must be reported where the conflict
-    actually is, not at the first occurrence of that line."""
-    content = "\n".join(
-        ["from petri.server import NullBackend"] * 3
-        + ["", "def target():", "    from petri.server import NullBackend", "    pass", ""]
-    )
-    scratch.commit("base", f=content)
-    # Branch and replayed commit both edit the import inside `target`, but to
-    # different names, so the region cannot be merged.
-    scratch.commit("second", f=content.replace(
-        "    from petri.server import NullBackend",
-        "    from petri.server import DefaultPhaseDriver",
-    ))
-    scratch.commit("third", f=content.replace(
-        "    from petri.server import NullBackend",
-        "    from petri.server import PhaseDriver",
-    ))
+    actually is, not at the first occurrence of that line.
+
+    The repeat has to be in the *merge base*, because that is the side a
+    block's base section is cut from and the file `base_range` counts lines
+    in. Repeating the line in the two contesting sides instead proves nothing:
+    the contested text is then unique in the file being searched, and looking
+    from the top finds it at the right place by luck.
+    """
+    same = "from petri.server import NullBackend"
+    # Replaying `third` onto `first` merges them over `second`, so `second` is
+    # the base: `same` four times, with only the last of them contested.
+    scratch.commit("first", f="\n".join([same, same, same, "import ours", ""]))
+    scratch.commit("second", f="\n".join([same, same, same, same, ""]))
+    scratch.commit("third", f="\n".join([same, same, same, "import theirs", ""]))
     third = scratch.git.out("rev-parse", "HEAD")
     scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
 
     report = conflicts(str(scratch.path))
     unit = report.files[0].units[0]
-    # The four leading repeats sit on lines 1-4; the contested import is line 6.
-    assert unit.base_range == (6, 6)
-    assert "def target():" in unit.branch_so_far_diff
+    # Lines 1-3 of the base repeat the contested line 4 exactly.
+    assert unit.base_range == (4, 4)
+    assert "+import ours" in unit.branch_so_far_diff
+    assert "+import theirs" in unit.replaying_diff
 
 
 def test_resolving_can_stage_what_is_already_in_the_working_tree(scratch: Scratch) -> None:
