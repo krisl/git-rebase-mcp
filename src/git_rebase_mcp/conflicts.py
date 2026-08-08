@@ -211,8 +211,15 @@ def read_conflict(
     for block, marker_line in zip(blocks, _marker_lines(merged)):
         anchor = _anchor(hunks, marker_line)
         # `anchor` is a 1-based base line; `_locate` counts from 0 and starts
-        # its search at from_line, so anchor - 1 is where to look first.
-        found = _locate(base_lines, block.base, max(0, anchor - 1) if anchor else search_from)
+        # its search at from_line, so anchor - 1 is where to look first. Only
+        # None means "no hunk covered the marker" -- testing the number itself
+        # for truth would read a block anchored at the top of the file as
+        # unanchored, and fall back to a search that starts somewhere else.
+        found = _locate(
+            base_lines,
+            block.base,
+            search_from if anchor is None else max(0, anchor - 1),
+        )
         starts.append(found)
         if found is not None:
             search_from = found + len(block.base)
