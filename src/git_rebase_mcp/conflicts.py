@@ -338,10 +338,10 @@ def _diff_hunks(git: Git, base: str, merged: str) -> list[tuple[int, int, int, i
                 return int(start), int(count)
             return int(section), 1
 
-        base = header.split("+", 1)[0].split("-", 1)[1]
-        merged = header.split("+", 1)[1]
-        base_start, base_count = side(base)
-        merged_start, merged_count = side(merged)
+        base_side = header.split("+", 1)[0].split("-", 1)[1]
+        merged_side = header.split("+", 1)[1]
+        base_start, base_count = side(base_side)
+        merged_start, merged_count = side(merged_side)
         hunks.append(
             (base_start, base_count, merged_start, max(merged_count, 1))
         )
