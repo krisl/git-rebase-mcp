@@ -453,7 +453,11 @@ def _file_report(
 
 @mcp.tool()
 def resolve(
-    path: str, content: str | None = None, repo: str = ".", take: str | None = None
+    path: str,
+    content: str | None = None,
+    repo: str = ".",
+    take: str | None = None,
+    allow_markers: bool = False,
 ) -> ResolveReport:
     """Stage the resolved content for one conflicted path.
 
@@ -477,6 +481,13 @@ def resolve(
     Every route refuses content that still contains conflict markers. Staging
     one is how a commit ends up with `<<<<<<<` in it, and nothing downstream
     catches that.
+
+    `allow_markers=True` stages it anyway, for the file whose markers are
+    content: documentation showing what a conflict looks like, a fixture of
+    git's own output. The check cannot tell that from a resolution abandoned
+    half way -- both are marker lines in text a person wrote -- and it refuses
+    on purpose when unsure, since a marker let through is a commit nobody can
+    build. So the caller who knows says so.
     """
     git = _git(repo)
     if take is not None and content is not None:
@@ -517,10 +528,12 @@ def resolve(
     # Checked before anything is written, so a refusal leaves the file as it was
     # and the caller does not have to reconstruct what they sent.
     assert content is not None
-    if has_markers(content):
+    if has_markers(content) and not allow_markers:
         raise ValueError(
             f"{path} still contains conflict markers. Resolve them first: staging "
-            "this would commit them."
+            "this would commit them. If they are content the file is meant to have "
+            "-- documentation showing a conflict, a fixture of git's output -- pass "
+            "allow_markers=True."
         )
     if not from_disk:
         target.write_text(content)

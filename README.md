@@ -144,7 +144,7 @@ a cherry-pick is not doing.
 | `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in. | rebase |
 | `status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. Reports a rebase that has ended and not been checked, rather than only that none is running. | any |
 | `conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the incoming side did to each file. | any |
-| `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers. Where one side deleted the path, `take` names a side rather than a text, so taking that side stages the deletion. | any |
+| `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers, unless `allow_markers=` says the file is meant to have them. Where one side deleted the path, `take` names a side rather than a text, so taking that side stages the deletion.| any |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. | rebase |
 | `rebase_split` | Takes this step's commit back out, changes left in the tree, to commit as several. | rebase |
 | `proceed` | Carries on, by the operation's own `--continue`. Refuses while anything is unmerged, or while part of this step's commit is left outside a commit. | any |

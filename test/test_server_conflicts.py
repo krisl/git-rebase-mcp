@@ -95,6 +95,25 @@ def test_a_marker_with_its_label_stripped_is_refused(conflicted: Scratch) -> Non
         resolve("f", "<<<<<<<HEAD\none\n=======\nthree\n", str(conflicted.path))
 
 
+def test_the_refusal_names_the_way_past_it(conflicted: Scratch) -> None:
+    """A refusal a caller cannot act on is one they work around by hand."""
+    with pytest.raises(ValueError, match="allow_markers=True"):
+        resolve("f", "<<<<<<< HEAD\none\n", str(conflicted.path))
+
+
+def test_markers_that_are_content_can_be_staged_when_said_so(
+    conflicted: Scratch,
+) -> None:
+    """The check reads text a person wrote, so it cannot tell documentation
+    from a resolution abandoned half way. It refuses when unsure, and the
+    caller who knows which it is overrides it."""
+    documented = "The file then reads:\n\n<<<<<<< HEAD\nyours\n=======\ntheirs\n>>>>>>> feature\n"
+    report = resolve("f", documented, str(conflicted.path), allow_markers=True)
+    assert report.still_conflicted == ()
+    assert conflicted.read("f") == documented
+    assert status(str(conflicted.path)).conflicted_files == ()
+
+
 def test_remaining_conflicts_are_named(scratch: Scratch) -> None:
     scratch.commit("base", f="one\n", g="one\n")
     scratch.commit("second", f="two\n", g="two\n")
@@ -306,6 +325,12 @@ def test_a_file_documenting_a_conflict_keeps_its_documentation(
     taken = take_side(scratch.git, "f", "branch")
     assert "\n".join(doc) in taken, "the explanation must survive being resolved"
     assert taken.endswith("status = 'ours'\n")
+
+    # Composed correctly, the file still holds the markers it is meant to, so
+    # staging it needs the caller to say those are content.
+    report = resolve("f", repo=str(scratch.path), take="branch", allow_markers=True)
+    assert report.still_conflicted == ()
+    assert "\n".join(doc) in scratch.read("f")
 
 
 def test_resolving_can_stage_what_is_already_in_the_working_tree(scratch: Scratch) -> None:
