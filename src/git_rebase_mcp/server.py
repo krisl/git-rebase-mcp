@@ -1534,7 +1534,9 @@ class FinishReport:
 
 
 @mcp.tool()
-def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
+def rebase_finish(
+    repo: str = ".", allow_change: bool = False, allow_markers: bool = False
+) -> FinishReport:
     """Check the finished rebase against the tip it started from, and tidy up.
 
     What must stay the same is the change the branch makes to its base -- not
@@ -1550,7 +1552,10 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
 
     Every rewritten commit is also scanned for conflict markers, since one
     committed part-way and tidied up later still leaves a commit nobody can
-    build.
+    build. `allow_markers=True` for the rebase that legitimately brings such a
+    line in -- a file documenting what a conflict looks like, a fixture of
+    git's output. They are still named in the report and in the guidance:
+    waiving a check is not the same as hiding what it found.
 
     The backup tag is kept either way; deleting the only record of where the
     branch was is not this tool's decision to make.
@@ -1585,11 +1590,15 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
             )
             + f":\n{change.summary}"
         )
-    if marker_hits:
-        problems.append(
-            "conflict markers were committed in "
-            + ", ".join(f"{hit.sha[:9]} ({hit.subject})" for hit in marker_hits)
-        )
+    named_markers = ", ".join(f"{hit.sha[:9]} ({hit.subject})" for hit in marker_hits)
+    if marker_hits and not allow_markers:
+        problems.append("conflict markers were committed in " + named_markers)
+    # Said even when the rebase passes, because it only passed by being told to
+    # allow it, and a report that reads "checks out" would leave the caller
+    # believing the scan found nothing.
+    waived = f"Conflict markers are committed in {named_markers}, allowed. " if (
+        marker_hits and allow_markers
+    ) else ""
 
     restored = (
         _unstash(git, session.stashed, session.stash_ref) if not problems else ()
@@ -1617,6 +1626,7 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
                 if change and change.reordered_only
                 else ". "
             )
+            + waived
             + "Anything moved aside was restored. The tip before the rebase is "
             f"still tagged {session.backup_ref}."
             if not problems

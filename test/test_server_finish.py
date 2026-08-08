@@ -125,6 +125,28 @@ def test_committed_markers_are_caught(scratch: Scratch) -> None:
     assert "conflict markers were committed" in report.guidance
 
 
+def test_markers_that_are_content_can_be_allowed(scratch: Scratch) -> None:
+    """A rebase may legitimately bring in a file that shows a conflict: this
+    project's own documentation does. Without a way to say so the rebase could
+    not be finished through the tool at all."""
+    scratch.commit("base", f="one\n")
+    scratch.commit("second", f="two\n")
+    scratch.commit("third", f="three\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    rebase_start("HEAD~2", str(scratch.path), [f"pick {third}"], force=True)
+
+    scratch.write("f", "<<<<<<< HEAD\none\n=======\nthree\n>>>>>>> abc (third)\n")
+    scratch.git.run("add", "--", "f")
+    scratch.git.run("-c", "core.editor=true", "rebase", "--continue", check=False)
+
+    report = rebase_finish(str(scratch.path), allow_change=True, allow_markers=True)
+    assert report.ok
+    # Waiving the check is not hiding what it found.
+    assert report.commits_with_markers
+    assert "Conflict markers are committed" in report.guidance
+    assert "allowed" in report.guidance
+
+
 def test_finishing_before_the_rebase_is_over_is_refused(series: Scratch) -> None:
     b, c = two(series)
     rebase_start("HEAD~2", str(series.path), [f"edit {c}", f"pick {b}"])
