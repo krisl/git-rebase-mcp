@@ -94,12 +94,46 @@ class StepInfo:
 
 
 @dataclass(frozen=True)
+class FinishedRebase:
+    """A rebase this server started that is no longer running and not yet checked.
+
+    Covers the branch being left where it started as well as rewritten, because
+    the two are not distinguishable from the state alone -- `git rebase --abort`
+    run by hand ends the rebase exactly as finishing it does -- and reporting a
+    rebase as finished when it was abandoned would be a guess presented as fact.
+    `branch_moved` is that difference.
+
+    A count rather than the commits themselves: rebase_finish returns those,
+    together with the check that they still make the branch's change. What is
+    needed here is only the difference between nothing having happened and a
+    branch that has been rewritten with nobody having verified it.
+    """
+
+    # Commits between the base the rebase was given and HEAD now: what the branch
+    # has, not how many steps the todo ran. A run of fixups leaves fewer commits
+    # than it consumed, and the number a caller wants is the one it can go and
+    # read.
+    rewritten: int
+    base: str
+    backup_ref: str
+    branch_moved: bool
+
+
+@dataclass(frozen=True)
 class StatusReport:
     state: StateName
     head: CommitInfo
     head_is_replaying_commit: bool
     can_amend: bool
     guidance: str
+    # Set when a rebase this server started has ended and rebase_finish has not
+    # checked it yet. A field rather than a sixth `state`, for the reason the
+    # conflict states share one name: `state` answers "is a rebase in progress",
+    # and a caller reading it for that would have to learn a new name to keep
+    # getting the same answer right. What was missing was never the name -- it
+    # was that "not_rebasing" alone reads as "nothing happened" at the moment a
+    # branch has just been rewritten and not verified.
+    finished: FinishedRebase | None = None
     # What left the index in this state: "rebase", "cherry-pick", "revert",
     # "merge", or "unknown" for a conflict nothing recorded -- a stash popped
     # into one, say. `state` stays "conflicted" for all of them, because what a
@@ -133,8 +167,14 @@ def status(repo: str = ".") -> StatusReport:
 
     `state` is "conflicted" for every operation that left unmerged paths, so
     that one check answers the question whatever produced them.
+
+    `finished` is set when a rebase this server started has ended and
+    rebase_finish has not checked it yet, which "not_rebasing" on its own cannot
+    say -- and the state a caller most needs telling about, since the branch is
+    rewritten and nothing has verified it.
     """
-    return _report(read_state(_git(repo)))
+    git = _git(repo)
+    return _report(read_state(git), git=git)
 
 
 @dataclass(frozen=True)
@@ -698,9 +738,17 @@ def rebase_start(
         stashed=stashed,
         status=stopped,
         guidance=(
-            f"Started. The tip beforehand is tagged {backup.ref}; rebase_finish "
-            "checks the result against it. " + stopped.guidance
-        ),
+            # A rebase with no conflicts in it is over by the time this returns,
+            # and saying "Started" and nothing else left the one report a caller
+            # reads sounding like the work was still ahead of it. The finished
+            # guidance already names the tag and the next call, so it is not
+            # repeated here.
+            "Ran to the end without stopping. "
+            if stopped.finished is not None
+            else f"Started. The tip beforehand is tagged {backup.ref}; "
+            "rebase_finish checks the result against it. "
+        )
+        + stopped.guidance,
     )
 
 
@@ -964,13 +1012,13 @@ def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
         state = read_state(git)
         command = _carry_on_command(state)
         if not isinstance(state, (Conflicted, Applying)) or not auto_resolve:
-            return _report(state, git_said, tuple(resolved))
+            return _report(state, git_said, tuple(resolved), git=git)
         if not state.unmerged or command is None:
-            return _report(state, git_said, tuple(resolved))
+            return _report(state, git_said, tuple(resolved), git=git)
 
         composed = {path: auto_resolve_file(git, path) for path in state.unmerged}
         if any(text is None for text in composed.values()):
-            return _report(state, git_said, tuple(resolved))
+            return _report(state, git_said, tuple(resolved), git=git)
 
         for path, text in composed.items():
             assert text is not None
@@ -979,7 +1027,7 @@ def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
             resolved.append(path)
         result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
         git_said = _git_said(result)
-    return _report(read_state(git), git_said, tuple(resolved))
+    return _report(read_state(git), git_said, tuple(resolved), git=git)
 
 
 def _outside_guidance(state: Applying) -> str:
@@ -1011,11 +1059,64 @@ def _outside_guidance(state: Applying) -> str:
     )
 
 
+def _finished(git: Git) -> FinishedRebase | None:
+    """The rebase that has just ended, when one has.
+
+    A session outliving the rebase that wrote it is the signal: rebase_start
+    writes it, and finishing, aborting and withdrawing a failed start all clear
+    it, so a session sitting beside a repository with no rebase running means one
+    ran to the end and nothing has checked it.
+
+    Read here rather than only in the tools that drive a rebase, so that a bare
+    status call answers it too. The session is kept in the git directory
+    precisely because the server can be restarted mid-rebase, and the caller who
+    comes back afterwards has no other way to find out what happened.
+    """
+    session = load_session(git)
+    if session is None:
+        return None
+    # A range against a base that is no longer resolvable would fail, and a
+    # status call that raises is worse than one that reports the count as zero:
+    # the point of the call is to find out where things stand.
+    range_ = f"{session.base_sha}..HEAD"
+    rewritten = len(git.lines("rev-list", range_)) if git.succeeds("rev-parse", range_) else 0
+    return FinishedRebase(
+        rewritten=rewritten,
+        base=session.base,
+        backup_ref=session.backup_ref,
+        branch_moved=git.out("rev-parse", "HEAD") != session.backup_sha,
+    )
+
+
+def _finished_guidance(finished: FinishedRebase | None) -> str:
+    if finished is None:
+        return "No rebase in progress."
+    if not finished.branch_moved:
+        return (
+            "No rebase in progress, and the branch is exactly where it started. "
+            "Either it was abandoned outside this server, or the rebase had "
+            f"nothing to change. The tip is still tagged {finished.backup_ref}; "
+            "abort has nothing left to undo."
+        )
+    return (
+        f"Rebase finished: {plural(finished.rewritten, 'commit')} between "
+        f"{finished.base} and HEAD, and nothing is in progress. The branch is "
+        "rewritten but unchecked -- call rebase_finish to compare what is here "
+        f"against {finished.backup_ref} and to restore anything moved aside."
+    )
+
+
 def _report(
-    state: RebaseState, git_said: str = "", auto_resolved: tuple[str, ...] = ()
+    state: RebaseState,
+    git_said: str = "",
+    auto_resolved: tuple[str, ...] = (),
+    git: Git | None = None,
 ) -> StatusReport:
     match state:
         case NotRebasing():
+            # Without `git` this is the bare state name, which is all the callers
+            # that pass no repository want it for.
+            finished = _finished(git) if git is not None else None
             return StatusReport(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
@@ -1023,7 +1124,8 @@ def _report(
                 head=_info(state.head),
                 head_is_replaying_commit=False,
                 can_amend=False,
-                guidance="No rebase in progress.",
+                guidance=_finished_guidance(finished),
+                finished=finished,
             )
         case Conflicted():
             return StatusReport(

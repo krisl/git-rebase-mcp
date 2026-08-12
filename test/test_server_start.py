@@ -37,6 +37,33 @@ def test_a_reorder_runs_to_completion(series: Scratch) -> None:
     assert series.subjects() == ["adds b", "adds c", "base"]
 
 
+def test_a_run_to_completion_does_not_read_as_still_being_underway(series: Scratch) -> None:
+    """A rebase with no conflicts in it is over by the time start returns, so the
+    one report a caller reads has to say so rather than only "Started"."""
+    b, c = series.git.out("rev-parse", "HEAD~1"), series.git.out("rev-parse", "HEAD")
+    report = rebase_start("HEAD~2", str(series.path), [f"pick {c}", f"pick {b}"])
+
+    assert "Ran to the end" in report.guidance
+    assert "No rebase in progress" not in report.guidance
+    assert "rebase_finish" in report.guidance
+    assert report.status.finished is not None
+    assert report.status.finished.rewritten == 2
+
+
+def test_a_start_that_stops_still_points_at_the_backup_tag(scratch: Scratch) -> None:
+    """The tag is worth naming at a stop, where the caller is about to resolve
+    something and needs to know what the result can be compared against."""
+    for value in ("one", "two", "three"):
+        scratch.write("f", value + "\n")
+        scratch.commit(f"f={value}")
+    second, third = scratch.git.out("rev-parse", "HEAD~1"), scratch.git.out("rev-parse", "HEAD")
+    report = rebase_start("HEAD~2", str(scratch.path), [f"pick {third}", f"pick {second}"])
+
+    assert report.status.state == "conflicted"
+    assert report.status.finished is None
+    assert "The tip beforehand is tagged" in report.guidance
+
+
 def test_a_repo_path_containing_a_quote_still_drives_the_todo(tmp_path: Path) -> None:
     """The todo is fed to git through a shell command, so the path has to be
     quoted the way a shell would quote it. A repo named `re'po` used to make

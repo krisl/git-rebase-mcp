@@ -116,7 +116,7 @@ a cherry-pick is not doing.
 | --- | --- | --- |
 | `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. | rebase |
 | `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in. | rebase |
-| `status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. | any |
+| `status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. Reports a rebase that has ended and not been checked, rather than only that none is running. | any |
 | `conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the incoming side did to each file. | any |
 | `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers. | any |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. | rebase |
