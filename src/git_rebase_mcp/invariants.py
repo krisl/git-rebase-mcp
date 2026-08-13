@@ -93,6 +93,19 @@ def branch_change(git: Git, backup: Backup, base: str, revision: str = "HEAD") -
     )
 
 
+def same_tree(git: Git, backup: Backup, revision: str = "HEAD") -> bool:
+    """Whether the result has exactly the content it started with.
+
+    Not the check -- the tree changes for a good reason whenever the rebase also
+    moves onto newer upstream work -- but the thing worth saying alongside it
+    when the branch's own diff has changed. A branch whose diff differs and whose
+    tree does not has lost nothing: the change is in the new base instead, which
+    is what dropping an already-upstream commit looks like from here, and what
+    redistributing one commit's work into others looks like too.
+    """
+    return git.out("rev-parse", f"{revision}^{{tree}}") == backup.tree
+
+
 def _changed_lines(git: Git, base: str, tip: str) -> dict[str, list[str]]:
     """Every line the branch adds or removes, per file, order discarded.
 

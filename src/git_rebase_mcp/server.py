@@ -37,6 +37,7 @@ from .invariants import (
     has_markers,
     load_session,
     record_backup,
+    same_tree,
     save_session,
     branch_change,
 )
@@ -1512,6 +1513,11 @@ class FinishReport:
     # True when the difference above is the same lines in a different order,
     # which a resolution that moves a block does and which is not damage.
     reordered_only: bool = False
+    # True when the result has exactly the content it started with. Reported
+    # because a branch whose diff-to-base changed and whose tree did not has lost
+    # nothing: the change is in the base instead. That is what dropping a commit
+    # already upstream looks like from here, and it is not damage.
+    tree_identical: bool = False
 
 
 @mcp.tool()
@@ -1520,8 +1526,15 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
 
     What must stay the same is the change the branch makes to its base -- not
     the resulting tree, which legitimately changes when the rebase also moves
-    onto newer upstream work. A difference here is a report of damage: a commit
-    dropped from the todo, or a conflict resolved the wrong way.
+    onto newer upstream work. A difference here is usually a report of damage: a
+    commit dropped from the todo, or a conflict resolved the wrong way.
+
+    Usually, because the same difference is what a deliberate redistribution
+    looks like: a commit dropped because its content is already in the new base,
+    or one commit's work divided into others. `tree_identical` separates the two
+    -- the content being exactly what it was means nothing was lost, only that
+    the branch's own share of it changed -- and `allow_change` accepts it.
+
     Every rewritten commit is also scanned for conflict markers, since one
     committed part-way and tidied up later still leaves a commit nobody can
     build.
@@ -1542,12 +1555,22 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
 
     change = branch_change(git, session.backup, session.base_sha)
     difference = change.summary if change else None
+    unchanged_tree = bool(change) and same_tree(git, session.backup)
     marker_hits = commits_with_markers(git, f"{session.base_sha}..HEAD")
     problems: list[str] = []
     if change and not change.reordered_only and not allow_change:
         problems.append(
-            "the branch no longer makes the same change to its base, so "
-            f"something was lost or resolved wrongly:\n{change.summary}"
+            "the branch no longer makes the same change to its base"
+            + (
+                f", though its content is identical to {session.backup_ref}: nothing "
+                "was lost, only the branch's own share of it changed. That is what "
+                "dropping a commit already in the new base looks like, and what "
+                "moving one commit's work into another does. Pass allow_change=true "
+                "if that was the intent"
+                if unchanged_tree
+                else ", so something was lost or resolved wrongly"
+            )
+            + f":\n{change.summary}"
         )
     if marker_hits:
         problems.append(
@@ -1566,6 +1589,7 @@ def rebase_finish(repo: str = ".", allow_change: bool = False) -> FinishReport:
         backup_ref=session.backup_ref,
         branch_change=difference,
         reordered_only=bool(change and change.reordered_only),
+        tree_identical=unchanged_tree,
         commits_with_markers=tuple(hit.sha for hit in marker_hits),
         commits=tuple(
             _commit_info(git, sha)

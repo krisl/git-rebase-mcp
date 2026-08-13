@@ -47,6 +47,47 @@ def test_a_dropped_commit_is_caught(series: Scratch) -> None:
     assert "something was lost" in report.guidance
 
 
+def test_a_commit_dropped_because_the_base_has_it_is_not_called_damage(
+    scratch: Scratch,
+) -> None:
+    """The report a real rebase got wrong. A commit was dropped on purpose -- its
+    content had moved into the new base -- and the check said "something was lost
+    or resolved wrongly" of a result whose content was byte for byte what it
+    started as. The verdict is still that the branch's change differs, because it
+    does; what changes is that the report says which of the two reasons it is."""
+    scratch.commit("base", a="one\n")
+    base = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("adds b", b="b\n")
+    scratch.commit("adds c", c="c\n")
+    adds_c = scratch.git.out("rev-parse", "HEAD")
+    # The new base already carries "adds b", under a different sha.
+    scratch.git.run("checkout", "-q", "-b", "up", base)
+    scratch.commit("adds b upstream", b="b\n")
+    upstream = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+
+    rebase_start(upstream, str(scratch.path), [f"pick {adds_c}"], force=True)
+    report = rebase_finish(str(scratch.path))
+
+    assert not report.ok  # the branch's own change really did shrink
+    assert report.tree_identical
+    assert "content is identical" in report.guidance
+    assert "allow_change=true" in report.guidance
+    assert "lost or resolved wrongly" not in report.guidance
+
+
+def test_a_rebase_that_lost_content_still_reads_as_damage(series: Scratch) -> None:
+    """The other side of the same report. Content missing from the result is what
+    the check exists for, and the wording that covers a deliberate
+    redistribution must not soften it."""
+    _, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"pick {c}"], force=True)
+
+    report = rebase_finish(str(series.path))
+    assert not report.tree_identical
+    assert "something was lost or resolved wrongly" in report.guidance
+
+
 def test_the_refusal_says_how_to_undo(series: Scratch) -> None:
     _, c = two(series)
     started = rebase_start("HEAD~2", str(series.path), [f"pick {c}"], force=True)
