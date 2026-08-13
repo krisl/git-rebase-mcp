@@ -135,6 +135,61 @@ def test_an_edit_stop_has_no_fixups_pending(three_commits: Scratch) -> None:
     assert state.head.sha == state.replaying.sha
 
 
+def test_the_commit_a_step_created_is_read_from_gits_own_record(scratch: Scratch) -> None:
+    """`replaying` is the commit the todo named, which is not the commit the step
+    created whenever the rebase had to rewrite it -- and a commit whose parent
+    moved always is. Git writes the sha it created into `amend`, so the question
+    "is HEAD the commit this step applied" has an answer that does not depend on
+    the rebase having changed nothing."""
+    scratch.commit("base", f="one\n")
+    scratch.git.run("checkout", "-q", "-b", "up")
+    scratch.commit("upstream", other="x\n")
+    upstream = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.commit("second", f="two\n")
+    second = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"edit {second}"], onto=upstream)
+
+    state = read_state(scratch.git)
+    assert isinstance(state, StoppedAfterApply)
+    assert state.replaying.sha == second
+    assert state.applied != second  # rewritten onto the moved base
+    assert state.head.sha == state.applied
+    assert state.holds_applied_commit
+    assert not state.unapplied
+
+
+def test_an_amended_commit_is_still_the_one_the_step_applied(three_commits: Scratch) -> None:
+    """Amending replaces the commit with a sibling, so HEAD stops matching the
+    record git wrote. A caller who amends twice means the same commit both times,
+    which is why the comparison is of where the commit sits, not of its sha."""
+    second = three_commits.git.out("rev-parse", "HEAD~1")
+    three_commits.start_rebase("HEAD~2", [f"edit {second}"])
+    three_commits.git.run("commit", "-q", "--amend", "-m", "reworded")
+
+    state = read_state(three_commits.git)
+    assert isinstance(state, StoppedAfterApply)
+    assert state.head.sha != state.applied
+    assert state.holds_applied_commit
+    assert not state.unapplied
+
+
+def test_a_commit_reset_back_out_is_reported_as_unapplied(three_commits: Scratch) -> None:
+    """A mixed reset is how a commit is split, and git's `amend` record survives
+    it: without this comparison the state says amending is safe, of a HEAD that
+    is now the commit before the one the step applied."""
+    second = three_commits.git.out("rev-parse", "HEAD~1")
+    three_commits.start_rebase("HEAD~2", [f"edit {second}"])
+    applied = three_commits.git.out("rev-parse", "HEAD")
+    three_commits.git.run("reset", "-q", "HEAD^")
+
+    state = read_state(three_commits.git)
+    assert isinstance(state, StoppedAfterApply)
+    assert state.applied == applied
+    assert state.unapplied
+    assert not state.holds_applied_commit
+
+
 def test_a_resolved_but_still_stopped_pick_is_not_amendable(scratch: Scratch) -> None:
     """All paths resolved, so nothing is unmerged, but the commit has still not
     been created. Git writes no `amend` marker, which is how this is told apart

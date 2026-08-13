@@ -80,11 +80,22 @@ class StoppedAfterApply:
 
     Git names it in `.git/rebase-merge/amend`, which is where this comes from.
 
-    HEAD is not always the commit being replayed. Part-way through a run of
-    `fixup` or `squash` steps it is the accumulation of them so far, and its
-    message is still the raw template git assembles and cleans up at the end of
-    the run. `fixups_pending` says when that is the case, so nothing reports the
-    template as though it were the commit's subject.
+    `applied` is the sha git recorded there: the commit this step created. It is
+    not the commit being replayed whenever the rebase had to rewrite it -- which
+    is most of the time, since a commit whose parent moved gets a new sha -- so
+    comparing HEAD against `replaying` answers a different question than it
+    looks like it answers, and answers it "no" on an ordinary stop.
+
+    HEAD is not always the commit this step created either:
+
+    - Part-way through a run of `fixup` or `squash` steps it is the accumulation
+      of them so far, and its message is still the raw template git assembles
+      and cleans up at the end of the run. `fixups_pending` says when that is
+      the case, so nothing reports the template as though it were the subject.
+    - `unapplied` is set when the commit has been taken back out with a mixed
+      reset, leaving its changes in the working tree. That is how a commit is
+      split, and git leaves its `amend` record in place through it, so nothing
+      but this comparison distinguishes it from a stop where amending is safe.
     """
 
     step: Step
@@ -92,6 +103,13 @@ class StoppedAfterApply:
     replaying: Commit
     head: Commit
     fixups_pending: tuple[str, ...] = ()
+    applied: str = ""
+    # HEAD is the commit this step created, or an amendment of it: the commit
+    # `--amend` would rewrite is the one the caller means.
+    holds_applied_commit: bool = True
+    # HEAD is that commit's parent, so amending would rewrite the commit before
+    # the one this step applied.
+    unapplied: bool = False
 
 
 @dataclass(frozen=True)
@@ -180,14 +198,37 @@ def read_state(git: Git) -> RebaseState:
     # `fixup` that stopped holding a commit from one that stopped without, and
     # got exactly that wrong on a real branch.
     if (directory / "amend").exists():
+        applied = _read(directory / "amend")
         return StoppedAfterApply(
             step=step,
             action=action,
             replaying=_commit(git, "REBASE_HEAD"),
             head=head,
             fixups_pending=tuple(_read(directory / "current-fixups").splitlines()),
+            applied=applied,
+            holds_applied_commit=_same_place(git, head.sha, applied),
+            unapplied=bool(applied) and head.sha == _parent(git, applied),
         )
     return StoppedWithoutApply(step=step, action=action, head=head)
+
+
+def _same_place(git: Git, head: str, applied: str) -> bool:
+    """Whether HEAD sits where the commit this step created sat.
+
+    Their parents, not their shas: an amend replaces the commit with a sibling,
+    and a caller who amends twice means the same commit both times. Without a
+    record to compare against -- an older git, or a file this server cannot read
+    -- the answer is the ordinary case, which is what the stop is for.
+    """
+    if not applied:
+        return True
+    return _parent(git, head) == _parent(git, applied)
+
+
+def _parent(git: Git, revision: str) -> str:
+    """The first parent's sha, or "" for a root commit."""
+    result = git.run("rev-parse", "--verify", "--quiet", f"{revision}^", check=False)
+    return result.stdout.strip() if result.ok else ""
 
 
 def _outside_rebase(git: Git) -> RebaseState:

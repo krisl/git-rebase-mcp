@@ -11,7 +11,7 @@ import asyncio
 
 import pytest
 
-from git_rebase_mcp.server import mcp, rebase_finish, rebase_start, status
+from git_rebase_mcp.server import mcp, rebase_amend, rebase_finish, rebase_start, status
 
 from scratch import Scratch
 
@@ -62,6 +62,71 @@ def test_an_applied_stop_says_amending_is_safe(three_commits: Scratch) -> None:
     assert report.head_is_replaying_commit
     assert report.can_amend
     assert report.step is not None and report.step.total == 1
+
+
+def test_an_edit_stop_of_a_rewritten_commit_is_not_reported_as_a_fixup_run(
+    scratch: Scratch,
+) -> None:
+    """Found by using it. A commit whose parent moved is applied under a new sha,
+    so comparing HEAD against the commit being replayed says "different" on the
+    most ordinary stop there is -- and the report then explained the difference
+    as a run of fixup steps, of which there were none, and said the message was
+    git's template, which it was not."""
+    scratch.commit("base", f="one\n")
+    scratch.git.run("checkout", "-q", "-b", "up")
+    scratch.commit("upstream", other="x\n")
+    upstream = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.commit("second", f="two\n")
+    second = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"edit {second}"], onto=upstream)
+
+    report = status(str(scratch.path))
+    assert report.state == "stopped_after_apply"
+    assert report.head.sha != second  # the rebase had to rewrite it
+    assert report.head_is_replaying_commit
+    assert report.can_amend
+    assert "fixup" not in report.guidance
+    assert "template" not in report.guidance
+    # Both shas, so `replaying` cannot read as a commit that failed to apply.
+    assert second[:9] in report.guidance
+    assert report.head.sha[:9] in report.guidance
+
+
+def test_a_commit_taken_back_out_is_not_reported_as_amendable(
+    three_commits: Scratch,
+) -> None:
+    """Git leaves its "you may amend" record in place through a mixed reset, so
+    the state alone still says amending is safe -- of a HEAD that is now the
+    commit before the one this step applied. That reset is how a commit is split,
+    and it is a thing people do to a stopped rebase by hand."""
+    second = three_commits.git.out("rev-parse", "HEAD~1")
+    three_commits.start_rebase("HEAD~2", [f"edit {second}"])
+    three_commits.git.run("reset", "-q", "HEAD^")
+
+    report = status(str(three_commits.path))
+    assert report.unapplied
+    assert not report.can_amend
+    assert not report.head_is_replaying_commit
+    assert "taken back out" in report.guidance
+    assert "proceed" in report.guidance
+
+
+def test_amending_a_commit_that_was_taken_back_out_is_refused(
+    three_commits: Scratch,
+) -> None:
+    """The refusal that field exists for: amending here rewrites the commit
+    before the one the caller has in mind, and git reports it as success."""
+    second = three_commits.git.out("rev-parse", "HEAD~1")
+    three_commits.start_rebase("HEAD~2", [f"edit {second}"])
+    three_commits.git.run("reset", "-q", "HEAD^")
+    before = three_commits.git.out("rev-parse", "HEAD")
+
+    with pytest.raises(ValueError) as raised:
+        rebase_amend(str(three_commits.path), message="would rewrite the wrong commit")
+
+    assert "Refusing to amend" in str(raised.value)
+    assert three_commits.git.out("rev-parse", "HEAD") == before
 
 
 def test_the_guidance_names_the_risk_rather_than_only_the_state(three_commits: Scratch) -> None:

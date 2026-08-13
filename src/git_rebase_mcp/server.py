@@ -151,6 +151,11 @@ class StatusReport:
     step: StepInfo | None = None
     action: str | None = None
     replaying: CommitInfo | None = None
+    # The step's commit has been taken back out with a mixed reset, so its
+    # changes are in the working tree and HEAD is the commit before it. Git keeps
+    # its own "you may amend" record through that, so a caller reading only
+    # `state` would be told a stop where amending is safe.
+    unapplied: bool = False
     conflicted_files: tuple[str, ...] = ()
     # Paths this server composed and staged without asking, because the two
     # sides edited different lines. Named rather than left silent: an automatic
@@ -949,7 +954,10 @@ def rebase_amend(
     """
     git = _git(repo)
     state = read_state(git)
-    if not isinstance(state, StoppedAfterApply):
+    # `unapplied` is refused here rather than left to the isinstance check: git's
+    # own "you may amend" record survives the commit being taken back out, so the
+    # state is the same one and the commit it names is no longer there.
+    if not isinstance(state, StoppedAfterApply) or state.unapplied:
         raise ValueError(_why_not_amendable(_report(state)))
 
     before = _info(state.head)
@@ -1123,6 +1131,45 @@ def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
     return _report(read_state(git), git_said, tuple(resolved), git=git)
 
 
+def _after_apply_guidance(state: StoppedAfterApply) -> str:
+    """What HEAD is at this stop, which decides whether amending means anything.
+
+    Three different stops share it, and the difference is not in what git prints:
+    the ordinary one, a fixup run mid-accumulation, and a commit that has been
+    unapplied to be split. Only the first is one where `--amend` rewrites the
+    commit the caller has in mind.
+    """
+    if state.unapplied:
+        return (
+            f"Stopped at `{state.action}`, and {state.applied[:9]} has since been "
+            "taken back out: HEAD is the commit before it and its changes are in the "
+            "working tree. That is the state a split leaves. Commit them in as many "
+            "pieces as you want, then call proceed. Amending here would rewrite the "
+            "commit before the one this step applied, so it is refused."
+        )
+    if state.fixups_pending:
+        return (
+            f"Stopped at `{state.action}`. Git will amend HEAD "
+            f"({state.head.sha[:9]}), which is a run of "
+            f"{len(state.fixups_pending)} fixup or squash steps so far, not "
+            f"{state.replaying.sha[:9]} on its own. Its message is still "
+            "git's template and is rewritten when the run ends, so ignore "
+            "the subject above."
+        )
+    # The sha the caller asked for and the one they now have, when the rebase had
+    # to rewrite it. Saying both keeps `replaying` in the report from reading as
+    # a commit that failed to apply.
+    rewritten = (
+        f" (applied as {state.applied[:9]}, since its parent moved)"
+        if state.applied and state.applied != state.replaying.sha
+        else ""
+    )
+    return (
+        f"Stopped at `{state.action}` with {state.replaying.sha[:9]} applied"
+        f"{rewritten}. HEAD is that commit, so amending it is safe."
+    )
+
+
 def _outside_guidance(state: Applying) -> str:
     """Say what is going on, when it is not a rebase doing it."""
     if not state.unmerged:
@@ -1254,28 +1301,17 @@ def _report(
                 conflicted_files=state.unmerged,
             )
         case StoppedAfterApply():
-            same = state.head.sha == state.replaying.sha
             return StatusReport(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
                 state="stopped_after_apply",
                 operation="rebase",
                 head=_info(state.head),
-                head_is_replaying_commit=same,
-                can_amend=True,
-                guidance=(
-                    f"Stopped at `{state.action}` with {state.replaying.sha[:9]} "
-                    "applied. HEAD is that commit, so amending it is safe."
-                    if same
-                    else (
-                        f"Stopped at `{state.action}`. Git will amend HEAD "
-                        f"({state.head.sha[:9]}), which is a run of "
-                        f"{len(state.fixups_pending)} fixup or squash steps so far, not "
-                        f"{state.replaying.sha[:9]} on its own. Its message is still "
-                        "git's template and is rewritten when the run ends, so ignore "
-                        "the subject above."
-                    )
-                ),
+                head_is_replaying_commit=state.holds_applied_commit
+                and not state.fixups_pending,
+                can_amend=state.holds_applied_commit,
+                unapplied=state.unapplied,
+                guidance=_after_apply_guidance(state),
                 step=StepInfo(state.step.index, state.step.total),
                 action=state.action,
                 replaying=_info(state.replaying),
