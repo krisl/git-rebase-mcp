@@ -166,6 +166,79 @@ def test_a_deleted_path_is_reported_as_a_deletion_not_as_regions(
     assert "include_file_diffs" in report.guidance
 
 
+def test_taking_the_side_that_deleted_stages_a_deletion(
+    deleted_by_the_branch: Scratch,
+) -> None:
+    """The bug this was written for: `take` composed the file's blocks, a
+    modify/delete has none, and the empty string that fell out was staged as the
+    file's new content. An empty file in the commit, the path no longer
+    conflicted, and nothing downstream with a reason to complain."""
+    report = resolve("f", repo=str(deleted_by_the_branch.path), take="branch")
+
+    assert report.deleted
+    assert report.still_conflicted == ()
+    # Gone from the index, not staged as an empty blob.
+    assert deleted_by_the_branch.git.lines("ls-files", "--", "f") == []
+    assert not (deleted_by_the_branch.path / "f").exists()
+
+    deleted_by_the_branch.git.run("-c", "core.editor=true", "rebase", "--continue")
+    assert "f" not in deleted_by_the_branch.git.lines("ls-tree", "--name-only", "HEAD")
+
+
+def test_taking_the_surviving_side_keeps_what_that_side_has(
+    deleted_by_the_branch: Scratch,
+) -> None:
+    """The other answer to the same conflict. It has to come from that side's
+    stage: the working file holds one side's text and says nothing about being
+    the answer, and composing has no blocks to work from here either."""
+    report = resolve("f", repo=str(deleted_by_the_branch.path), take="replaying")
+
+    assert not report.deleted
+    assert report.still_conflicted == ()
+    assert deleted_by_the_branch.read("f") == "one\ntwo\nthree\n"
+    assert deleted_by_the_branch.git.run("show", ":f").stdout == "one\ntwo\nthree\n"
+
+
+def test_both_is_refused_on_a_path_one_side_deleted(
+    deleted_by_the_branch: Scratch,
+) -> None:
+    """"Both" means one side's lines and then the other's, and a side that
+    deleted the path has none. Answering it as "keep the file" would be a guess
+    at which of two opposite intents was meant."""
+    with pytest.raises(ValueError) as raised:
+        resolve("f", repo=str(deleted_by_the_branch.path), take="both")
+
+    assert 'take="branch"' in str(raised.value)  # the deletion
+    assert 'take="replaying"' in str(raised.value)  # keeping it
+    assert deleted_by_the_branch.git.lines("diff", "--name-only", "--diff-filter=U") == ["f"]
+
+
+def test_deleting_the_file_and_resolving_stages_the_deletion(
+    deleted_by_the_branch: Scratch,
+) -> None:
+    """Answering by hand, which is what a caller does when the deletion is the
+    obvious half of a rename they are about to finish. An absent file was
+    refused as "nothing to stage" -- true of an ordinary path, and on a
+    conflicted one the only thing its absence can mean."""
+    (deleted_by_the_branch.path / "f").unlink()
+
+    report = resolve("f", repo=str(deleted_by_the_branch.path))
+
+    assert report.deleted
+    assert deleted_by_the_branch.git.lines("ls-files", "--", "f") == []
+
+
+def test_an_absent_path_that_is_not_conflicted_is_still_refused(
+    conflicted: Scratch,
+) -> None:
+    """The refusal has to survive: a mistyped path is absent too, and staging a
+    deletion for it would answer a conflict that was never asked about."""
+    with pytest.raises(ValueError) as raised:
+        resolve("typo", repo=str(conflicted.path))
+
+    assert "not in the working tree" in str(raised.value)
+
+
 def test_a_block_whose_base_is_a_repeated_line_is_placed_at_the_conflict(
     scratch: Scratch,
 ) -> None:

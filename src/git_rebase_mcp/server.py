@@ -19,7 +19,15 @@ from typing import Literal, Never, assert_never
 
 from mcp.server.mcpserver import MCPServer
 
-from .conflicts import FileConflict, auto_resolve_file, plural, read_conflict, take_side
+from .conflicts import (
+    FileConflict,
+    auto_resolve_file,
+    deleted_side,
+    plural,
+    read_conflict,
+    side_text,
+    take_side,
+)
 from .git import Git, GitError, GitResult
 from .invariants import (
     Backup,
@@ -236,6 +244,11 @@ class ResolveReport:
     path: str
     still_conflicted: tuple[str, ...]
     guidance: str
+    # True when what was staged is the path's removal rather than any text. Said
+    # out loud because every other resolution leaves a file behind, and a caller
+    # that asked for a side without knowing that side had deleted it should hear
+    # about it here rather than notice at the next `git status`.
+    deleted: bool = False
 
 
 @mcp.tool()
@@ -448,6 +461,13 @@ def resolve(
       enough that sending it back costs more than editing it in place.
     - `content` writes the finished file and stages it.
 
+    `take` names a side, not a text: where that side deleted the path, taking it
+    stages the deletion. "both" has no meaning on such a path -- there is no
+    text of one side to keep the other's beside -- and is refused rather than
+    answered. Deleting the file yourself and calling this with no arguments
+    stages the deletion too, which is what an absent file can only mean once the
+    path is conflicted.
+
     Every route refuses content that still contains conflict markers. Staging
     one is how a commit ends up with `<<<<<<<` in it, and nothing downstream
     catches that.
@@ -467,6 +487,15 @@ def resolve(
             "the work in it. Nothing there is a conflicted path, and writing to it "
             "can change what git does next."
         )
+    # One side deleted the path, so the resolution is which of "gone" and "here"
+    # to stage -- and one of those is not text. Composing blocks would answer it
+    # with the empty string, which stages an empty file: a resolution nothing
+    # downstream reports as wrong, since the path stops being conflicted either
+    # way. So it is decided before any content is computed.
+    deleted = deleted_side(git, path)
+    if deleted is not None and (take is not None or (content is None and not target.is_file())):
+        return _resolve_one_sided(git, path, take, deleted)
+
     if take is not None:
         content = take_side(git, path, take)
 
@@ -490,20 +519,64 @@ def resolve(
     if not from_disk:
         target.write_text(content)
     git.run("add", "--", path)
+    return _resolved(git, path)
 
+
+def _resolve_one_sided(
+    git: Git, path: str, take: str | None, deleted: str
+) -> ResolveReport:
+    """Answer a modify/delete: stage the path's removal, or the survivor's text.
+
+    `take` of None means the caller deleted the file and called with no
+    arguments, which on a conflicted path says the same as naming the side that
+    deleted it. Anything the other side did to the text is in that side's stage,
+    so keeping the path means staging what it says rather than the working file,
+    which is one side's text and never says which.
+    """
+    kept = "replaying" if deleted == "branch" else "branch"
+    if take == "both":
+        raise ValueError(
+            f'take="both" cannot answer {path}: {_side_name(deleted)} deleted it, so '
+            "there are no two texts to keep in some order. The answers are "
+            f'take="{deleted}", which stages the deletion, and take="{kept}", which '
+            "keeps the file as that side has it."
+        )
+    if take is not None and take != deleted and take != kept:
+        raise ValueError(f"take must be branch, replaying or both, not {take!r}")
+
+    if take is None or take == deleted:
+        # -f because the path is unmerged, which git otherwise refuses to remove;
+        # it also covers the file already being gone, when the caller deleted it.
+        git.run("rm", "-q", "-f", "--", path)
+        return _resolved(git, path, deleted=True)
+
+    _, target = _contained(git.repo, path)
+    target.write_text(side_text(git, path, take))
+    git.run("add", "--", path)
+    return _resolved(git, path)
+
+
+def _side_name(side: str) -> str:
+    return "the branch" if side == "branch" else "the commit being replayed"
+
+
+def _resolved(git: Git, path: str, deleted: bool = False) -> ResolveReport:
+    """What is left to do, once one path has been answered."""
     remaining = tuple(git.lines("diff", "--name-only", "--diff-filter=U"))
+    staged = "Staged the deletion of " if deleted else "Resolved "
     return ResolveReport(
         path=path,
         still_conflicted=remaining,
+        deleted=deleted,
         guidance=(
-            f"Still conflicted: {', '.join(remaining)}."
+            f"{staged}{path}. Still conflicted: {', '.join(remaining)}."
             if remaining
-            else "All paths resolved; call proceed."
+            else f"{staged}{path}; all paths resolved. Call proceed."
             if _carry_on_command(read_state(git)) is not None
             # A conflict nothing recorded has nothing to continue, and saying so
             # here saves the caller finding out from a refusal one call later.
-            else "All paths resolved. Nothing is mid-operation, so there is nothing "
-            "to continue: commit them as you would any other change."
+            else f"{staged}{path}; all paths resolved. Nothing is mid-operation, so "
+            "there is nothing to continue: commit them as you would any other change."
         ),
     )
 
