@@ -979,6 +979,164 @@ def rebase_amend(
     )
 
 
+@dataclass(frozen=True)
+class SplitReport:
+    """What was taken back out, and what is now in the tree to be committed."""
+
+    unapplied: CommitInfo
+    head: CommitInfo
+    paths: tuple[str, ...]
+    guidance: str
+
+
+@mcp.tool()
+def rebase_split(repo: str = ".") -> SplitReport:
+    """Take the commit this step just applied back out, keeping its changes.
+
+    For turning one commit into several: its changes end up in the working tree,
+    unstaged, with HEAD at the commit before it. Commit them in as many pieces as
+    you like -- with ordinary git, which needs nothing this server guards -- then
+    call proceed and the rest of the todo replays on top of them.
+
+    Only at an `edit` stop, and only one holding a single commit. Part-way
+    through a run of `fixup` or `squash` steps HEAD is the accumulation of them,
+    and taking that apart is a different operation from splitting one commit.
+
+    Nothing is lost if it goes wrong: the changes are in the tree, and abort
+    still puts the branch back where it started.
+    """
+    git = _git(repo)
+    state = read_state(git)
+    if not isinstance(state, StoppedAfterApply) or state.unapplied:
+        raise ValueError(_why_not_splittable(_report(state)))
+    if state.fixups_pending:
+        raise ValueError(
+            f"Refusing to split: HEAD ({state.head.sha[:9]}) is a run of "
+            f"{len(state.fixups_pending)} fixup or squash steps so far, not one "
+            "commit. Let the run finish, then split the commit it produces at a "
+            "later `edit` step."
+        )
+    # Uncommitted work would be indistinguishable from the commit's own changes
+    # once both are sitting in the tree, and the caller is about to divide those
+    # changes into commits by hand.
+    dirty = tuple(git.lines("status", "--porcelain", "--untracked-files=no"))
+    if dirty:
+        raise ValueError(
+            "Refusing to split: the working tree already has uncommitted changes "
+            f"({', '.join(entry[3:] for entry in dirty)}), which would be mixed in "
+            "with the commit's own once it is taken back out. Commit or stash them "
+            "first."
+        )
+    parent = git.run("rev-parse", "--verify", "--quiet", f"{state.head.sha}^", check=False)
+    if not parent.ok:
+        raise ValueError(
+            f"Refusing to split: {state.head.sha[:9]} is a root commit, so there is "
+            "no commit before it to reset to. Its content is the whole of the branch "
+            "at that point; a split has to be made by committing it differently."
+        )
+
+    unapplied = _info(state.head)
+    # From the commit, not from the tree afterwards. A mixed reset leaves the
+    # files a commit *added* untracked, so `git diff` lists only the ones it
+    # modified -- and a caller told about half of what to commit will commit half.
+    paths = tuple(git.lines("diff", "--name-only", f"{unapplied.sha}^", unapplied.sha))
+    # Mixed on purpose: staged changes would let a `git commit` with no paths
+    # sweep the whole commit back in, which is the opposite of splitting it.
+    git.run("reset", "-q", "--mixed", "HEAD^")
+    return SplitReport(
+        unapplied=unapplied,
+        head=_commit_info(git, "HEAD"),
+        paths=paths,
+        guidance=(
+            f"Took {unapplied.sha[:9]} ({unapplied.subject!r}) back out. Its changes "
+            f"are in the working tree, unstaged: {', '.join(paths)}. Commit them in "
+            "pieces, then call proceed -- which refuses while anything is left "
+            "uncommitted, since the rest of the todo would replay over it. Amending "
+            "is refused until then: HEAD is the commit before the one that was "
+            "applied."
+        ),
+    )
+
+
+def _split_leftovers(
+    git: Git, applied: str, staged: bool = False
+) -> tuple[tuple[str, str], ...]:
+    """What this step's commit changed that is not going into a commit, as (code, path).
+
+    Untracked files are the reason this exists. A mixed reset -- how a commit is
+    split -- leaves the files a commit *added* untracked, and `git rebase
+    --continue` does not refuse to replay over an untracked file: it reports
+    success, the change is not in the branch, and the file is still sitting in
+    the tree looking like it had been dealt with. Measured, not assumed.
+
+    Unstaged changes to tracked files count too: git refuses over those, but as
+    "You must edit all merge conflicts", of a rebase with no conflict in it.
+
+    Staged content only counts when `staged` is set, which is the split case.
+    Everywhere else it is exactly what `--continue` is for: it is how every
+    resolved conflict is committed, so counting it would refuse the normal flow.
+
+    Scoped to the commit's own paths, so unrelated scratch work is not something
+    this has an opinion about. Asked of the paths rather than of HEAD's position,
+    because it has to keep holding once the first piece of a split is committed.
+    """
+    if not applied:
+        return ()
+    paths = git.lines("diff", "--name-only", f"{applied}^", applied)
+    if not paths:
+        return ()
+    left: list[tuple[str, str]] = []
+    for entry in git.lines("status", "--porcelain", "--untracked-files=all", "--", *paths):
+        code, path = entry[:2], entry[3:]
+        # X is the index against HEAD, Y the working tree against the index.
+        if code == "??" or code[1] != " " or (staged and code[0] != " "):
+            left.append((code, path))
+    return tuple(left)
+
+
+def _why_not_continuing(left: tuple[tuple[str, str], ...]) -> str:
+    """Name what is being left behind, and what git would have done with it."""
+    listed = ", ".join(path for _, path in left)
+    dropped = [path for code, path in left if code == "??"]
+    if dropped:
+        return (
+            f"Refusing to continue: {', '.join(dropped)} is untracked and this step's "
+            "commit changed it -- the state a split leaves for a file the commit added. "
+            "Git would carry on and report success, leaving the change out of the "
+            "branch with the file still sitting in the tree. `git add` and commit it, "
+            "or move it aside if it does not belong."
+        )
+    return (
+        f"Refusing to continue: this step's commit changed {listed}, which is in the "
+        "working tree and not in a commit. Commit it -- in as many pieces as you want, "
+        "if this is a split -- or `git checkout` it away if it was meant to be dropped. "
+        "Git refuses this too, as merge conflicts that need `git add`, of a rebase that "
+        "has no conflict in it."
+    )
+
+
+def _why_not_splittable(report: StatusReport) -> str:
+    """Say what is wrong and what to do instead, not just that it was refused."""
+    if report.operation is None:
+        return (
+            "Refusing to split: nothing is in progress, so there is no step whose "
+            f"commit this would be. HEAD is {report.head.sha[:9]} "
+            f"({report.head.subject!r}); dividing that into several commits is an "
+            "ordinary `git reset HEAD^`, which needs nothing this tool guards."
+        )
+    if report.unapplied:
+        return (
+            "Refusing to split: the commit this step applied has already been taken "
+            "back out, and its changes are in the working tree. Commit them in "
+            "pieces, then call proceed."
+        )
+    return (
+        f"Refusing to split: the {report.operation} is {report.state}, and HEAD "
+        f"({report.head.sha[:9]} {report.head.subject!r}) is not a commit this "
+        f"step created. {report.guidance}"
+    )
+
+
 def _why_not_amendable(report: StatusReport) -> str:
     """Say what is wrong and what to do instead, not just that it was refused."""
     if report.operation is None:
@@ -1015,6 +1173,10 @@ def proceed(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
             "Refusing to continue: still unmerged: "
             f"{', '.join(state.unmerged)}. Stage each answer with resolve first."
         )
+    if isinstance(state, StoppedAfterApply):
+        left = _split_leftovers(git, state.applied, staged=state.unapplied)
+        if left:
+            raise ValueError(_why_not_continuing(left))
     command = _carry_on_command(state)
     if command is None:
         raise ValueError(_nothing_to_carry_on(state))
