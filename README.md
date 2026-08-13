@@ -74,11 +74,37 @@ still contradict each other — one side adding a call, the other removing the
 helper it needs — and a conflict resolved without being read has to be reviewed
 afterwards anyway.
 
+**Says when the question is whether a path lives at all.** A modify/delete does
+not look like a conflict: git leaves the surviving side's text in the working
+file with no markers in it, so nothing about the file says one side deleted it.
+It is reported as that, with the side named, and `take` then means a side rather
+than a text — the side that deleted the path stages the deletion. It used to
+compose the file's blocks, of which there are none, and stage the empty string
+that fell out: an empty file in the commit, the path no longer conflicted, and
+nothing downstream with a reason to complain. The guidance also points out that
+such a deletion is often half of a rename, in which case what the incoming side
+did to the old path has to be reapplied to the new one.
+
+**Splits a commit without being reached past.** `rebase_split` takes the commit
+a step just applied back out, leaving its changes in the working tree to commit
+as several. Doing that by hand — `git reset HEAD^` at an `edit` stop — is the one
+move that leaves a rebase where `--amend` rewrites the commit *before* the one you
+mean, and git's own record still says amending is safe through it. Now the state
+says `unapplied`, amending is refused, and `proceed` refuses while any of the
+commit is still outside a commit. That last one matters most for a file the
+commit *added*: the reset leaves it untracked, and `git rebase --continue`
+neither refuses nor picks it up. It reports success, and the change is simply
+not in the branch.
+
 **Records where the branch was, and checks the result against it.** What must
 stay the same is the change the branch makes to its base -- not the resulting
 tree, which changes for good reason when the rebase also moves onto newer
-upstream work. A difference is a report of damage. This is what caught all
-three errors above.
+upstream work. A difference is usually a report of damage, and this is what
+caught all three errors above. Usually, because a deliberate redistribution
+looks the same from there — a commit dropped because the new base already has
+it, or one commit's work moved into others — so the report says which:
+`tree_identical` means the content is exactly what it started as, and nothing was
+lost but the branch's own share of it.
 
 ## It is not only for rebases
 
@@ -118,12 +144,13 @@ a cherry-pick is not doing.
 | `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in. | rebase |
 | `status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. Reports a rebase that has ended and not been checked, rather than only that none is running. | any |
 | `conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the incoming side did to each file. | any |
-| `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers. | any |
+| `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers. Where one side deleted the path, `take` names a side rather than a text, so taking that side stages the deletion. | any |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. | rebase |
-| `proceed` | Carries on, by the operation's own `--continue`. Refuses while anything is unmerged. | any |
+| `rebase_split` | Takes this step's commit back out, changes left in the tree, to commit as several. | rebase |
+| `proceed` | Carries on, by the operation's own `--continue`. Refuses while anything is unmerged, or while part of this step's commit is left outside a commit. | any |
 | `skip` | Drops the commit being applied — for one already in the base. | rebase, cherry-pick, revert |
 | `rebase_todo` | The steps left, and replaces them. Refuses to drop a commit. | rebase |
-| `rebase_finish` | Checks the branch still makes the same change to its base, and names any commit that brought a conflict marker to a file. | rebase started here |
+| `rebase_finish` | Checks the branch still makes the same change to its base, and names any commit that brought a conflict marker to a file. `tree_identical` says whether a difference is a redistribution or a loss. | rebase started here |
 | `abort` | Abandons the operation and puts back what was moved aside. | rebase, cherry-pick, revert, merge |
 
 The prefix carries the distinction: `rebase_` is for the tools that only make
@@ -231,6 +258,13 @@ The rebase tools are complete and tested, and have driven the same 21-commit
 branch twice. They caught two defects nothing else would have — a syntax error
 committed into 8 of 10 commits, and a `fixup` whose test depended on a commit
 scheduled after it.
+
+A third run, tidying a branch whose TypeScript conversion had been split from
+the feature that prompted it, produced the four fixes above: `take` staging an
+empty file where the branch had renamed one away, an `edit` stop reported as "a
+run of 0 fixup or squash steps", no way to divide a commit without reaching past
+the tools, and a deliberately dropped commit called damage. Each was found by
+using the thing, and each is now a test.
 
 What they do not yet do is save much time: nine of eleven conflicts in the last
 run were mechanical shapes resolved by a hand-written script. [Phase 2](docs/phase-2.md)
