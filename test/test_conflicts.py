@@ -19,7 +19,9 @@ from git_rebase_mcp.conflicts import (
     _render,
     _summarise,
     auto_resolution,
+    deleted_side,
     read_conflict,
+    side_text,
 )
 from git_rebase_mcp.state import Conflicted, read_state
 
@@ -301,6 +303,105 @@ def test_an_add_add_conflict_says_there_is_no_common_base(scratch: Scratch) -> N
     assert conflict.units == ()
     assert conflict.sides.branch_so_far == "from branch\n"
     assert conflict.sides.replaying == "from side\n"
+
+
+def deleted_by_the_branch(scratch: Scratch) -> None:
+    """Replay a commit that edits `f` onto a branch that removed it.
+
+    The branch deletes `f` outright rather than renaming it, because a rename
+    git can detect never reaches this state: it follows the path and applies the
+    replayed edit to the new name. What produces a modify/delete is a deletion
+    with nothing similar enough to be paired with it -- an outright removal, or
+    a rename whose content changed too much to be recognised as one.
+    """
+    scratch.commit("base", f="one\ntwo\n", other="keep\n")
+    base = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("rm", "-q", "f")
+    scratch.git.run("commit", "-q", "-m", "branch deletes f")
+    deleting = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "-b", "side", base)
+    scratch.commit("side edits f", f="one\ntwo\nthree\n")
+    side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.start_rebase(base, [f"pick {deleting}", f"pick {side}"])
+
+
+def test_a_path_one_side_deleted_says_so_rather_than_diffing_its_lines(
+    scratch: Scratch,
+) -> None:
+    """Regions could be computed here -- there is a base and one side -- and they
+    would read as "the branch removed every line", which is true of the text and
+    is not what happened. The decision is whether the path lives."""
+    deleted_by_the_branch(scratch)
+
+    conflict = read_conflict(scratch.git, "f")
+    assert conflict.deleted_by == "branch"
+    assert conflict.units == ()
+    assert conflict.sides.base == "one\ntwo\n"
+    assert conflict.sides.branch_so_far == ""
+    assert conflict.sides.replaying == "one\ntwo\nthree\n"
+
+
+def test_the_side_that_deleted_is_named_even_when_it_is_the_replayed_one(
+    scratch: Scratch,
+) -> None:
+    """The mirror case: the branch keeps editing a path the replayed commit
+    removes. Both are modify/delete conflicts and the answers are opposites, so
+    which side is which is the whole of what the caller needs told."""
+    scratch.commit("base", f="one\ntwo\n")
+    base = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "-b", "side", base)
+    scratch.git.run("rm", "-q", "f")
+    scratch.git.run("commit", "-q", "-m", "side deletes f")
+    deleting = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.commit("branch edits f", f="one\ntwo\nthree\n")
+    editing = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase(base, [f"pick {editing}", f"pick {deleting}"])
+
+    conflict = read_conflict(scratch.git, "f")
+    assert conflict.deleted_by == "replaying"
+    assert conflict.sides.replaying == ""
+    assert conflict.sides.branch_so_far == "one\ntwo\nthree\n"
+
+
+def test_a_conflict_with_both_sides_present_reports_no_deletion(scratch: Scratch) -> None:
+    """The check has to stay quiet on the ordinary conflict: a report of a
+    deletion that did not happen would send the caller to `take` for a question
+    the regions were there to answer."""
+    scratch.commit("base", f="one\n")
+    scratch.commit("second", f="two\n")
+    scratch.commit("third", f="three\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    assert deleted_side(scratch.git, "f") is None
+    assert read_conflict(scratch.git, "f").deleted_by is None
+
+
+def test_an_add_add_conflict_is_not_reported_as_a_deletion(scratch: Scratch) -> None:
+    """No base stage means neither side removed anything -- both introduced the
+    path. Reading a missing base as a deletion would offer to stage one."""
+    scratch.commit("base", other="x\n")
+    scratch.commit("branch adds", f="from branch\n")
+    branch_side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "-b", "side", "HEAD~1")
+    scratch.commit("side adds", f="from side\n")
+    side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.start_rebase(branch_side, [f"pick {side}"])
+
+    assert deleted_side(scratch.git, "f") is None
+    assert read_conflict(scratch.git, "f").no_common_base
+
+
+def test_a_surviving_side_can_be_read_whole(scratch: Scratch) -> None:
+    """What keeping the path means, for the side that still has it. Composing
+    blocks cannot say: a modify/delete has none."""
+    deleted_by_the_branch(scratch)
+
+    assert side_text(scratch.git, "f", "replaying") == "one\ntwo\nthree\n"
+    assert side_text(scratch.git, "f", "branch") == ""
 
 
 def test_a_block_the_branch_has_not_reached_stays_small(scratch: Scratch) -> None:

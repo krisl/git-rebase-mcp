@@ -127,6 +127,45 @@ def test_an_add_add_conflict_hands_over_both_versions(scratch: Scratch) -> None:
     assert "No common base for f" in report.guidance
 
 
+@pytest.fixture
+def deleted_by_the_branch(scratch: Scratch) -> Scratch:
+    """A rebase stopped where the branch deleted `f` and the replayed commit edits it.
+
+    An outright deletion rather than a rename: a rename git can detect is
+    followed, and the replayed edit lands on the new name without conflicting.
+    """
+    scratch.commit("base", f="one\ntwo\n", other="keep\n")
+    base = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("rm", "-q", "f")
+    scratch.git.run("commit", "-q", "-m", "branch deletes f")
+    deleting = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "-b", "side", base)
+    scratch.commit("side edits f", f="one\ntwo\nthree\n")
+    side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.start_rebase(base, [f"pick {deleting}", f"pick {side}"])
+    return scratch
+
+
+def test_a_deleted_path_is_reported_as_a_deletion_not_as_regions(
+    deleted_by_the_branch: Scratch,
+) -> None:
+    """Git leaves the surviving side's text in the working file with no markers
+    in it, so nothing about the file says the question is whether it exists. The
+    report has to say it: `take` means something different here, and a caller
+    reading "removes 57 lines" has no reason to suspect that."""
+    report = conflicts(str(deleted_by_the_branch.path))
+    entry = report.files[0]
+
+    assert entry.path == "f"
+    assert entry.deleted_by == "branch"
+    assert entry.units == ()
+    assert "gone from the branch" in report.guidance
+    # The two answers, and the reason the deletion is often not the whole story.
+    assert 'take="branch"' in report.guidance
+    assert "include_file_diffs" in report.guidance
+
+
 def test_a_block_whose_base_is_a_repeated_line_is_placed_at_the_conflict(
     scratch: Scratch,
 ) -> None:

@@ -160,6 +160,9 @@ class FileConflict:
     # almost always "both, branch first", so saying so lets a caller answer in
     # one call instead of reading the file to work out the same thing.
     both_inserted: bool = False
+    # "branch" or "replaying" for a path one side deleted and the other
+    # modified. There are no units in that case: see deleted_side.
+    deleted_by: str | None = None
 
 
 def read_conflict(
@@ -174,8 +177,17 @@ def read_conflict(
     # Git records no stage 1 when the sides share no ancestor for this path. With
     # no base there is nothing to diff against, so the two-intents framing does
     # not apply and the whole text of each side is the only useful answer.
-    if not git.succeeds("rev-parse", "--verify", "--quiet", f":{BASE}:{path}"):
+    if not _present(git, BASE, path):
         return FileConflict(path=path, units=(), sides=sides, no_common_base=True)
+
+    # One side deleted the path. There is a base and one side, so regions could
+    # be computed -- and they would read as "the branch removed every line",
+    # which is true of the text and not what happened. What decides this
+    # conflict is whether the path lives, so it is reported as that and no
+    # region is invented to dress it up as two edits meeting.
+    deleted = deleted_side(git, path)
+    if deleted is not None:
+        return FileConflict(path=path, units=(), sides=sides, deleted_by=deleted)
 
     base_lines = base.splitlines()
     branch_lines = branch.splitlines()
@@ -575,6 +587,50 @@ def _stage(git: Git, stage: str, path: str) -> str:
     """
     result = git.run("show", f":{stage}:{path}", check=False)
     return result.stdout if result.ok else ""
+
+
+def _present(git: Git, stage: str, path: str) -> bool:
+    """Whether git recorded this stage, which is how it says a side has the path."""
+    return git.succeeds("rev-parse", "--verify", "--quiet", f":{stage}:{path}")
+
+
+def deleted_side(git: Git, path: str) -> str | None:
+    """The side that removed the path, when the other side still has it.
+
+    A modify/delete conflict does not look like one. Git leaves the surviving
+    side's text in the working file with no markers in it, so the file reads as
+    though it merged cleanly, and nothing in it says that what is being decided
+    is whether the path exists.
+
+    It is worth naming for what happens if it is not: taking the deleting side
+    means staging a deletion, and every other route through this module returns
+    text. Text for a side that has none is the empty string, and staging that
+    writes an empty file into the commit -- a resolution nothing downstream
+    reports as wrong, since the path is no longer conflicted.
+
+    None when both sides have the path, and for an add/add, which has no base
+    and so no deletion either.
+    """
+    if not _present(git, BASE, path):
+        return None
+    if not _present(git, BRANCH_SO_FAR, path):
+        return "branch"
+    if not _present(git, REPLAYING, path):
+        return "replaying"
+    return None
+
+
+def side_text(git: Git, path: str, side: str) -> str:
+    """One whole side of a conflicted path, as git recorded it.
+
+    For the conflicts `take_side` cannot answer by composing blocks: where one
+    side deleted the path there are no blocks, and the surviving side's text is
+    the whole of what keeping it means.
+    """
+    stages = {"branch": BRANCH_SO_FAR, "replaying": REPLAYING}
+    if side not in stages:
+        raise ValueError(f"side must be branch or replaying, not {side!r}")
+    return _stage(git, stages[side], path)
 
 
 def _opcodes(base: list[str], other: list[str]) -> list[Opcode]:

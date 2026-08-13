@@ -209,6 +209,10 @@ class FileReport:
     # Every block is both sides inserting at the same point. Nothing says which
     # order was meant, so composing refuses -- but `take="both"` answers it.
     both_inserted: bool = False
+    # "branch" or "replaying" for a path that side deleted while the other
+    # modified it. There are no units: what is being decided is whether the path
+    # lives, and `take` names the side whose answer to that to stage.
+    deleted_by: str | None = None
     base: str | None = None
     branch_so_far: str | None = None
     replaying: str | None = None
@@ -359,6 +363,21 @@ def _conflict_guidance(
             ' independent additions, `resolve(path, take="both")` keeps the'
             " branch's first and the replayed commit's after."
         )
+    removed = [(f.path, f.deleted_by) for f in files if f.deleted_by is not None]
+    if removed:
+        cases = ", ".join(
+            f"{path} (gone from {'the branch' if side == 'branch' else incoming})"
+            for path, side in removed
+        )
+        advice += (
+            f" One side deleted a path the other modified: {cases}. Nothing composes "
+            "here and no regions are listed: what is being decided is whether the path "
+            'lives. `take` says either answer -- take="branch" and take="replaying" '
+            "each stage what that side did, a deletion included. A deletion is often "
+            "half of a rename the other side has not got, in which case what the "
+            "incoming side did to the old path has to be reapplied to the new one: "
+            "include_file_diffs shows it."
+        )
     rootless = [f.path for f in files if f.no_common_base]
     if rootless:
         advice += (
@@ -399,6 +418,7 @@ def _file_report(
         ),
         no_common_base=conflict.no_common_base,
         both_inserted=conflict.both_inserted,
+        deleted_by=conflict.deleted_by,
         # With no common base there are no units, so withholding the texts would
         # leave the caller nothing at all.
         base=conflict.sides.base if include_full_sides else None,
