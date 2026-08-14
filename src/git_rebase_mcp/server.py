@@ -1217,7 +1217,7 @@ def proceed(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
             raise ValueError(_why_not_continuing(left))
     command = _carry_on_command(state)
     if command is None:
-        raise ValueError(_nothing_to_carry_on(state))
+        raise ValueError(_nothing_to_carry_on(git, state))
     # Stopping again on the next conflict is an ordinary outcome, not a failure,
     # so the exit status is read from the state rather than from git.
     result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
@@ -1238,12 +1238,33 @@ def _carry_on_command(state: RebaseState) -> str | None:
     return None
 
 
-def _nothing_to_carry_on(state: RebaseState, verb: str = "continue") -> str:
+def _nothing_to_carry_on(git: Git, state: RebaseState, verb: str = "continue") -> str:
+    """Why there is nothing to carry on, in the terms of what actually happened.
+
+    A rebase that ran to its end leaves nothing to continue, which is the same
+    absence as never having started one -- and reported in those words it reads
+    as the state having been lost, at the moment a branch has just been
+    rewritten and nobody has checked it. The session says which it is, so it is
+    asked rather than the caller left to find out from `status`.
+    """
     if isinstance(state, Applying):  # the unknown operation: nothing owns it
         return (
             f"Nothing to {verb}: the conflict came from something that left no "
             "record of itself -- a stash popped into one, or `checkout -m` -- so "
             "there is no operation to finish. Resolve the paths and commit as usual."
+        )
+    finished = _finished(git)
+    if finished is not None and finished.branch_moved:
+        return (
+            f"Nothing to {verb}: the rebase ran to the end. The branch now has "
+            f"{plural(finished.rewritten, 'commit')} on {finished.base}, unchecked. "
+            "Call rebase_finish."
+        )
+    if finished is not None:
+        return (
+            f"Nothing to {verb}: the rebase is over and the branch is exactly where "
+            "it started, so it was abandoned outside this server or had nothing to "
+            "change. Call rebase_finish to close it out."
         )
     return f"Nothing in progress: no rebase, cherry-pick, revert or merge to {verb}."
 
@@ -1775,7 +1796,7 @@ def skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
         )
     command = _carry_on_command(state)
     if command is None:
-        raise ValueError(_nothing_to_carry_on(state, "skip"))
+        raise ValueError(_nothing_to_carry_on(git, state, "skip"))
     result = git.run("-c", "core.editor=true", *RERERE, command, "--skip", check=False)
     return _advance(git, _git_said(result), auto_resolve, _replayed(result))
 

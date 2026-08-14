@@ -11,6 +11,7 @@ from git_rebase_mcp.server import (
     rebase_amend,
     rebase_finish,
     rebase_start,
+    skip,
 )
 
 from scratch import Scratch
@@ -178,6 +179,50 @@ def test_committed_markers_are_caught(scratch: Scratch) -> None:
     assert not report.ok
     assert report.commits_with_markers
     assert "conflict markers were committed" in report.guidance
+
+
+def test_continuing_a_finished_rebase_says_it_finished(series: Scratch) -> None:
+    """The same absence as never having started one, and said in those words it
+    reads as the state having been lost -- exactly when a branch has just been
+    rewritten and nothing has checked it."""
+    b, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"pick {c}", f"pick {b}"])
+
+    with pytest.raises(ValueError) as raised:
+        proceed(str(series.path))
+    assert "ran to the end" in str(raised.value)
+    assert "rebase_finish" in str(raised.value)
+    assert "Nothing in progress" not in str(raised.value)
+
+
+def test_skipping_a_finished_rebase_says_it_finished(series: Scratch) -> None:
+    b, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"pick {c}", f"pick {b}"])
+
+    with pytest.raises(ValueError, match="Nothing to skip: the rebase ran to the end"):
+        skip(str(series.path))
+
+
+def test_a_rebase_that_changed_nothing_is_not_reported_as_rewritten(
+    series: Scratch,
+) -> None:
+    """Abandoned outside the server, or with nothing to do: the branch sits
+    where it started, and saying it was rewritten would be a guess."""
+    b, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"pick {b}", f"pick {c}"])
+    series.git.run("reset", "--hard", load_session(series.git).backup_sha)  # type: ignore[union-attr]
+
+    with pytest.raises(ValueError) as raised:
+        proceed(str(series.path))
+    assert "exactly where it started" in str(raised.value)
+    assert "rebase_finish" in str(raised.value)
+
+
+def test_no_rebase_at_all_still_says_nothing_is_in_progress(scratch: Scratch) -> None:
+    """The new answers must not swallow the plain one."""
+    scratch.commit("base", a="one\n")
+    with pytest.raises(ValueError, match="Nothing in progress"):
+        proceed(str(scratch.path))
 
 
 def test_markers_that_are_content_can_be_allowed(scratch: Scratch) -> None:
