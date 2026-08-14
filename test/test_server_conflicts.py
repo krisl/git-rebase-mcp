@@ -13,6 +13,7 @@ from git_rebase_mcp.server import (
     _conflict_guidance,
     _contained,
     conflicts,
+    proceed,
     rebase_start,
     resolve,
     status,
@@ -644,3 +645,50 @@ def test_the_guidance_says_nothing_of_the_kind_when_the_region_is_placed() -> No
 
     assert "src/report.py" not in advice
     assert "base_range" not in advice
+
+
+def test_a_replayed_resolution_is_named(scratch: Scratch) -> None:
+    """The field that exists because this server turns rerere on itself.
+
+    It does, deliberately, so an aborted-and-retried rebase does not resolve
+    the identical conflict twice by hand -- and it leaves `rerere.autoUpdate`
+    off on the stated grounds that a replay "is a guess from an earlier
+    context and should be looked at before it is staged".  Which it said only
+    inside git's passthrough text, while its own far milder auto-compositions
+    got a field.  Restarting a rebase is exactly when a caller stops reading
+    that text closely, because it has seen it once already.
+    """
+    scratch.commit("base", f="one\n")
+    scratch.git.run("checkout", "-q", "-b", "side")
+    scratch.commit("side edit", f="side\n")
+    side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.commit("main edit", f="main\n")
+
+    # Resolve it once, so git has the answer recorded.
+    original = scratch.git.out("rev-parse", "HEAD")
+    rebase_start(f"{side}", str(scratch.path), force=True)
+    scratch.write("f", "resolved by hand\n")
+    scratch.git.run("add", "f")
+    proceed(str(scratch.path))
+
+    # Then put the branch back and meet the identical conflict again, which
+    # is what abandoning a rebase and retrying it amounts to.
+    scratch.git.run("reset", "--hard", "-q", original)
+    report = rebase_start(f"{side}", str(scratch.path), force=True)
+    assert report.status.replayed_resolutions == ("f",)
+    assert scratch.read("f") == "resolved by hand\n"
+
+
+def test_nothing_replayed_says_nothing(scratch: Scratch) -> None:
+    """A conflict seen for the first time has no memory behind it."""
+    scratch.commit("base", f="one\n")
+    scratch.git.run("checkout", "-q", "-b", "side")
+    scratch.commit("side edit", f="side\n")
+    side = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+    scratch.commit("main edit", f="main\n")
+
+    report = rebase_start(f"{side}", str(scratch.path), force=True)
+    assert report.status.conflicted_files == ("f",)
+    assert report.status.replayed_resolutions == ()

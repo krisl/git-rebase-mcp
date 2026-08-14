@@ -162,6 +162,14 @@ class StatusReport:
     # sides edited different lines. Named rather than left silent: an automatic
     # resolution is still a resolution, and worth a look.
     auto_resolved: tuple[str, ...] = ()
+    # Paths git resolved from a resolution recorded on an earlier run of the
+    # same conflict. The same argument as `auto_resolved`, and it applies
+    # harder: this one was decided in a context the caller may no longer be
+    # in -- a rebase abandoned and restarted onto a moved base hits the
+    # identical conflict and replays an answer written for the old one. It was
+    # visible only as a line inside git's passthrough text, which is not where
+    # a caller looks for something it is being asked to check.
+    replayed_resolutions: tuple[str, ...] = ()
     # What git printed when it stopped, when this report follows a git command.
     # Git often explains a stop in a way nothing else can reconstruct -- "the
     # previous cherry-pick is now empty" being the one that cost the most time --
@@ -853,7 +861,7 @@ def rebase_start(
     result = git.run(*config, *args, check=False)
     if not result.ok and not is_rebasing(read_state(git)):
         _withdraw_start(git, backup, stashed, stash_ref, result)
-    stopped = _advance(git, _git_said(result), auto_resolve)
+    stopped = _advance(git, _git_said(result), auto_resolve, _replayed(result))
     return StartReport(
         backup_ref=backup.ref,
         stashed=stashed,
@@ -1213,7 +1221,7 @@ def proceed(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     # Stopping again on the next conflict is an ordinary outcome, not a failure,
     # so the exit status is read from the state rather than from git.
     result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
-    return _advance(git, _git_said(result), auto_resolve)
+    return _advance(git, _git_said(result), auto_resolve, _replayed(result))
 
 
 def _carry_on_command(state: RebaseState) -> str | None:
@@ -1248,6 +1256,21 @@ def _commit_info(git: Git, revision: str) -> CommitInfo:
 # Progress ticks and git's generic advice add length without adding meaning; the
 # sentence explaining the stop is what is worth keeping.
 NOISE = re.compile(r"^(Rebasing \(\d+/\d+\)|hint:|\s*$)")
+
+# Git's own sentence for a conflict it resolved from its recorded memory. This
+# server turns rerere on (see RERERE) and leaves autoUpdate off precisely
+# because a replay "is a guess from an earlier context and should be looked
+# at" -- and then said so only inside git's passthrough text, while its own
+# far milder auto-compositions got a field of their own. Parsing a message is
+# not this project's habit, but the alternative is asking git for something it
+# does not report; a wording change degrades this to silence, never to a wrong
+# answer.
+REPLAYED = re.compile(r"^Resolved '(.+)' using previous resolution\.$", re.M)
+
+
+def _replayed(result: GitResult) -> tuple[str, ...]:
+    """Paths git resolved from a resolution it recorded earlier."""
+    return tuple(REPLAYED.findall(result.stderr + result.stdout))
 
 
 def _git_said(result: GitResult, limit: int = 1200) -> str:
@@ -1292,7 +1315,8 @@ def _info(commit: Commit) -> CommitInfo:
 AUTO_STEPS = 200
 
 
-def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
+def _advance(git: Git, git_said: str, auto_resolve: bool,
+             replayed: tuple[str, ...] = ()) -> StatusReport:
     """Read where the rebase stopped, composing the decidable conflicts on the way.
 
     Composing is opt-in. Where the two sides edited different lines there is
@@ -1305,13 +1329,16 @@ def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
         state = read_state(git)
         command = _carry_on_command(state)
         if not isinstance(state, (Conflicted, Applying)) or not auto_resolve:
-            return _report(state, git_said, tuple(resolved), git=git)
+            return _report(state, git_said, tuple(resolved), git=git,
+                       replayed=replayed)
         if not state.unmerged or command is None:
-            return _report(state, git_said, tuple(resolved), git=git)
+            return _report(state, git_said, tuple(resolved), git=git,
+                       replayed=replayed)
 
         composed = {path: auto_resolve_file(git, path) for path in state.unmerged}
         if any(text is None for text in composed.values()):
-            return _report(state, git_said, tuple(resolved), git=git)
+            return _report(state, git_said, tuple(resolved), git=git,
+                       replayed=replayed)
 
         for path, text in composed.items():
             assert text is not None
@@ -1320,7 +1347,9 @@ def _advance(git: Git, git_said: str, auto_resolve: bool) -> StatusReport:
             resolved.append(path)
         result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
         git_said = _git_said(result)
-    return _report(read_state(git), git_said, tuple(resolved), git=git)
+        replayed = replayed + _replayed(result)
+    return _report(read_state(git), git_said, tuple(resolved), git=git,
+                   replayed=replayed)
 
 
 def _after_apply_guidance(state: StoppedAfterApply) -> str:
@@ -1443,6 +1472,7 @@ def _report(
     git_said: str = "",
     auto_resolved: tuple[str, ...] = (),
     git: Git | None = None,
+    replayed: tuple[str, ...] = (),
 ) -> StatusReport:
     """The state as a report, stamped with the checkout it is about.
 
@@ -1451,7 +1481,7 @@ def _report(
     end of the match.  It needs `git`, and the callers that pass none want the
     bare state name and nothing else.
     """
-    report = _state_report(state, git_said, auto_resolved, git)
+    report = _state_report(state, git_said, auto_resolved, git, replayed)
     if git is None:
         return report
     worktree, branch = git.where()
@@ -1463,6 +1493,7 @@ def _state_report(
     git_said: str = "",
     auto_resolved: tuple[str, ...] = (),
     git: Git | None = None,
+    replayed: tuple[str, ...] = (),
 ) -> StatusReport:
     match state:
         case NotRebasing():
@@ -1472,6 +1503,7 @@ def _state_report(
             return StatusReport(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
+                replayed_resolutions=replayed,
                 state="not_rebasing",
                 head=_info(state.head),
                 head_is_replaying_commit=False,
@@ -1483,6 +1515,7 @@ def _state_report(
             return StatusReport(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
+                replayed_resolutions=replayed,
                 state="conflicted",
                 operation="rebase",
                 head=_info(state.head),
@@ -1503,6 +1536,7 @@ def _state_report(
             return StatusReport(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
+                replayed_resolutions=replayed,
                 state="conflicted" if state.unmerged else "applying",
                 operation=state.operation,
                 head=_info(state.head),
@@ -1516,6 +1550,7 @@ def _state_report(
             return StatusReport(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
+                replayed_resolutions=replayed,
                 state="stopped_after_apply",
                 operation="rebase",
                 head=_info(state.head),
@@ -1532,6 +1567,7 @@ def _state_report(
             return StatusReport(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
+                replayed_resolutions=replayed,
                 state="stopped_without_apply",
                 operation="rebase",
                 head=_info(state.head),
@@ -1741,7 +1777,7 @@ def skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     if command is None:
         raise ValueError(_nothing_to_carry_on(state, "skip"))
     result = git.run("-c", "core.editor=true", *RERERE, command, "--skip", check=False)
-    return _advance(git, _git_said(result), auto_resolve)
+    return _advance(git, _git_said(result), auto_resolve, _replayed(result))
 
 
 @mcp.tool()
