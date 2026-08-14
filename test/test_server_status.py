@@ -251,3 +251,64 @@ def test_a_stopped_fixup_chain_is_not_reported_as_the_replayed_commit(
     assert report.can_amend  # git does mean HEAD; it is just not the replayed commit
     assert "not " + last[:9] in report.guidance
     assert "ignore the subject" in report.guidance
+
+
+def test_a_report_says_which_checkout_it_is_about(separate_files: Scratch) -> None:
+    """The field that exists because a shell got this wrong and a tool did not.
+
+    A repository with worktrees has several checkouts of one history side by
+    side, each on its own branch at its own commit.  Every tool here takes
+    `repo` and is therefore always right; a shell in the same session drifts
+    between directories, and `git show HEAD:file` then answers about whichever
+    one it happens to be in.  Two answers that look alike and are about
+    different trees is how a healthy rebase gets abandoned on a misreading.
+    """
+    separate_files.git.run("branch", "-q", "side")
+    elsewhere = separate_files.path.parent / "elsewhere"
+    separate_files.git.run("worktree", "add", "-q", str(elsewhere), "side")
+
+    here = status(str(separate_files.path))
+    there = status(str(elsewhere))
+
+    assert here.worktree == str(separate_files.path)
+    assert here.branch == "main"
+    assert there.worktree == str(elsewhere)
+    assert there.branch == "side"
+
+
+def test_the_checkout_is_named_through_a_stop_too(separate_files: Scratch) -> None:
+    """Not only when idle: the reports a caller reads mid-rebase are the ones
+    it is comparing against its own `git` output."""
+    b, c = (separate_files.git.out("rev-parse", r) for r in ("HEAD~1", "HEAD"))
+    started = rebase_start(
+        "HEAD~2", str(separate_files.path), [f"edit {b}", f"pick {c}"]
+    )
+    assert started.status.worktree == str(separate_files.path)
+    assert started.status.branch == "main"
+
+
+def test_a_report_built_without_a_repository_still_returns(
+    separate_files: Scratch,
+) -> None:
+    """The stamp needs git, and the callers that pass none want the bare state.
+    Empty rather than absent, so a reader never has to test for the field."""
+    from git_rebase_mcp.server import _report
+    from git_rebase_mcp.state import read_state
+
+    report = _report(read_state(separate_files.git))
+    assert report.worktree == ""
+    assert report.branch == ""
+
+
+def test_a_detached_head_that_is_not_a_rebase_names_no_branch(
+    separate_files: Scratch,
+) -> None:
+    """The honest answer, since there is no branch to name.
+
+    Guarding the fallback: reading `head-name` where no rebase wrote one must
+    not resurrect a stale name from a previous operation.
+    """
+    separate_files.git.run("checkout", "-q", "--detach", "HEAD~1")
+    report = status(str(separate_files.path))
+    assert report.branch == ""
+    assert report.worktree == str(separate_files.path)

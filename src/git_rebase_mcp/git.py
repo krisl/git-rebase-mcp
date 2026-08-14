@@ -89,6 +89,42 @@ class Git:
         """Whether the command exits zero. For questions, not for actions."""
         return self.run(*args, check=False).ok
 
+    def where(self) -> tuple[str, str]:
+        """The working tree this instance drives, and the branch checked out.
+
+        Reported back to the caller because a `repo` argument is easy to get
+        right and a shell is not: a repository with worktrees has several
+        checkouts of the same history, each on its own branch and at its own
+        commit, and a plain `git show HEAD:file` answers about whichever
+        directory the shell happens to be in.
+
+        Asking rather than echoing the argument, so a relative path, a
+        subdirectory of the repository and a symlink all come back as the one
+        place the answer is about. Empty strings when git cannot say -- a
+        report is worth returning without them.
+
+        A rebase detaches HEAD, so `--abbrev-ref` answers "HEAD" for the whole
+        of the operation these reports are read during -- which is to say, the
+        field would be blank exactly where it was added to be useful. Git
+        records what it is rewriting in `rebase-merge/head-name`, and that is
+        the branch a caller means.
+        """
+        top = self.run("rev-parse", "--show-toplevel", check=False)
+        return (top.stdout.strip() if top.ok else "", self._branch())
+
+    def _branch(self) -> str:
+        name = self.run("rev-parse", "--abbrev-ref", "HEAD", check=False)
+        current = name.stdout.strip() if name.ok else ""
+        if current != "HEAD":
+            return current
+        try:
+            rewriting = self.git_path("rebase-merge/head-name").read_text().strip()
+        except OSError:
+            # Detached for some other reason, which is the honest answer: there
+            # is no branch, and naming one would be worse than naming none.
+            return ""
+        return rewriting.removeprefix("refs/heads/")
+
 
 def _path() -> str:
     import os

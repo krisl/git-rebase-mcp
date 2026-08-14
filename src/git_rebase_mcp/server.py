@@ -167,6 +167,15 @@ class StatusReport:
     # previous cherry-pick is now empty" being the one that cost the most time --
     # and swallowing it leaves the caller guessing.
     git_said: str = ""
+    # Which checkout this report is about, and what is on it. Every tool here
+    # takes `repo` and is therefore always right about it; a shell in the same
+    # session is not, and a repository with worktrees has several checkouts of
+    # one history side by side. Saying it back means a caller reading `git show
+    # HEAD:file` from the wrong directory has this server's own answer next to
+    # its own, instead of two numbers it has no way to tell apart. Cost one
+    # `rev-parse`; the alternative was a rebase abandoned on a misreading.
+    worktree: str = ""
+    branch: str = ""
 
 
 @mcp.tool()
@@ -1430,6 +1439,26 @@ def _finished_guidance(finished: FinishedRebase | None) -> str:
 
 
 def _report(
+    state: RebaseState,
+    git_said: str = "",
+    auto_resolved: tuple[str, ...] = (),
+    git: Git | None = None,
+) -> StatusReport:
+    """The state as a report, stamped with the checkout it is about.
+
+    The stamp is applied here rather than in each `case` so that a state added
+    later cannot arrive without it -- the same reason `assert_never` guards the
+    end of the match.  It needs `git`, and the callers that pass none want the
+    bare state name and nothing else.
+    """
+    report = _state_report(state, git_said, auto_resolved, git)
+    if git is None:
+        return report
+    worktree, branch = git.where()
+    return replace(report, worktree=worktree, branch=branch)
+
+
+def _state_report(
     state: RebaseState,
     git_said: str = "",
     auto_resolved: tuple[str, ...] = (),
