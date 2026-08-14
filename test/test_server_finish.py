@@ -368,3 +368,64 @@ def test_a_lost_line_is_still_damage(scratch: Scratch) -> None:
     report = rebase_finish(str(scratch.path))
     assert not report.ok
     assert not report.reordered_only
+
+
+def test_a_dropped_commit_is_named_not_just_counted(series: Scratch) -> None:
+    """The gap a real session hit: the report said the branch's change moved
+    and handed over "3 files changed, 21 insertions", which does not say which
+    commit did it. Verifying that meant dropping to `git diff` by hand."""
+    _, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"pick {c}"], force=True)
+
+    report = rebase_finish(str(series.path))
+    assert not report.ok
+    dropped = [x for x in report.changed_commits if x.status == "dropped"]
+    assert [x.subject for x in dropped] == ["adds b"]
+    assert dropped[0].before is not None and dropped[0].after is None
+
+
+def test_an_amended_commit_is_named_with_both_its_shas(scratch: Scratch) -> None:
+    """A file of several lines, one of them corrected: an ordinary amend.
+
+    git pairs the two versions of a commit by how alike their diffs are, and
+    that threshold is git's to set -- a commit whose every line is rewritten is
+    reported as one dropped and another added, which is what it looks like.
+    """
+    scratch.commit("base", a="one\n")
+    scratch.commit("adds f", f="one\ntwo\nthree\nfour\nfive\nsix\n")
+    scratch.commit("adds g", g="g\n")
+    f, g = two(scratch)
+    rebase_start("HEAD~2", str(scratch.path), [f"edit {f}", f"pick {g}"])
+    (scratch.path / "f").write_text("one\ntwo\nthree\nfour\nfive\nsix, corrected\n")
+    rebase_amend(repo=str(scratch.path), stage_tracked=True)
+    proceed(str(scratch.path))
+
+    report = rebase_finish(str(scratch.path))
+    changed = [x for x in report.changed_commits if x.status == "changed"]
+    assert [x.subject for x in changed] == ["adds f"]
+    assert changed[0].before == f
+    assert changed[0].after is not None and changed[0].after != f
+
+
+def test_the_commit_by_commit_detail_is_there_when_asked_for(scratch: Scratch) -> None:
+    """Large on a long rebase, so it is not sent unasked."""
+    scratch.commit("base", a="one\n")
+    scratch.commit("adds f", f="one\ntwo\nthree\nfour\nfive\nsix\n")
+    scratch.commit("adds g", g="g\n")
+    f, g = two(scratch)
+    rebase_start("HEAD~2", str(scratch.path), [f"edit {f}", f"pick {g}"])
+    (scratch.path / "f").write_text("one\ntwo\nthree\nfour\nfive\nsix, corrected\n")
+    rebase_amend(repo=str(scratch.path), stage_tracked=True)
+    proceed(str(scratch.path))
+
+    assert rebase_finish(str(scratch.path)).commit_detail is None
+    detail = rebase_finish(str(scratch.path), include_diff=True).commit_detail
+    assert detail is not None
+    assert "six, corrected" in detail
+
+
+def test_a_clean_rebase_names_no_changed_commits(series: Scratch) -> None:
+    """Nothing moved, so there is nothing to attribute."""
+    b, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"pick {c}", f"pick {b}"])
+    assert rebase_finish(str(series.path)).changed_commits == ()

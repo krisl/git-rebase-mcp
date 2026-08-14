@@ -150,7 +150,7 @@ a cherry-pick is not doing.
 | `proceed` | Carries on, by the operation's own `--continue`. Refuses while anything is unmerged, or while part of this step's commit is left outside a commit. | any |
 | `skip` | Drops the commit being applied — for one already in the base. | rebase, cherry-pick, revert |
 | `rebase_todo` | The steps left, and replaces them. Refuses to drop a commit. | rebase |
-| `rebase_finish` | Checks the branch still makes the same change to its base, and names any commit that brought a conflict marker to a file. `tree_identical` says whether a difference is a redistribution or a loss, and a difference is read against what the run actually did — amending explains one, so a rebase that used `rebase_amend` is told that rather than told its own work looks like damage. `allow_change=`/`allow_markers=` waive either, and still report it. | rebase started here |
+| `rebase_finish` | Checks the branch still makes the same change to its base, and names any commit that brought a conflict marker to a file. `tree_identical` says whether a difference is a redistribution or a loss, and a difference is read against what the run actually did — amending explains one, so a rebase that used `rebase_amend` is told that rather than told its own work looks like damage. When the change moved, `changed_commits` names the commits that account for it — dropped, added, or altered — and `include_diff=` adds git's commit-by-commit rendering. `allow_change=`/`allow_markers=` waive either, and still report it. | rebase started here |
 | `abort` | Abandons the operation and puts back what was moved aside. | rebase, cherry-pick, revert, merge |
 
 The prefix carries the distinction: `rebase_` is for the tools that only make

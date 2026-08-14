@@ -106,6 +106,93 @@ def same_tree(git: Git, backup: Backup, revision: str = "HEAD") -> bool:
     return git.out("rev-parse", f"{revision}^{{tree}}") == backup.tree
 
 
+@dataclass(frozen=True)
+class CommitChange:
+    """One commit that differs between the branch before the rebase and after.
+
+    `before` and `after` are the two shas of the same commit, either being None
+    when it exists on only one side. The subject is how a person names it.
+    """
+
+    subject: str
+    before: str | None
+    after: str | None
+    status: str  # "changed", "dropped" or "added"
+
+
+@dataclass(frozen=True)
+class BranchComparison:
+    """The branch before and after, paired up commit by commit."""
+
+    changes: tuple[CommitChange, ...]
+    # git's own rendering, which shows what changed inside each commit. Large
+    # on a long rebase, so it is passed on only when asked for.
+    detail: str
+
+
+# A range-diff summary line: `3:  bb4d412 ! 3:  000e026 adds d`, with `-` and a
+# row of dashes standing in for the side a commit is missing from.
+RANGE_DIFF_LINE = re.compile(
+    r"^\s*(?:\d+|-):\s+(?P<before>[0-9a-f]+|-+)\s+"
+    r"(?P<mark>[=!<>])\s+"
+    r"(?:\d+|-):\s+(?P<after>[0-9a-f]+|-+)\s+(?P<subject>.*)$"
+)
+
+STATUS = {"!": "changed", "<": "dropped", ">": "added"}
+
+
+def compare_commits(
+    git: Git, backup: Backup, base: str, revision: str = "HEAD"
+) -> BranchComparison:
+    """Pair the branch's commits before and after, and name the ones that moved.
+
+    `branch_change` answers whether the branch still makes the same change; the
+    next question is always which commit accounts for the difference, and until
+    now that meant leaving the tool for `git diff`. A stat cannot answer it: it
+    says three files changed, not which commit changed them.
+
+    The pairing is `git range-diff`, which exists for exactly this comparison
+    and matches commits across a rewrite by content rather than by position. It
+    also sees a reworded commit, which the patch-id check by design cannot --
+    the message is not part of the change a branch makes to its base.
+    """
+    fork = _fork_point(git, backup.sha, base)
+    found = git.run(
+        "range-diff", f"{fork}..{backup.sha}", f"{base}..{revision}", check=False
+    )
+    if not found.ok:
+        return BranchComparison(changes=(), detail="")
+    changes: list[CommitChange] = []
+    for line in found.stdout.splitlines():
+        match = RANGE_DIFF_LINE.match(line)
+        if match is None or match["mark"] == "=":
+            continue
+        changes.append(
+            CommitChange(
+                subject=match["subject"].strip(),
+                before=_full(git, match["before"]),
+                after=_full(git, match["after"]),
+                status=STATUS[match["mark"]],
+            )
+        )
+    return BranchComparison(changes=tuple(changes), detail=found.stdout)
+
+
+def _full(git: Git, abbreviated: str) -> str | None:
+    """A range-diff sha at the length the rest of the report uses.
+
+    range-diff abbreviates, and a caller should not have to know that one field
+    of one report is shorter than every other sha it is given. A row of dashes
+    is how it spells the side a commit is missing from.
+    """
+    if abbreviated.startswith("-"):
+        return None
+    found = git.run(
+        "rev-parse", "--verify", "--quiet", f"{abbreviated}^{{commit}}", check=False
+    )
+    return found.stdout.strip() or abbreviated
+
+
 def _changed_lines(git: Git, base: str, tip: str) -> dict[str, list[str]]:
     """Every line the branch adds or removes, per file, order discarded.
 

@@ -31,9 +31,11 @@ from .conflicts import (
 from .git import Git, GitError, GitResult
 from .invariants import (
     Backup,
+    CommitChange,
     Session,
     clear_session,
     commits_with_markers,
+    compare_commits,
     has_markers,
     load_session,
     record_backup,
@@ -1624,6 +1626,14 @@ class FinishReport:
     # nothing: the change is in the base instead. That is what dropping a commit
     # already upstream looks like from here, and it is not damage.
     tree_identical: bool = False
+    # Which commits account for a moved branch change, paired before and after.
+    # `branch_change` says the branch's diff moved and hands over a stat; the
+    # question after it is always which commit did that, and answering it meant
+    # leaving the tool for `git diff`. Empty when nothing moved.
+    changed_commits: tuple[CommitChange, ...] = ()
+    # git's own commit-by-commit rendering of the same thing, behind
+    # include_diff because on a long rebase it is very large.
+    commit_detail: str | None = None
 
 
 def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> str:
@@ -1665,7 +1675,10 @@ def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> st
 
 @mcp.tool()
 def rebase_finish(
-    repo: str = ".", allow_change: bool = False, allow_markers: bool = False
+    repo: str = ".",
+    allow_change: bool = False,
+    allow_markers: bool = False,
+    include_diff: bool = False,
 ) -> FinishReport:
     """Check the finished rebase against the tip it started from, and tidy up.
 
@@ -1687,6 +1700,14 @@ def rebase_finish(
     git's output. They are still named in the report and in the guidance:
     waiving a check is not the same as hiding what it found.
 
+    When the branch's change did move, `changed_commits` names the commits that
+    account for it, paired before and after: dropped, added, or the same commit
+    with different content. A stat says three files changed; the question after
+    it is always which commit changed them, and answering that used to mean
+    leaving these tools for `git diff`. `include_diff=True` adds git's own
+    commit-by-commit rendering, which is large on a long rebase and so is not
+    sent unasked.
+
     The backup tag is kept either way; deleting the only record of where the
     branch was is not this tool's decision to make.
     """
@@ -1704,6 +1725,11 @@ def rebase_finish(
     change = branch_change(git, session.backup, session.base_sha)
     difference = change.summary if change else None
     unchanged_tree = bool(change) and same_tree(git, session.backup)
+    # Only when something moved: pairing every commit costs a range-diff over
+    # the whole branch, and there is nothing to attribute when nothing changed.
+    comparison = (
+        compare_commits(git, session.backup, session.base_sha) if change else None
+    )
     marker_hits = commits_with_markers(git, f"{session.base_sha}..HEAD")
     problems: list[str] = []
     if change and not change.reordered_only and not allow_change:
@@ -1733,6 +1759,8 @@ def rebase_finish(
         backup_ref=session.backup_ref,
         branch_change=difference,
         reordered_only=bool(change and change.reordered_only),
+        changed_commits=comparison.changes if comparison else (),
+        commit_detail=comparison.detail if comparison and include_diff else None,
         tree_identical=unchanged_tree,
         commits_with_markers=tuple(hit.sha for hit in marker_hits),
         commits=tuple(
