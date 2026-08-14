@@ -220,6 +220,13 @@ class Session:
     # user made meanwhile would otherwise be.
     stash_ref: str | None = None
     check_command: str | None = None
+    # The commits amended at an `edit` stop, by the sha git recorded in
+    # `rebase-merge/amend` -- which names the *step*, and so stays put when the
+    # same commit is amended twice. Kept because amending is how an `edit` stop
+    # is used, and it changes the branch's own share of the change on purpose:
+    # without this the finish check reports the tool's primary workflow as
+    # "something was lost or resolved wrongly".
+    amended: tuple[str, ...] = ()
 
     @property
     def backup(self) -> Backup:
@@ -255,6 +262,12 @@ def load_session(git: Git) -> Session | None:
     )
     command = raw.get("check_command")
     stash_ref = raw.get("stash_ref")
+    amended_raw = raw.get("amended", ())
+    amended: tuple[str, ...] = (
+        tuple(str(sha) for sha in cast("list[object]", amended_raw))
+        if isinstance(amended_raw, list)
+        else ()
+    )
     try:
         return Session(
             backup_ref=str(raw["backup_ref"]),
@@ -265,6 +278,7 @@ def load_session(git: Git) -> Session | None:
             stashed=stashed,
             stash_ref=str(stash_ref) if stash_ref is not None else None,
             check_command=str(command) if command is not None else None,
+            amended=amended,
         )
     except KeyError:
         return None

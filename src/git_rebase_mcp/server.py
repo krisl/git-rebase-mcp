@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 import shlex
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal, Never, assert_never
 
@@ -985,6 +985,13 @@ def rebase_amend(
     args = ["commit", "--amend", "--no-verify"]
     args += ["-m", message] if message is not None else ["--no-edit"]
     git.run("-c", "core.editor=true", *args)
+    # Recorded before the report, so the finish check can tell a branch whose
+    # change moved because it was told to from one whose change moved because a
+    # conflict went the wrong way. `applied` names the step rather than the
+    # commit, so amending the same one twice stays one entry.
+    session = load_session(git)
+    if session is not None and state.applied and state.applied not in session.amended:
+        save_session(git, replace(session, amended=(*session.amended, state.applied)))
     after = _commit_info(git, "HEAD")
     return AmendReport(
         before=before,
@@ -1533,6 +1540,43 @@ class FinishReport:
     tree_identical: bool = False
 
 
+def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> str:
+    """The reading of a moved branch change that fits what this run actually did.
+
+    Three of them, and getting this wrong is expensive in one direction only: a
+    report that says "something was lost" when nothing was teaches the caller
+    that the check cries wolf, and the next real one gets waved through.
+
+    Amending is the case that was missing, and it is not a corner -- it is what
+    an `edit` stop is *for*, and this server hands out `rebase_amend` to do it.
+    Every rebase that used one ended here being told its work looked like
+    damage, with a hard reset as the only exit offered.
+    """
+    if session.amended:
+        count = len(session.amended)
+        return (
+            f", which is what amending does: {count} "
+            f"commit{'' if count == 1 else 's'} "
+            f"({', '.join(sha[:9] for sha in session.amended)}) "
+            f"{'was' if count == 1 else 'were'} amended during this rebase, on "
+            "purpose. Read the difference below and confirm it is only what you "
+            "changed, then pass allow_change=true"
+        )
+    if unchanged_tree:
+        return (
+            f", though its content is identical to {session.backup_ref}: nothing "
+            "was lost, only the branch's own share of it changed. That is what "
+            "dropping a commit already in the new base looks like, and what "
+            "moving one commit's work into another does. Pass allow_change=true "
+            "if that was the intent"
+        )
+    return (
+        ", so something was lost or resolved wrongly -- or was changed on "
+        "purpose by hand, which this run has no record of. Read the difference "
+        "below; pass allow_change=true only if all of it is yours"
+    )
+
+
 @mcp.tool()
 def rebase_finish(
     repo: str = ".", allow_change: bool = False, allow_markers: bool = False
@@ -1579,15 +1623,7 @@ def rebase_finish(
     if change and not change.reordered_only and not allow_change:
         problems.append(
             "the branch no longer makes the same change to its base"
-            + (
-                f", though its content is identical to {session.backup_ref}: nothing "
-                "was lost, only the branch's own share of it changed. That is what "
-                "dropping a commit already in the new base looks like, and what "
-                "moving one commit's work into another does. Pass allow_change=true "
-                "if that was the intent"
-                if unchanged_tree
-                else ", so something was lost or resolved wrongly"
-            )
+            + _why_the_change_might_be_meant(session, unchanged_tree)
             + f":\n{change.summary}"
         )
     named_markers = ", ".join(f"{hit.sha[:9]} ({hit.subject})" for hit in marker_hits)

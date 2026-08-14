@@ -7,6 +7,8 @@ import pytest
 from git_rebase_mcp.invariants import load_session
 from git_rebase_mcp.server import (
     abort,
+    proceed,
+    rebase_amend,
     rebase_finish,
     rebase_start,
 )
@@ -86,6 +88,59 @@ def test_a_rebase_that_lost_content_still_reads_as_damage(series: Scratch) -> No
     report = rebase_finish(str(series.path))
     assert not report.tree_identical
     assert "something was lost or resolved wrongly" in report.guidance
+
+
+def test_an_amended_commit_is_not_reported_as_damage(series: Scratch) -> None:
+    """The case the wording was missing, and it is the ordinary one.
+
+    Changing a commit's content at an `edit` stop is what an `edit` stop is
+    for, and this server hands out `rebase_amend` to do it -- so every rebase
+    that used one ended up told its own work looked like something lost or
+    resolved wrongly, with a hard reset as the only exit named.  A check that
+    cries wolf on its primary workflow is a check nobody reads.
+    """
+    b, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"edit {b}", f"pick {c}"])
+    (series.path / "b").write_text("b, corrected\n")
+    rebase_amend(repo=str(series.path), stage_tracked=True)
+    proceed(str(series.path))
+
+    report = rebase_finish(str(series.path))
+    # Still not ok: an amend explains that *a* change is expected, never that
+    # the change on screen is only that one.  The caller confirms.
+    assert not report.ok
+    assert "which is what amending does" in report.guidance
+    assert "allow_change=true" in report.guidance
+    assert "lost or resolved wrongly" not in report.guidance
+
+
+def test_amending_one_commit_twice_counts_once(series: Scratch) -> None:
+    """The record names the step, not the commit, so it survives the sha
+    changing under it -- which is exactly what an amend does."""
+    b, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"edit {b}", f"pick {c}"])
+    (series.path / "b").write_text("once\n")
+    rebase_amend(repo=str(series.path), stage_tracked=True)
+    (series.path / "b").write_text("twice\n")
+    rebase_amend(repo=str(series.path), stage_tracked=True)
+    proceed(str(series.path))
+
+    assert "1 commit" in rebase_finish(str(series.path)).guidance
+
+
+def test_a_hand_edit_nobody_recorded_still_reads_as_a_warning(series: Scratch) -> None:
+    """No amend, no explanation -- but the waiver is named anyway.
+
+    The old wording offered only `reset --hard`, which is the wrong advice for
+    someone who resolved by hand outside this server and knows the result is
+    right.  "Only if all of it is yours" keeps the burden where it belongs.
+    """
+    _, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"pick {c}"], force=True)
+
+    guidance = rebase_finish(str(series.path)).guidance
+    assert "something was lost or resolved wrongly" in guidance
+    assert "allow_change=true only if all of it is yours" in guidance
 
 
 def test_the_refusal_says_how_to_undo(series: Scratch) -> None:
