@@ -1410,7 +1410,11 @@ def _after_apply_guidance(state: StoppedAfterApply) -> str:
     )
     return (
         f"Stopped at `{state.action}` with {state.replaying.sha[:9]} applied"
-        f"{rewritten}. HEAD is that commit, so amending it is safe."
+        f"{rewritten}. HEAD is that commit, so amending it is safe. Staging "
+        "changes and calling proceed folds them into it, with no separate amend "
+        "step: that is what `git rebase --continue` does here. rebase_amend is "
+        "for changing the message, for staging tracked files in the same call, "
+        "or for seeing the commit before and after."
     )
 
 

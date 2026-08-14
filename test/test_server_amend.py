@@ -11,6 +11,7 @@ import pytest
 from git_rebase_mcp.server import (
     proceed,
     rebase_amend,
+    rebase_start,
     resolve,
     status,
 )
@@ -143,3 +144,29 @@ def test_amending_never_stages_untracked_files(three_commits: Scratch) -> None:
     assert "tracked.txt" in committed
     assert "my-scratch-notes.txt" not in committed
     assert three_commits.read("my-scratch-notes.txt") == "not for history\n"
+
+
+def test_staging_then_proceeding_folds_the_change_in_without_an_amend(
+    scratch: Scratch,
+) -> None:
+    """The shorter path, which git already provides: `rebase --continue` at an
+    `edit` stop puts whatever is staged into the commit the step applied.
+
+    Tested because the guidance now says so. It was true before and nothing
+    said it, so the two-call route read as required.
+    """
+    scratch.commit("base", a="one\n")
+    scratch.commit("adds b", b="b\n")
+    scratch.commit("adds c", c="c\n")
+    b = scratch.git.out("rev-parse", "HEAD~1")
+    c = scratch.git.out("rev-parse", "HEAD")
+    rebase_start("HEAD~2", str(scratch.path), [f"edit {b}", f"pick {c}"])
+
+    (scratch.path / "b").write_text("b, corrected\n")
+    scratch.git.run("add", "--", "b")
+    assert "calling proceed folds them into it" in status(str(scratch.path)).guidance
+
+    proceed(str(scratch.path))
+    # Folded into "adds b" itself, not left as a commit of its own.
+    assert scratch.git.out("show", "HEAD~1:b") == "b, corrected"
+    assert scratch.git.lines("log", "--format=%s", "HEAD~2..HEAD") == ["adds c", "adds b"]
