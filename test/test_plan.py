@@ -9,7 +9,12 @@ from __future__ import annotations
 
 import pytest
 
-from git_rebase_mcp.plan import autosquash_targets, check_plan, commits_in_range
+from git_rebase_mcp.plan import (
+    autosquash_targets,
+    base_relationship,
+    check_plan,
+    commits_in_range,
+)
 
 from scratch import Scratch
 
@@ -143,3 +148,19 @@ def test_a_fixup_naming_nothing_in_the_range_is_a_problem(scratch: Scratch) -> N
     assert not check.safe
     assert [c.subject for c in check.stray_fixups] == ["fixup! Add something that is not here"]
     assert "survive into the final history" in check.problems[0]
+
+
+# ── where the base sits relative to the branch ───────────────────────────────
+
+
+def test_base_relationship_names_each_shape(series: Scratch) -> None:
+    assert base_relationship(series.git, "HEAD") == "same"
+    assert base_relationship(series.git, "HEAD~2") == "ancestor"
+    series.git.run("branch", "ahead")
+    series.commit("adds e", e="e\n")
+    series.git.run("checkout", "-q", "ahead")
+    # `ahead` is now behind main, so from here main is the descendant.
+    assert base_relationship(series.git, "main") == "descendant"
+    series.git.run("checkout", "-q", "-b", "sideways", "HEAD~1")
+    series.commit("a different line", f="f\n")
+    assert base_relationship(series.git, "main") == "diverged"

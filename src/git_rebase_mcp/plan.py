@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Literal
 
 from .git import Git
 from .state import Commit
@@ -56,6 +57,81 @@ def already_upstream(git: Git, base: str) -> frozenset[str]:
     """
     marked = git.lines("rev-list", "--cherry-mark", "--right-only", f"{base}...HEAD")
     return frozenset(line[1:] for line in marked if line.startswith("="))
+
+
+Relation = Literal["same", "ancestor", "descendant", "diverged"]
+
+
+def base_relationship(git: Git, base: str) -> Relation:
+    """Where `base` sits relative to HEAD.
+
+    Asked because "the branch has probably been merged already, or the base is
+    wrong" names two situations and leaves the caller to work out which, when
+    git answers it directly.
+
+    The one that costs most to guess at is `diverged`: a base that is neither
+    ancestor nor descendant, carrying the same changes under other shas. That
+    is what the tip before a rebase looks like, and this server's own backup
+    tag is exactly that -- a copy of the branch rather than something to put
+    the branch on.
+    """
+    head = git.out("rev-parse", "HEAD")
+    there = git.out("rev-parse", f"{base}^{{commit}}")
+    if there == head:
+        return "same"
+    if git.succeeds("merge-base", "--is-ancestor", there, head):
+        return "ancestor"
+    if git.succeeds("merge-base", "--is-ancestor", head, there):
+        return "descendant"
+    return "diverged"
+
+
+def _why_duplicated(git: Git, base: str) -> str:
+    """The relationship the duplicates come of, as a fact before a reading.
+
+    "The branch has probably been merged already, or the base is wrong" gives
+    two readings and no way to choose between them. Which of the two it is
+    cannot be answered from the history -- an upstream that merged this branch
+    and a backup tag of this branch are the same shape: diverged, same changes,
+    other shas -- so both are still offered. What can be answered is the
+    relationship, and that is the half that settles it: a base that is not an
+    ancestor of the branch is not a base, whichever reading applies.
+
+    Only a diverged base can get here. A duplicate needs a commit on the base
+    side to match, which rules out an ancestor; and it needs a commit in
+    `base..HEAD` to be marked, which rules out the base being HEAD or ahead of
+    it. The other answer is kept for the caller who reaches it anyway, since a
+    problem with no sentence after it is worse than a vague one.
+    """
+    if base_relationship(git, base) == "diverged":
+        return (
+            f"{base} is not an ancestor of this branch: the two have diverged, and "
+            "it makes these same changes under other shas. The branch has probably "
+            f"been merged already -- or {base} is a copy of the branch, which is "
+            "what the tip before a rebase, or a backup tag, is, and not something "
+            "to rebase onto."
+        )
+    return "The branch has probably been merged already, or the base is wrong."
+
+
+def _nothing_between(git: Git, base: str) -> str:
+    """Why the range is empty, which decides whether that is a problem at all.
+
+    An empty range used to pass preflight as "Nothing found; safe to start",
+    which is true of the checks and false of the question asked. A rebase with
+    nothing to replay is not a safe rebase, it is a mistaken base.
+    """
+    relation = base_relationship(git, base)
+    if relation == "same":
+        return f"{base} is this branch's own tip."
+    if relation == "descendant":
+        return (
+            f"{base} is ahead of this branch and already contains its commits, so "
+            "there is nothing of the branch's own to put on top."
+        )
+    # An ancestor with an empty range is HEAD under another name, and a diverged
+    # base always leaves something in the range. Neither reaches here.
+    return f"{base} may not be the base that was meant."
 
 
 def commits_in_range(git: Git, base: str) -> tuple[Commit, ...]:
@@ -116,10 +192,18 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
         [
             f"{len(duplicated)} of {len(commits)} commits in the range are already in "
             f"{base} under different shas, so replaying them conflicts with work that "
-            "is already there. The branch has probably been merged already, or the "
-            "base is wrong."
+            "is already there. "
+            + _why_duplicated(git, base)
         ]
         if duplicated
+        else []
+    )
+    empty_problem = (
+        [
+            f"there are no commits between {base} and HEAD, so a rebase onto it "
+            "would replay nothing. " + _nothing_between(git, base)
+        ]
+        if not commits
         else []
     )
 
@@ -132,7 +216,7 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
             unknown=(),
             already_upstream=duplicated,
             stray_fixups=stray,
-            problems=tuple(upstream_problem + stray_problem),
+            problems=tuple(empty_problem + upstream_problem + stray_problem),
         )
 
     by_sha = {commit.sha: commit for commit in commits}
@@ -156,7 +240,7 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
     accounted = set(kept) | set(dropped_on_purpose)
     missing = tuple(commit for sha, commit in by_sha.items() if sha not in accounted)
 
-    problems: list[str] = list(upstream_problem) + list(stray_problem)
+    problems: list[str] = list(empty_problem) + list(upstream_problem) + list(stray_problem)
     if missing:
         problems.append(
             "the todo leaves out "

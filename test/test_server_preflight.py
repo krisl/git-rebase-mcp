@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from git_rebase_mcp.server import rebase_preflight
+from git_rebase_mcp.server import rebase_finish, rebase_preflight, rebase_start
 
 from scratch import Scratch
 
@@ -98,3 +98,38 @@ def test_preflight_names_commits_already_in_the_base(scratch: Scratch) -> None:
     assert not report.safe_to_start
     assert len(report.already_upstream) == 1
     assert "probably been merged already" in report.guidance
+
+
+def test_the_backup_ref_is_named_as_not_an_ancestor(series: Scratch) -> None:
+    """The report a real session got stuck on. Handed this server's own backup
+    tag as a base, preflight refused -- correctly -- but explained it as "the
+    branch has probably been merged already, or the base is wrong", which sent
+    the caller looking for a merge. The relationship is the fact that settles
+    it, and git answers it directly."""
+    c = series.git.out("rev-parse", "HEAD")
+    started = rebase_start("HEAD~2", str(series.path), [f"pick {c}"], force=True)
+    rebase_finish(str(series.path), allow_change=True)
+
+    report = rebase_preflight(started.backup_ref, str(series.path))
+    assert not report.safe_to_start
+    assert "is not an ancestor of this branch" in report.guidance
+    assert "backup tag" in report.guidance
+
+
+def test_a_base_with_nothing_to_replay_is_not_safe_to_start(series: Scratch) -> None:
+    """It used to answer "Nothing found; safe to start", which is true of the
+    checks and false of the question. A rebase that would replay nothing is not
+    a safe rebase, it is a mistaken base -- and which mistake it is comes from
+    where the base sits."""
+    series.git.run("checkout", "-q", "-b", "behind", "HEAD~2")
+
+    report = rebase_preflight("main", str(series.path))
+    assert not report.safe_to_start
+    assert "would replay nothing" in report.guidance
+    assert "is ahead of this branch" in report.guidance
+
+
+def test_the_branch_s_own_tip_as_a_base_says_so(series: Scratch) -> None:
+    report = rebase_preflight("HEAD", str(series.path))
+    assert not report.safe_to_start
+    assert "this branch's own tip" in report.guidance
