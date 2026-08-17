@@ -91,6 +91,22 @@ def test_folding_two_commits_together_is_not_visible_here(scratch: Scratch) -> N
     assert branch_change(scratch.git, backup, base) is None
 
 
+def test_a_deleted_file_is_named_by_its_own_path(scratch: Scratch) -> None:
+    """Its `+++` side is `/dev/null`, so reading the path off that alone files
+    every deletion under one name and tells the reader which files nothing."""
+    scratch.commit("base", gone="one\n", also_gone="two\n", kept="three\n")
+    base = scratch.git.out("rev-parse", "HEAD")
+    (scratch.path / "gone").unlink()
+    (scratch.path / "also_gone").unlink()
+    scratch.commit("deletes two files")
+
+    lines = _changed_lines(scratch.git, base, "HEAD")
+
+    assert sorted(lines) == ["also_gone", "gone"]
+    assert lines["gone"] == ["-one"]
+    assert lines["also_gone"] == ["-two"]
+
+
 def test_the_backup_tag_survives_as_a_real_ref(scratch: Scratch) -> None:
     scratch.commit("base", a="one\n")
     backup = record_backup(scratch.git, label="test")

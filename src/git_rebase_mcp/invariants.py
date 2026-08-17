@@ -203,17 +203,27 @@ def _changed_lines(git: Git, base: str, tip: str) -> dict[str, list[str]]:
     whose content starts with `-- ` renders as `--- `, and an added line whose
     content starts with `++ ` renders as `+++ `, so a header can only be told
     from a body line by where it sits.
+
+    The `---` side is kept for the file the diff deletes, whose `+++` side is
+    `/dev/null`. Reading the path off `+++` alone files every deletion under
+    that name, which collides two deleted files into one entry and names neither
+    of them -- invisible while this only fed an equality check, and wrong the
+    moment the difference is reported per path.
     """
     per_file: dict[str, list[str]] = {}
     path = ""
+    removed = ""
     in_hunk = False
     for line in git.run("diff", base, tip).stdout.splitlines():
         if line.startswith("diff --git ") or line.startswith("@@"):
             in_hunk = line.startswith("@@")
             continue
         if not in_hunk and (line.startswith("--- ") or line.startswith("+++ ")):
-            if line.startswith("+++ "):
-                path = line[6:] if line.startswith("+++ b/") else line[4:]
+            if line.startswith("--- "):
+                removed = line[6:] if line.startswith("--- a/") else line[4:]
+            else:
+                added = line[6:] if line.startswith("+++ b/") else line[4:]
+                path = removed if added == "/dev/null" else added
             continue
         if line[:1] in "+-" and path:
             per_file.setdefault(path, []).append(line)
