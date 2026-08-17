@@ -39,6 +39,71 @@ def test_a_clean_reorder_checks_out(series: Scratch) -> None:
     assert [x.subject for x in report.commits] == ["adds c", "adds b"]
 
 
+def stack(scratch: Scratch) -> Scratch:
+    """A branch with a sibling pointing partway into it, over an upstream that
+    has moved on -- the shape `update_refs` exists for."""
+    scratch.commit("base", a="one\n")
+    fork = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("lower", lower="work\n")
+    scratch.git.run("branch", "stacked")
+    scratch.commit("upper", upper="more\n")
+    scratch.git.run("checkout", "-q", "-b", "upstream", fork)
+    scratch.commit("upstream work", theirs="a\n")
+    scratch.git.run("checkout", "-q", "main")
+    return scratch
+
+
+def test_the_branches_carried_along_are_named(scratch: Scratch) -> None:
+    """git prints a line about it and exits zero whether or not a ref moved, so
+    confirming a stack survived meant reconstructing it from merge-base by hand."""
+    repo = stack(scratch)
+    before = repo.git.out("rev-parse", "stacked")
+
+    rebase_start("upstream", str(repo.path), update_refs=True)
+    report = rebase_finish(str(repo.path))
+
+    assert report.ok
+    assert [entry.ref for entry in report.carried_refs] == ["stacked"]
+    carry = report.carried_refs[0]
+    assert carry.moved
+    assert carry.before == before
+    assert carry.after == repo.git.out("rev-parse", "stacked")
+    assert "Carried along: stacked" in report.guidance
+
+
+def test_a_rebase_that_was_not_asked_to_carry_anything_claims_nothing(
+    scratch: Scratch,
+) -> None:
+    """The sibling is left behind, which is git's own behaviour and not damage
+    when it was never promised -- so the report says nothing about it either."""
+    repo = stack(scratch)
+
+    rebase_start("upstream", str(repo.path))
+    report = rebase_finish(str(repo.path))
+
+    assert report.ok
+    assert report.carried_refs == ()
+    assert "Carried along" not in report.guidance
+    assert "Left behind" not in report.guidance
+
+
+def test_a_branch_left_behind_is_said_plainly(scratch: Scratch) -> None:
+    """Nothing else in the report mentions a ref, so a stack that did not come
+    along would otherwise pass as "checks out"."""
+    repo = stack(scratch)
+    rebase_start("upstream", str(repo.path), update_refs=True)
+    # Put it back where it was, standing in for the ref git did not move.
+    session = load_session(repo.git)
+    assert session is not None
+    repo.git.run("branch", "-f", "stacked", session.carried[0].sha)
+
+    report = rebase_finish(str(repo.path))
+
+    assert [entry.moved for entry in report.carried_refs] == [False]
+    assert "Left behind on the commits that were replaced: stacked" in report.guidance
+    assert report.ok  # reported, not refused: the branch itself is sound
+
+
 def test_a_dropped_commit_is_caught(series: Scratch) -> None:
     """The todo that lost three commits, caught this time."""
     _, c = two(series)

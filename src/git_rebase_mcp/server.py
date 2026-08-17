@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 import shlex
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal, Never, assert_never
@@ -31,6 +32,7 @@ from .conflicts import (
 from .git import Git, GitError, GitResult
 from .invariants import (
     Backup,
+    CarriedRef,
     CommitChange,
     Session,
     clear_session,
@@ -763,6 +765,28 @@ def _blocking(git: Git) -> tuple[str, ...]:
     return tuple(problems)
 
 
+def _refs_into_range(git: Git, base: str) -> tuple[CarriedRef, ...]:
+    """The branches `--update-refs` is expected to move, as they stand now.
+
+    Every branch but the one checked out whose tip is a commit about to be
+    replaced. Recorded so the finish can say whether each actually came along:
+    git prints a line about it and exits zero either way, and a sibling left
+    behind points into history that no longer exists -- which is the failure the
+    option is asked for to prevent, and the one nothing would otherwise report.
+    """
+    in_range = set(git.lines("rev-list", f"{base}..HEAD"))
+    if not in_range:
+        return ()
+    rebasing = git.run("symbolic-ref", "--quiet", "--short", "HEAD", check=False)
+    current = rebasing.stdout.strip()
+    found: list[CarriedRef] = []
+    for line in git.lines("for-each-ref", "--format=%(refname:short) %(objectname)", "refs/heads/"):
+        name, _, sha = line.partition(" ")
+        if name != current and sha in in_range:
+            found.append(CarriedRef(ref=name, sha=sha))
+    return tuple(found)
+
+
 def _untracked_collisions(git: Git, base: str) -> tuple[str, ...]:
     """Untracked files that checking out the range would refuse to overwrite.
 
@@ -853,6 +877,7 @@ def rebase_start(
             stashed=stashed,
             stash_ref=stash_ref,
             check_command=check_command,
+            carried=_refs_into_range(git, base) if update_refs else (),
         ),
     )
 
@@ -1634,6 +1659,20 @@ def _state_report(
 
 
 @dataclass(frozen=True)
+class RefCarry:
+    """Whether a branch stacked on the rebased one came along with it.
+
+    `after` is None for a ref that has since been deleted, which is not the same
+    as one that stayed put and should not read as it.
+    """
+
+    ref: str
+    before: str
+    after: str | None
+    moved: bool
+
+
+@dataclass(frozen=True)
 class FinishReport:
     ok: bool
     backup_ref: str
@@ -1658,6 +1697,11 @@ class FinishReport:
     # git's own commit-by-commit rendering of the same thing, behind
     # include_diff because on a long rebase it is very large.
     commit_detail: str | None = None
+    # Each branch `update_refs` was asked to carry, and whether it did. Empty
+    # when it was not asked for. Reported rather than refused: git does move
+    # them, and the one report a caller reads should not have to be reconstructed
+    # from merge-base by hand to know that a stack survived.
+    carried_refs: tuple[RefCarry, ...] = ()
 
 
 def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> str:
@@ -1694,6 +1738,34 @@ def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> st
         ", so something was lost or resolved wrongly -- or was changed on "
         "purpose by hand, which this run has no record of. Read the difference "
         "below; pass allow_change=true only if all of it is yours"
+    )
+
+
+def _carried_now(git: Git, recorded: Sequence[CarriedRef]) -> tuple[RefCarry, ...]:
+    """Where each branch that was to be carried points now."""
+    found: list[RefCarry] = []
+    for ref in recorded:
+        current = git.run("rev-parse", "--verify", "--quiet", f"{ref.ref}^{{commit}}", check=False)
+        after = current.stdout.strip() or None
+        found.append(
+            RefCarry(ref=ref.ref, before=ref.sha, after=after, moved=after not in (None, ref.sha))
+        )
+    return tuple(found)
+
+
+def _what_happened_to_the_stack(carried: Sequence[RefCarry]) -> str:
+    """Whether the branches stacked on this one came along, in one sentence."""
+    if not carried:
+        return ""
+    left = [entry.ref for entry in carried if not entry.moved]
+    if not left:
+        named = ", ".join(entry.ref for entry in carried)
+        return f" Carried along: {named}. "
+    # Worth saying plainly: a ref still on its old sha points into history that
+    # was just replaced, and nothing else in this report would mention it.
+    return (
+        f" Left behind on the commits that were replaced: {', '.join(left)}"
+        " -- still pointing at history this rebase rewrote. "
     )
 
 
@@ -1734,6 +1806,13 @@ def rebase_finish(
     commit-by-commit rendering, which is large on a long rebase and so is not
     sent unasked.
 
+    A rebase started with `update_refs` also reports, per branch it was asked to
+    carry, whether that branch actually moved -- git prints a line about it and
+    exits zero whether or not it did, and a sibling left behind points into
+    history this rebase replaced. Reported rather than refused, since git does
+    move them; the point is that confirming it should not mean reconstructing the
+    stack from merge-base by hand.
+
     The backup tag is kept either way; deleting the only record of where the
     branch was is not this tool's decision to make.
     """
@@ -1757,6 +1836,7 @@ def rebase_finish(
         compare_commits(git, session.backup, session.base_sha) if change else None
     )
     marker_hits = commits_with_markers(git, f"{session.base_sha}..HEAD")
+    carried = _carried_now(git, session.carried)
     problems: list[str] = []
     if change and not change.reordered_only and not allow_change:
         problems.append(
@@ -1793,6 +1873,7 @@ def rebase_finish(
             _commit_info(git, sha)
             for sha in git.lines("rev-list", "--reverse", f"{session.base_sha}..HEAD")
         ),
+        carried_refs=carried,
         restored=restored,
         guidance=(
             "Rebase checks out"
@@ -1803,6 +1884,7 @@ def rebase_finish(
                 else ". "
             )
             + waived
+            + _what_happened_to_the_stack(carried)
             + "Anything moved aside was restored. The tip before the rebase is "
             f"still tagged {session.backup_ref}."
             if not problems
@@ -1810,6 +1892,7 @@ def rebase_finish(
             + "; ".join(problems)
             + f". The branch before the rebase is at {session.backup_ref}; "
             "`git reset --hard` to it to undo."
+            + _what_happened_to_the_stack(carried)
         ),
     )
 

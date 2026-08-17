@@ -341,6 +341,19 @@ def has_markers(text: str) -> bool:
 
 
 @dataclass(frozen=True)
+class CarriedRef:
+    """A branch `--update-refs` is expected to move, and where it pointed before.
+
+    Recorded before the rewrite because afterwards there is nothing left to read
+    it from: a ref that was carried no longer holds its old sha, and one that was
+    left behind is indistinguishable from one that was never in the range.
+    """
+
+    ref: str
+    sha: str
+
+
+@dataclass(frozen=True)
 class Session:
     """What one run of the server set up, so a later call can undo or check it.
 
@@ -370,6 +383,10 @@ class Session:
     # without this the finish check reports the tool's primary workflow as
     # "something was lost or resolved wrongly".
     amended: tuple[str, ...] = ()
+    # The branches `update_refs` was asked to carry, as they stood before the
+    # rewrite. Empty when it was not asked for, so nothing is claimed about a
+    # rebase that never promised to move them.
+    carried: tuple[CarriedRef, ...] = ()
 
     @property
     def backup(self) -> Backup:
@@ -422,9 +439,25 @@ def load_session(git: Git) -> Session | None:
             stash_ref=str(stash_ref) if stash_ref is not None else None,
             check_command=str(command) if command is not None else None,
             amended=amended,
+            carried=_carried(raw.get("carried", ())),
         )
     except KeyError:
         return None
+
+
+def _carried(raw: object) -> tuple[CarriedRef, ...]:
+    """The recorded refs, skipping any entry a different version wrote oddly."""
+    if not isinstance(raw, list):
+        return ()
+    found: list[CarriedRef] = []
+    for entry in cast("list[object]", raw):
+        if not isinstance(entry, dict):
+            continue
+        fields = cast("dict[str, object]", entry)
+        ref, sha = fields.get("ref"), fields.get("sha")
+        if ref is not None and sha is not None:
+            found.append(CarriedRef(ref=str(ref), sha=str(sha)))
+    return tuple(found)
 
 
 def clear_session(git: Git) -> None:
