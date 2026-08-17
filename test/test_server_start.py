@@ -251,6 +251,61 @@ def test_autosquash_and_a_todo_together_are_refused(scratch: Scratch) -> None:
         rebase_start("HEAD~1", str(scratch.path), todo=[f"pick {second}"], autosquash=True)
 
 
+def test_update_refs_carries_a_stacked_branch_along(scratch: Scratch) -> None:
+    """A stack of branches on one another: without this the rebase moves only the
+    branch checked out and strands its siblings on the commits it replaced."""
+    scratch.commit("base", a="one\n")
+    fork = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("lower", lower="work\n")
+    scratch.git.run("branch", "stacked")  # a sibling pointing into the range
+    scratch.commit("upper", upper="more\n")
+    stranded = scratch.git.out("rev-parse", "stacked")
+
+    # Upstream moves on, which is what makes the rebase worth doing at all.
+    scratch.git.run("checkout", "-q", "-b", "upstream", fork)
+    scratch.commit("upstream work", theirs="a\n")
+    scratch.git.run("checkout", "-q", "main")
+
+    report = rebase_start("upstream", str(scratch.path), update_refs=True)
+
+    assert report.status.state == "not_rebasing"
+    carried = scratch.git.out("rev-parse", "stacked")
+    assert carried != stranded  # it moved rather than being left behind
+    # Still one commit below the tip, and now on top of the upstream work.
+    assert scratch.git.run("merge-base", "--is-ancestor", "stacked", "main").ok
+    assert scratch.git.run("merge-base", "--is-ancestor", "upstream", "stacked").ok
+
+
+def test_without_update_refs_a_stacked_branch_is_left_behind(scratch: Scratch) -> None:
+    """The default, and why the option is worth having: git's own behaviour is to
+    move only the branch that is checked out."""
+    scratch.commit("base", a="one\n")
+    fork = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("lower", lower="work\n")
+    scratch.git.run("branch", "stacked")
+    scratch.commit("upper", upper="more\n")
+    stranded = scratch.git.out("rev-parse", "stacked")
+
+    scratch.git.run("checkout", "-q", "-b", "upstream", fork)
+    scratch.commit("upstream work", theirs="a\n")
+    scratch.git.run("checkout", "-q", "main")
+
+    rebase_start("upstream", str(scratch.path))
+
+    assert scratch.git.out("rev-parse", "stacked") == stranded
+
+
+def test_update_refs_and_a_todo_together_are_refused(scratch: Scratch) -> None:
+    """Both work by writing into the generated todo, so one of the caller's own
+    would discard the update-ref lines -- and a rebase that succeeds while
+    silently leaving the siblings behind is the outcome to avoid hardest."""
+    scratch.commit("base", a="one\n")
+    scratch.commit("second", b="two\n")
+    second = scratch.git.out("rev-parse", "HEAD")
+    with pytest.raises(ValueError, match="would discard them"):
+        rebase_start("HEAD~1", str(scratch.path), todo=[f"pick {second}"], update_refs=True)
+
+
 def test_a_resolution_is_replayed_when_the_same_conflict_comes_back(scratch: Scratch) -> None:
     """A rebase that is retried hits the identical conflicts a second time.
     Without rerere they are resolved again by hand for nothing."""

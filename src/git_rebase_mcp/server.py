@@ -791,6 +791,7 @@ def rebase_start(
     repo: str = ".",
     todo: list[str] | None = None,
     autosquash: bool = False,
+    update_refs: bool = False,
     check_command: str | None = None,
     auto_resolve: bool = False,
     force: bool = False,
@@ -805,6 +806,12 @@ def rebase_start(
     its subject names, which is the workflow `git commit --fixup` sets up. It
     cannot be combined with a todo, since it is a way of generating one.
 
+    `update_refs` carries every other branch pointing into the range along with
+    the rewrite, which is what a stack of branches on one another needs: without
+    it the rebase moves only the branch checked out and strands its siblings on
+    the commits it just replaced. Like autosquash it works by writing lines into
+    the generated todo, so it cannot be combined with one of your own.
+
     `check_command` is run after every commit, which is the only thing that
     catches a step that applies cleanly but leaves the tree broken.
 
@@ -817,6 +824,17 @@ def rebase_start(
     """
     if autosquash and todo is not None:
         raise ValueError("autosquash generates the todo, so it cannot be given one.")
+    if update_refs and todo is not None:
+        # Silently dropping them would be the worst outcome: the rebase succeeds,
+        # the caller is told nothing, and the sibling branches are left behind on
+        # commits that no longer exist -- which is the very thing they asked to
+        # avoid. Weaving `update-ref` lines into a caller's todo would mean
+        # deciding where in their ordering each one belongs, which is theirs.
+        raise ValueError(
+            "update_refs writes update-ref lines into the generated todo, so a "
+            "todo of your own would discard them. Put the update-ref lines in "
+            "your todo, or start without one."
+        )
     git = _git(repo)
     preflight = rebase_preflight(base, repo, todo)
     if not preflight.safe_to_start and not force:
@@ -853,6 +871,8 @@ def rebase_start(
     else:
         if autosquash:
             args.append("--autosquash")
+        if update_refs:
+            args.append("--update-refs")
         if check_command:
             args += ["--exec", check_command]
     args.append(base)

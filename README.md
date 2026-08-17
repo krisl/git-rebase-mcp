@@ -141,7 +141,7 @@ a cherry-pick is not doing.
 | Tool | | Works on |
 | --- | --- | --- |
 | `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. | rebase |
-| `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in. | rebase |
+| `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `autosquash` folds `fixup!` commits in; `update_refs` carries every other branch pointing into the range along, which a stack of branches on one another needs. | rebase |
 | `status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. Reports a rebase that has ended and not been checked, rather than only that none is running. Every report also names the checkout it is about — `worktree` and `branch` — so an answer from here can be told apart from one a shell gave about a different worktree of the same repository, and `replayed_resolutions` names any conflict git answered from its recorded memory rather than fresh. | any |
 | `conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the incoming side did to each file. | any |
 | `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers, unless `allow_markers=` says the file is meant to have them. Where one side deleted the path, `take` names a side rather than a text, so taking that side stages the deletion.| any |
