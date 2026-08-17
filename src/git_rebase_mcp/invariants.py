@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from typing import cast
@@ -73,6 +74,9 @@ class Change:
     # place. A resolution that puts a block somewhere else does that, and it is
     # not damage; reporting it as damage is how a check stops being believed.
     reordered_only: bool
+    # The paths whose contribution moved and by how many lines -- what differs,
+    # rather than a diff between the two tips, which on a rebase onto newer
+    # upstream work is mostly the new base's own commits.
     summary: str
 
 
@@ -87,10 +91,52 @@ def branch_change(git: Git, backup: Backup, base: str, revision: str = "HEAD") -
     fork = _fork_point(git, backup.sha, base)
     if _contribution(git, fork, backup.sha) == _contribution(git, base, revision):
         return None
+    before = _changed_lines(git, fork, backup.sha)
+    after = _changed_lines(git, base, revision)
     return Change(
-        reordered_only=_changed_lines(git, fork, backup.sha) == _changed_lines(git, base, revision),
-        summary=git.out("diff", "--stat", backup.sha, revision),
+        reordered_only=before == after,
+        summary=_moved_contribution(before, after),
     )
+
+
+def _moved_contribution(
+    before: dict[str, list[str]], after: dict[str, list[str]]
+) -> str:
+    """Which files the branch's contribution differs on, and by how many lines.
+
+    The difference, not `git diff <old tip> <new tip>`, which is what this used
+    to hand over. On a rebase that also moves onto newer upstream work that diff
+    is mostly upstream's own commits: a real session resolved two files and was
+    given thirty-three to read, of which thirty-one were the new base's and not
+    its own doing. The check above already compares the right two things -- each
+    side's contribution to its own base -- and only the evidence was taken from
+    somewhere else, which is the worst place for a check to be loose. A caller
+    who cannot see what moved has to reconstruct this by hand to decide whether
+    to allow it, and the one who does not reconstruct it waves it through.
+
+    Counted as lines present in one side's contribution and not the other's, per
+    path, so a file both sides change in the same way stays out. Multiplicity is
+    kept: the same line changed twice before and once after is a difference.
+    """
+    rows: list[tuple[str, str]] = []
+    for path in sorted(set(before) | set(after)):
+        was, now = Counter(before.get(path, ())), Counter(after.get(path, ()))
+        only_before, only_after = sum((was - now).values()), sum((now - was).values())
+        if not only_before and not only_after:
+            continue
+        counts = [
+            *([f"{only_before} before only"] if only_before else []),
+            *([f"{only_after} after only"] if only_after else []),
+        ]
+        rows.append((path, ", ".join(counts)))
+    if not rows:
+        # patch-ids disagreed and the lines did not, which is a reordering. The
+        # caller is told that in `reordered_only`; saying "0 files" here instead
+        # of naming it reads as the report having nothing to show.
+        return "The same lines, in a different order or place.\n"
+    width = max(len(path) for path, _ in rows)
+    listed = "".join(f" {path.ljust(width)} | {counts}\n" for path, counts in rows)
+    return f"{listed} {len(rows)} file{'' if len(rows) == 1 else 's'} whose contribution moved\n"
 
 
 def same_tree(git: Git, backup: Backup, revision: str = "HEAD") -> bool:

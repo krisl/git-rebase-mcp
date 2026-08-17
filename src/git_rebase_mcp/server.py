@@ -1631,7 +1631,7 @@ class FinishReport:
     # already upstream looks like from here, and it is not damage.
     tree_identical: bool = False
     # Which commits account for a moved branch change, paired before and after.
-    # `branch_change` says the branch's diff moved and hands over a stat; the
+    # `branch_change` says the branch's diff moved and names the paths; the
     # question after it is always which commit did that, and answering it meant
     # leaving the tool for `git diff`. Empty when nothing moved.
     changed_commits: tuple[CommitChange, ...] = ()
@@ -1704,11 +1704,13 @@ def rebase_finish(
     git's output. They are still named in the report and in the guidance:
     waiving a check is not the same as hiding what it found.
 
-    When the branch's change did move, `changed_commits` names the commits that
-    account for it, paired before and after: dropped, added, or the same commit
-    with different content. A stat says three files changed; the question after
-    it is always which commit changed them, and answering that used to mean
-    leaving these tools for `git diff`. `include_diff=True` adds git's own
+    When the branch's change did move, `branch_change` names the paths whose
+    contribution moved and by how many lines -- what actually differs, not a
+    diff between the two tips, which on a rebase onto newer upstream work is
+    mostly the new base's own commits. `changed_commits` then names the commits
+    that account for it, paired before and after: dropped, added, or the same
+    commit with different content, since the question after "which files" is
+    always which commit changed them. `include_diff=True` adds git's own
     commit-by-commit rendering, which is large on a long rebase and so is not
     sent unasked.
 

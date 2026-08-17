@@ -75,6 +75,35 @@ def test_moving_onto_newer_upstream_work_is_not_damage(scratch: Scratch) -> None
     assert branch_change(scratch.git, backup, moved_base) is None
 
 
+def test_the_moved_contribution_names_only_the_branch_s_own_files(scratch: Scratch) -> None:
+    """The evidence has to be the difference the check found, not a diff between
+    the two tips: a real session resolved two files and was handed thirty-three,
+    thirty-one of them the new base's own work, and had to reconstruct which two
+    were its own by hand before it could decide whether to allow the change."""
+    scratch.commit("base", shared="one\n")
+    fork = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("adds mine", mine="feature\n")
+    scratch.commit("adds other", other="second\n")
+    backup = record_backup(scratch.git, label="test")
+
+    # Upstream gains work the branch has never seen, in files of its own.
+    scratch.git.run("checkout", "-q", "-b", "upstream", fork)
+    scratch.commit("upstream work", theirs="a\n", theirs_too="b\n")
+    moved_base = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "main")
+
+    # Only the first of the two branch commits is replayed: "adds other" is lost.
+    adds_mine = scratch.git.out("rev-parse", "HEAD~1")
+    scratch.start_rebase(fork, [f"pick {adds_mine}"], onto=moved_base)
+
+    change = branch_change(scratch.git, backup, moved_base)
+    assert change is not None
+    assert "other" in change.summary  # the file the dropped commit added
+    assert "theirs" not in change.summary  # the new base's own work is not the branch's
+    assert "mine" not in change.summary  # replayed identically, so nothing moved in it
+    assert "1 file whose contribution moved" in change.summary
+
+
 def test_folding_two_commits_together_is_not_visible_here(scratch: Scratch) -> None:
     """Honest limit: squashing preserves the branch's contribution, so this
     check cannot see it. The state types are what prevent that one."""
