@@ -45,7 +45,7 @@ from .invariants import (
     save_session,
     branch_change,
 )
-from .plan import DROPPING_ACTIONS, TODO_LINE, check_plan
+from .plan import DROPPING_ACTIONS, TODO_LINE, check_plan, todo_stopping_at
 from .state import (
     Applying,
     Commit,
@@ -835,6 +835,7 @@ def rebase_start(
     base: str,
     repo: str = ".",
     todo: list[str] | None = None,
+    edit: list[str] | None = None,
     autosquash: bool = False,
     update_refs: bool = False,
     check_command: str | None = None,
@@ -846,6 +847,14 @@ def rebase_start(
     Refuses anything rebase_preflight called unsafe, unless `force`. Before
     starting it tags the current tip, so the result can be checked against it,
     and moves aside untracked files a replayed commit would collide with.
+
+    `edit` is the short way to say "replay the whole range, stop at these": pass
+    the commits to stop at and the todo is built here, every other commit
+    picked. Prefer it to writing `todo` out by hand -- it cannot leave a commit
+    out, and a hand-written list is exactly where one goes missing. `todo` is
+    still there for anything that reorders, drops or squashes. Being a way of
+    generating the todo, it cannot be combined with `autosquash` or
+    `update_refs`, which are the others.
 
     `autosquash` folds every `fixup!` and `squash!` in the range into the commit
     its subject names, which is the workflow `git commit --fixup` sets up. It
@@ -880,7 +889,29 @@ def rebase_start(
             "todo of your own would discard them. Put the update-ref lines in "
             "your todo, or start without one."
         )
+    if edit is not None and todo is not None:
+        raise ValueError(
+            "edit builds the todo, so it cannot be combined with one. Put the "
+            "`edit` lines in the todo itself."
+        )
+    if autosquash and edit is not None:
+        raise ValueError("autosquash generates the todo, so it cannot be given `edit`.")
+    if update_refs and edit is not None:
+        # `edit` generates a todo and hands it over as one, so the update-ref
+        # lines git would have written go the same way a caller's todo sends
+        # them: nowhere, silently, leaving the sibling branches on commits that
+        # no longer exist. Weaving them in here is possible -- unlike a hand-
+        # written todo, this one's ordering is ours -- but it is a feature rather
+        # than a merge, so for now the combination is refused rather than
+        # half-honoured.
+        raise ValueError(
+            "update_refs writes update-ref lines into the generated todo, and "
+            "`edit` generates that todo, so they would be discarded. Use a todo "
+            "of your own with the update-ref lines in it, or drop `edit`."
+        )
     git = _git(repo)
+    if edit is not None:
+        todo = todo_stopping_at(git, base, edit)
     preflight = rebase_preflight(base, repo, todo)
     if not preflight.safe_to_start and not force:
         raise ValueError(f"Refusing to start. {preflight.guidance}")
