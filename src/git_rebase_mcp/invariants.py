@@ -448,6 +448,11 @@ class Session:
     # user made meanwhile would otherwise be.
     stash_ref: str | None = None
     check_command: str | None = None
+    # Whether a failing `check_command` stops the rebase. True is git's `--exec`,
+    # woven into the todo. False runs it at each stop instead and reports what it
+    # said, which is what a branch that is legitimately red part-way through needs:
+    # a gate there halts on history rather than on the caller's work.
+    check_halts: bool = True
     # The commits amended at an `edit` stop, by the sha git recorded in
     # `rebase-merge/amend` -- which names the *step*, and so stays put when the
     # same commit is amended twice. Kept because amending is how an `edit` stop
@@ -525,6 +530,7 @@ def load_session(git: Git) -> Session | None:
             stashed=stashed,
             stash_ref=str(stash_ref) if stash_ref is not None else None,
             check_command=str(command) if command is not None else None,
+            check_halts=bool(raw.get("check_halts", True)),
             amended=amended,
             resolved=resolved,
             carried=_carried(raw.get("carried", ())),

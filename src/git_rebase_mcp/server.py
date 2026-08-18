@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 import shlex
+import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -85,6 +86,10 @@ mcp = MCPServer(
 # an earlier context and should be looked at before it is staged.
 RERERE = ("-c", "rerere.enabled=true")
 
+# How much of an observed check's output to carry back. The tail rather than
+# the head: a test runner puts the summary last, and the summary is the answer.
+CHECK_OUTPUT = 2000
+
 StateName = Literal[
     "not_rebasing",
     "conflicted",
@@ -132,6 +137,20 @@ class FinishedRebase:
     base: str
     backup_ref: str
     branch_moved: bool
+
+
+@dataclass(frozen=True)
+class CheckResult:
+    """What an observed `check_command` said at this stop.
+
+    Present only for a rebase started with `check_halts=False`, and absent at a
+    conflicted stop, where the working tree still holds markers and the answer
+    would be about the conflict rather than about the commit.
+    """
+
+    command: str
+    ok: bool
+    output: str
 
 
 @dataclass(frozen=True)
@@ -200,6 +219,9 @@ class StatusReport:
     # `rev-parse`; the alternative was a rebase abandoned on a misreading.
     worktree: str = ""
     branch: str = ""
+    # What an observed check said here. See `CheckResult`, and `check_halts` on
+    # rebase_start for why a check would be observed rather than enforced.
+    check: CheckResult | None = None
 
 
 @mcp.tool()
@@ -856,6 +878,7 @@ def rebase_start(
     update_refs: bool = False,
     check_command: str | None = None,
     check_edits_only: bool = False,
+    check_halts: bool = True,
     auto_resolve: bool = False,
     force: bool = False,
 ) -> StartReport:
@@ -906,6 +929,13 @@ def rebase_start(
     check then halts the rebase on history that was already like that before you
     touched it.
 
+    `check_halts=False` stops it being a gate at all: the command runs at each
+    stop and its result comes back in the report, and nothing halts. That is the
+    shape for a rebase somebody is watching -- the answer wanted at each stop is
+    "what does the suite say here?", compared against a baseline, and a branch is
+    rarely green at every commit of its own history. It is skipped at a
+    conflicted stop, where the tree still holds markers.
+
     `auto_resolve` composes conflicts where the two sides touched different
     lines and carries on without stopping. Off by default: lines that do not
     overlap can still contradict each other -- one side adding a call, the other
@@ -955,6 +985,13 @@ def rebase_start(
         )
     if check_edits_only and not check_command:
         raise ValueError("check_edits_only says when to run check_command, which is unset.")
+    if check_edits_only and not check_halts:
+        raise ValueError(
+            "check_edits_only says which steps get an exec line, and check_halts="
+            "False writes none: the check runs at every stop instead. Pass one."
+        )
+    if not check_halts and not check_command:
+        raise ValueError("check_halts says how to run check_command, which is unset.")
     git = _git(repo)
     if generating:
         todo = todo_stopping_at(
@@ -984,6 +1021,7 @@ def rebase_start(
             stashed=stashed,
             stash_ref=stash_ref,
             check_command=check_command,
+            check_halts=check_halts,
             carried=_refs_into_range(git, base) if update_refs else (),
         ),
     )
@@ -993,7 +1031,9 @@ def rebase_start(
     if todo is not None:
         # A supplied todo replaces whatever git generates, so --exec would be
         # discarded with it; the exec lines have to be woven in here instead.
-        lines = _with_checks(todo, check_command, check_edits_only)
+        lines = _with_checks(
+            todo, check_command if check_halts else None, check_edits_only
+        )
         todo_file = git.git_path("rebase-mcp-todo")
         todo_file.write_text("\n".join(lines) + "\n")
         # Git runs this through a shell, so the path is quoted for one. A repo
@@ -1007,7 +1047,7 @@ def rebase_start(
             args.append("--autosquash")
         if update_refs:
             args.append("--update-refs")
-        if check_command:
+        if check_command and check_halts:
             args += ["--exec", check_command]
     args.append(base)
 
@@ -1519,21 +1559,28 @@ def _advance(git: Git, git_said: str, auto_resolve: bool,
     tell. So it happens only when asked for.
     """
     resolved: list[str] = []
+
+    def stopped(state: RebaseState) -> StatusReport:
+        """The report for a stop the caller is about to be handed.
+
+        One place, so an observed check runs exactly once per call and cannot be
+        forgotten at one of the four ways out below.
+        """
+        return _report(state, git_said, tuple(resolved), git=git,
+                       replayed=replayed, check=_observed_check(git, state))
+
     for _ in range(AUTO_STEPS):
         state = read_state(git)
         _record_handwork(git, state)
         command = _carry_on_command(state)
         if not isinstance(state, (Conflicted, Applying)) or not auto_resolve:
-            return _report(state, git_said, tuple(resolved), git=git,
-                       replayed=replayed)
+            return stopped(state)
         if not state.unmerged or command is None:
-            return _report(state, git_said, tuple(resolved), git=git,
-                       replayed=replayed)
+            return stopped(state)
 
         composed = {path: auto_resolve_file(git, path) for path in state.unmerged}
         if any(text is None for text in composed.values()):
-            return _report(state, git_said, tuple(resolved), git=git,
-                       replayed=replayed)
+            return stopped(state)
 
         for path, text in composed.items():
             assert text is not None
@@ -1543,8 +1590,7 @@ def _advance(git: Git, git_said: str, auto_resolve: bool,
         result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
         git_said = _git_said(result)
         replayed = replayed + _replayed(result)
-    return _report(read_state(git), git_said, tuple(resolved), git=git,
-                   replayed=replayed)
+    return stopped(read_state(git))
 
 
 def _conflicted_guidance(state: Conflicted) -> str:
@@ -1576,6 +1622,47 @@ def _conflicted_guidance(state: Conflicted) -> str:
         f"resolution and moves to the next step. Whatever you meant to {intended} "
         "has to be staged now, together with the resolution -- `--continue` "
         "commits everything staged. There is no second stop to do it at."
+    )
+
+
+def _observed_check(git: Git, state: RebaseState) -> CheckResult | None:
+    """Run the check at this stop and report what it said, without acting on it.
+
+    The other half of `check_command`. As `--exec` it is a gate: a non-zero exit
+    halts the rebase, which is what you want when nobody is watching. It is the
+    wrong shape when somebody is: a branch is rarely green at every commit of its
+    own history -- a budget raised one commit after the file that outgrew it, a
+    helper used one commit before it is defined -- and a gate then stops on that
+    rather than on anything the rebase did. Recovering means rewriting the todo,
+    so the feature goes unused on the one workflow that most wants it.
+
+    Observed instead, the same command answers the question actually being asked
+    at each stop: what does the suite say here? The caller compares it against the
+    baseline and decides. Nothing halts.
+
+    Skipped at a conflicted stop. The working tree still holds markers there, so
+    the answer would be about the conflict rather than about the commit, and a
+    long suite run would be spent saying so.
+    """
+    session = load_session(git)
+    if session is None or not session.check_command or session.check_halts:
+        return None
+    if isinstance(state, (Conflicted, Applying)) and state.unmerged:
+        return None
+    # Through a shell, which is how git's own `exec` runs it: the same string has
+    # to mean the same thing whichever half of `check_command` is in use.
+    finished = subprocess.run(
+        session.check_command,
+        shell=True,
+        cwd=git.repo,
+        capture_output=True,
+        text=True,
+    )
+    said = (finished.stdout + finished.stderr).strip()
+    return CheckResult(
+        command=session.check_command,
+        ok=finished.returncode == 0,
+        output=said[-CHECK_OUTPUT:] if len(said) > CHECK_OUTPUT else said,
     )
 
 
@@ -1753,6 +1840,7 @@ def _report(
     auto_resolved: tuple[str, ...] = (),
     git: Git | None = None,
     replayed: tuple[str, ...] = (),
+    check: CheckResult | None = None,
 ) -> StatusReport:
     """The state as a report, stamped with the checkout it is about.
 
@@ -1762,6 +1850,8 @@ def _report(
     bare state name and nothing else.
     """
     report = _state_report(state, git_said, auto_resolved, git, replayed)
+    if check is not None:
+        report = replace(report, check=check)
     if git is None:
         return report
     worktree, branch = git.where()
