@@ -1475,6 +1475,7 @@ def _advance(git: Git, git_said: str, auto_resolve: bool,
     resolved: list[str] = []
     for _ in range(AUTO_STEPS):
         state = read_state(git)
+        _record_handwork(git, state)
         command = _carry_on_command(state)
         if not isinstance(state, (Conflicted, Applying)) or not auto_resolve:
             return _report(state, git_said, tuple(resolved), git=git,
@@ -1535,14 +1536,24 @@ def _conflicted_guidance(state: Conflicted) -> str:
 def _record_handwork(git: Git, state: RebaseState) -> None:
     """Note that this continue is about to put a decision into a commit.
 
-    Continuing from an `edit` stop with something staged folds it into the
-    commit. That is the path this server recommends over `rebase_amend` --
-    "staging it and calling proceed does that" -- and it was the one that left no
-    trace: the finish check then read the tool's own advice as possible damage,
-    with a hard reset as the only exit offered.
+    Two of them, and the finish check had a record of neither:
 
-    Read at the continue rather than when the stop is reported, because at the
-    moment it is reported nothing is staged yet. Written before git runs rather
+    - A step that conflicted will commit a resolution, and a resolution is a
+      decision. Composing two sides is not the same text as either side, so the
+      branch's contribution legitimately moves.
+    - Continuing from an `edit` stop with something staged folds it into the
+      commit. That is the path this server recommends over `rebase_amend` --
+      "staging it and calling proceed does that" -- and it was the one that left
+      no trace, so the finish check read the tool's own advice as damage.
+
+    The conflict is recorded when the state is *seen*, not when it is continued
+    from, because staging a resolution takes the path out of the unmerged list:
+    by the time `proceed` runs, the same stop reads as `StoppedWithoutApply` and
+    nothing left says a conflict happened there. Called from the top of
+    `_advance`, which is where every stop a caller can act on is observed.
+
+    The staged case has to be read at the continue instead, since at the moment
+    the stop is reported nothing is staged yet. Written before git runs rather
     than after, so a note is never lost to a process that dies between
     committing and recording; the cost is a note for a continue git then
     refused, which is the harmless direction -- it can only make the finish
@@ -1553,6 +1564,11 @@ def _record_handwork(git: Git, state: RebaseState) -> None:
     """
     session = load_session(git)
     if session is None:
+        return
+    if isinstance(state, Conflicted):
+        if state.replaying.sha in session.resolved:
+            return
+        save_session(git, replace(session, resolved=(*session.resolved, state.replaying.sha)))
         return
     if not isinstance(state, StoppedAfterApply) or not state.applied:
         return
@@ -1861,6 +1877,13 @@ def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> st
     an `edit` stop is *for*, and this server hands out `rebase_amend` to do it.
     Every rebase that used one ended here being told its work looked like
     damage, with a hard reset as the only exit offered.
+
+    Resolving was the case missing after that, and it is not a corner either: it
+    is what a conflicted rebase *is*. A resolution is a decision, and composing
+    two sides gives text that is neither, so the contribution moves and nothing
+    has gone wrong. Amending is offered first because it is the narrower claim --
+    a named commit was deliberately rewritten -- and a rebase that did both is
+    better explained by that than by the conflicts it also had.
     """
     if session.amended:
         count = len(session.amended)
@@ -1871,6 +1894,17 @@ def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> st
             f"{'was' if count == 1 else 'were'} amended during this rebase, on "
             "purpose. Read the difference below and confirm it is only what you "
             "changed, then pass allow_change=true"
+        )
+    if session.resolved:
+        count = len(session.resolved)
+        return (
+            f", which is what resolving does: {count} "
+            f"commit{'' if count == 1 else 's'} "
+            f"({', '.join(sha[:9] for sha in session.resolved)}) "
+            f"{'was' if count == 1 else 'were'} continued from a conflict, and a "
+            "resolution is a decision -- composing two sides gives text that is "
+            "neither of them. Read the difference below and confirm it is the "
+            "resolutions you made, then pass allow_change=true"
         )
     if unchanged_tree:
         return (

@@ -437,6 +437,14 @@ class Session:
     # without this the finish check reports the tool's primary workflow as
     # "something was lost or resolved wrongly".
     amended: tuple[str, ...] = ()
+    # The commits whose step was continued from a conflict, by the sha being
+    # replayed. A resolution is a decision, and a decision legitimately changes
+    # what the branch contributes: composing two sides is not the same text as
+    # either of them. Without this, a rebase that resolved anything and did not
+    # also amend had one reading left at the finish -- "something was lost or
+    # resolved wrongly" -- which is the wrong half of the sentence to leave a
+    # caller holding.
+    resolved: tuple[str, ...] = ()
     # The branches `update_refs` was asked to carry, as they stood before the
     # rewrite. Empty when it was not asked for, so nothing is claimed about a
     # rebase that never promised to move them.
@@ -482,6 +490,12 @@ def load_session(git: Git) -> Session | None:
         if isinstance(amended_raw, list)
         else ()
     )
+    resolved_raw = raw.get("resolved", ())
+    resolved: tuple[str, ...] = (
+        tuple(str(sha) for sha in cast("list[object]", resolved_raw))
+        if isinstance(resolved_raw, list)
+        else ()
+    )
     try:
         return Session(
             backup_ref=str(raw["backup_ref"]),
@@ -493,6 +507,7 @@ def load_session(git: Git) -> Session | None:
             stash_ref=str(stash_ref) if stash_ref is not None else None,
             check_command=str(command) if command is not None else None,
             amended=amended,
+            resolved=resolved,
             carried=_carried(raw.get("carried", ())),
         )
     except KeyError:

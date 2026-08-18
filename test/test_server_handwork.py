@@ -1,18 +1,27 @@
-"""Tests for the finish check knowing that a fold-in was deliberate.
+"""Tests for the finish check knowing what the caller did on purpose.
 
 `_why_the_change_might_be_meant` used to end at "something was lost or resolved
 wrongly -- or was changed on purpose by hand, which this run has no record of".
-Staging a change at an `edit` stop and continuing is one such change, and it is
-the one the README recommends over `rebase_amend` -- "staging it and calling
-proceed does that" -- so the tool was reading its own advice as damage.
+The two ways a caller changes a commit deliberately are the two this records: it
+resolved a conflict, or it staged something at an `edit` stop and continued.
+
+The second is the one the README recommends over `rebase_amend` -- "staging it
+and calling proceed does that" -- so the tool was reading its own advice as
+damage.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from git_rebase_mcp.invariants import load_session
-from git_rebase_mcp.server import proceed, rebase_amend, rebase_finish, rebase_start
+from git_rebase_mcp.invariants import Session, load_session
+from git_rebase_mcp.server import (
+    _why_the_change_might_be_meant,
+    proceed,
+    rebase_amend,
+    rebase_finish,
+    rebase_start,
+)
 
 from scratch import Scratch
 
@@ -25,6 +34,17 @@ def series(scratch: Scratch) -> Scratch:
     return scratch
 
 
+@pytest.fixture
+def diverged(scratch: Scratch) -> Scratch:
+    """A sibling branch that touched the same file, so rebasing onto it
+    conflicts -- which `rebase_start` can set up, unlike an `--onto`."""
+    scratch.commit("base", f="one\n")
+    scratch.git.run("branch", "side")
+    scratch.commit("second", f="two\n")
+    scratch.git.run("checkout", "-q", "side")
+    scratch.commit("side edits f", f="side\n")
+    scratch.git.run("checkout", "-q", "main")
+    return scratch
 
 
 class TestStagingAtAnEditStop:
@@ -74,3 +94,70 @@ class TestStagingAtAnEditStop:
 
         session = load_session(series.git)
         assert session is not None and len(session.amended) == 1
+
+
+class TestResolvingAConflict:
+
+    def test_it_is_recorded(self, diverged: Scratch) -> None:
+        rebase_start("side", str(diverged.path))
+        diverged.write("f", "composed\n")
+        diverged.git.run("add", "f")
+        proceed(str(diverged.path))
+
+        session = load_session(diverged.git)
+        assert session is not None and len(session.resolved) == 1
+
+    def test_the_finish_names_resolving_as_the_reason(self, diverged: Scratch) -> None:
+        rebase_start("side", str(diverged.path))
+        diverged.write("f", "composed\n")
+        diverged.git.run("add", "f")
+        proceed(str(diverged.path))
+
+        report = rebase_finish(str(diverged.path))
+        assert "which is what resolving does" in report.guidance
+        assert "was lost or resolved wrongly" not in report.guidance
+
+    def test_allowing_it_still_works(self, diverged: Scratch) -> None:
+        rebase_start("side", str(diverged.path))
+        diverged.write("f", "composed\n")
+        diverged.git.run("add", "f")
+        proceed(str(diverged.path))
+
+        assert rebase_finish(str(diverged.path), allow_change=True).ok is True
+
+
+def _session(**kwargs: object) -> Session:
+    return Session(
+        backup_ref="rebase-backup/x",
+        backup_sha="a" * 40,
+        backup_tree="b" * 40,
+        base="main",
+        base_sha="c" * 40,
+        **kwargs,  # type: ignore[arg-type]
+    )
+
+
+class TestWhichReadingIsOffered:
+    """Tested on the function rather than through a repository: the rule is about
+    precedence between three readings, and building a rebase that produces each
+    combination says more about git than about the rule."""
+
+    def test_amending_comes_before_resolving(self) -> None:
+        """The narrower claim: a named commit was deliberately rewritten. A
+        rebase that also had conflicts is better explained by that."""
+        said = _why_the_change_might_be_meant(
+            _session(amended=("d" * 40,), resolved=("e" * 40,)), unchanged_tree=False
+        )
+        assert "what amending does" in said
+
+    def test_resolving_comes_before_an_unchanged_tree(self) -> None:
+        said = _why_the_change_might_be_meant(
+            _session(resolved=("e" * 40,)), unchanged_tree=True
+        )
+        assert "what resolving does" in said
+
+    def test_with_neither_the_old_reading_stands(self) -> None:
+        """The honest answer when the run really has no record: it might be
+        damage. What changed is only how often that sentence is reached."""
+        said = _why_the_change_might_be_meant(_session(), unchanged_tree=False)
+        assert "was lost or resolved wrongly" in said
