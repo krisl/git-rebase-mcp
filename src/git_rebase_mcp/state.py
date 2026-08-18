@@ -62,6 +62,20 @@ INCOMING_REFS: tuple[tuple[Operation, str], ...] = (
 # is why this is a set of actions rather than a property of conflicts.
 STOPPING_ACTIONS = frozenset({"edit", "reword"})
 
+# Todo actions that create a commit, by every spelling git accepts. What they
+# answer: whether a stop that is not conflicted and holds no applied commit is
+# nonetheless part-way through making one -- which is what a conflicted step
+# looks like once its resolution has been staged, and what a `break` or a failing
+# `exec` never is.
+COMMITTING_ACTIONS = frozenset({
+    "pick", "p",
+    "edit", "e",
+    "reword", "r",
+    "squash", "s",
+    "fixup", "f",
+    "revert",
+})
+
 
 @dataclass(frozen=True)
 class Commit:

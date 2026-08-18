@@ -49,6 +49,7 @@ from .invariants import (
 )
 from .plan import DROPPING_ACTIONS, TODO_LINE, check_plan, todo_stopping_at
 from .state import (
+    COMMITTING_ACTIONS,
     STOPPING_ACTIONS,
     Applying,
     Commit,
@@ -1404,7 +1405,9 @@ def _why_not_amendable(report: StatusReport) -> str:
 
 
 @mcp.tool()
-def proceed(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
+def proceed(
+    repo: str = ".", auto_resolve: bool = False, message: str | None = None
+) -> StatusReport:
     """Carry on with whatever is in progress, and report where it stops next.
 
     Calls the operation's own continue -- a cherry-pick is not finished by
@@ -1413,11 +1416,23 @@ def proceed(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     Refused while any path is still unmerged, which is the other way a marker
     reaches a commit.
 
+    `message` is the message for the commit this continue is about to create,
+    for a rebase stopped at a conflict. It is the only way to set one there: the
+    commit does not exist yet, so `rebase_amend` is refused, and at a conflicted
+    `edit` or `reword` there is no later stop -- so without this, a resolution
+    that deserves a word in the message cannot have one. Anywhere else it is
+    refused rather than ignored, and says where the message belongs instead.
+
+    Comment lines are stripped, as they are from any commit message git takes
+    from a file.
+
     `auto_resolve` behaves as it does in rebase_start, and is off for the same
     reason: deciding a conflict without reading it is not this tool's job.
     """
     git = _git(repo)
     state = read_state(git)
+    if message is not None:
+        _set_pending_message(git, state, message)
     if isinstance(state, (Conflicted, Applying)) and state.unmerged:
         raise ValueError(
             "Refusing to continue: still unmerged: "
@@ -1435,6 +1450,80 @@ def proceed(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     # so the exit status is read from the state rather than from git.
     result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
     return _advance(git, _git_said(result), auto_resolve, _replayed(result))
+
+
+def _set_pending_message(git: Git, state: RebaseState, message: str) -> None:
+    """Write the message the next commit of a conflicted rebase step will take.
+
+    `rebase-merge/message` is where git keeps it, and where `--continue` reads it
+    from. Verified against the alternative: overwriting `MERGE_MSG` instead is
+    silently ignored by a rebase, which is the failure that would be hardest to
+    notice -- the rebase succeeds and keeps the old message.
+
+    Refused at every other stop, each for its own reason rather than a shared
+    one, because the answer to "then how do I set it" differs:
+
+    - A stop with the commit applied has `rebase_amend(message=...)`, which
+      rewrites the commit that exists.
+    - A `break` or a failing `exec` is creating no commit at all.
+    - Another operation's conflict keeps its message somewhere else, and this has
+      only been established for a rebase. Claiming it for a cherry-pick without
+      having checked is how a message goes quietly missing.
+    """
+    if not _pending_commit(git, state):
+        raise ValueError(
+            "A message can only be set where a commit is about to be created from "
+            f"a resolution, and this is {_report(state).state}. "
+            + _why_not_this_message(state)
+        )
+    path = git.git_path("rebase-merge/message")
+    path.write_text(message if message.endswith("\n") else message + "\n")
+
+
+def _pending_commit(git: Git, state: RebaseState) -> bool:
+    """Whether a rebase step is part-way through making a commit.
+
+    Not `isinstance(state, Conflicted)`, which is the obvious answer and the
+    wrong one: staging a resolution takes those paths out of the unmerged list,
+    so the same stop reads as `StoppedWithoutApply` afterwards -- and staging the
+    resolution is exactly what a caller has just done when it asks for this. The
+    first version of this check refused every real use for that reason.
+
+    Second time that has caught something. `_record_handwork` has the same note,
+    and the shared lesson is that `Conflicted` describes an index, not a step: to
+    ask about the step, read what it was doing.
+
+    So the step's action decides, and a pending message has to be there for git
+    to overwrite. A `break` or a failing `exec` has neither.
+    """
+    if isinstance(state, Conflicted):
+        return True
+    if not isinstance(state, StoppedWithoutApply):
+        return False
+    return (
+        state.action.lower() in COMMITTING_ACTIONS
+        and git.git_path("rebase-merge/message").exists()
+    )
+
+
+def _why_not_this_message(state: RebaseState) -> str:
+    if isinstance(state, StoppedAfterApply):
+        return (
+            "The commit exists here, so rebase_amend(message=...) is what rewrites "
+            "it."
+        )
+    if isinstance(state, StoppedWithoutApply):
+        return f"`{state.action}` creates no commit, so there is no message to set."
+    if isinstance(state, Conflicted):  # unreachable: those are accepted above
+        return ""
+    if isinstance(state, Applying):
+        return (
+            f"A {state.operation} keeps its pending message elsewhere, and only a "
+            "rebase's has been established here; setting the wrong file would "
+            "leave the old message in place without saying so. Commit the "
+            "resolution yourself with the message you want."
+        )
+    return "Nothing is mid-operation, so there is no pending commit to name."
 
 
 def _carry_on_command(state: RebaseState) -> str | None:
@@ -1621,7 +1710,8 @@ def _conflicted_guidance(state: Conflicted) -> str:
         "its commit applies, and it conflicted instead, so continuing commits the "
         f"resolution and moves to the next step. Whatever you meant to {intended} "
         "has to be staged now, together with the resolution -- `--continue` "
-        "commits everything staged. There is no second stop to do it at."
+        "commits everything staged. There is no second stop to do it at, and "
+        "`proceed(message=...)` is how the message gets set, for the same reason."
     )
 
 
