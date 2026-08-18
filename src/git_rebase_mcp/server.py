@@ -440,14 +440,31 @@ def _conflict_guidance(
             "unknown": "the incoming side",
         }[state.operation]
     )
+    contested = sum(len(f.units) for f in files)
+    lines = sum(
+        (u.base_range[1] - u.base_range[0] + 1) if u.base_range else 0
+        for f in files
+        for u in f.units
+    )
+    extent = (
+        f"{contested} region{'s' if contested != 1 else ''} contested"
+        + (f", {lines} line{'s' if lines != 1 else ''} of the base in total" if lines else "")
+        + ". Everything else in these files git merged already, so a resolution that "
+        "rewrites more than the regions below is rewriting lines nobody disagreed "
+        "about. "
+    )
     advice = (
-        f"Each region lists what the branch did to the base and what {incoming} did "
+        extent
+        + f"Each region lists what the branch did to the base and what {incoming} did "
         "to the same base -- `branch_so_far` is what is here already, `replaying` is "
         "what is being applied over it. branch_so_far_commits names the commits "
         "behind the first side, which is the nearest it has to a stated intent. "
         "Read both, then answer: "
         'resolve(path, take="both"/"branch"/"replaying") where that says '
-        "it, or edit the file and call resolve(path) with no content. "
+        "it, or edit the file and call resolve(path) with no content. Those "
+        "compose, and composing them is the cheap way through a region neither "
+        "side gets right on its own: take the closer side first, which leaves a "
+        "file with no markers in it, then edit that as ordinary text. "
         "Raise `context` if a region is hard to place."
     )
     appended = [f.path for f in files if f.both_inserted]

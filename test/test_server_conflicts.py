@@ -742,3 +742,20 @@ def test_blank_lines_are_not_counted(scratch: Scratch) -> None:
     report = resolve("f", "three\n\n\n\nkeep\n", str(scratch.path))
 
     assert report.repeated == ()
+
+
+def test_the_guidance_says_how_much_is_contested(scratch: Scratch) -> None:
+    """The extent is the number that decides how much a resolution may rewrite,
+    and it was a field among a dozen rather than a sentence."""
+    scratch.commit("base", f="one\nkeep\n")
+    scratch.commit("second", f="two\nkeep\n")
+    scratch.commit("third", f="three\nkeep\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = conflicts(str(scratch.path))
+
+    assert "1 region contested" in report.guidance
+    assert "git merged already" in report.guidance
+    # And that the two ways of answering compose.
+    assert "take the closer side first" in report.guidance
