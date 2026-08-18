@@ -161,6 +161,16 @@ class StatusReport:
     # its own "you may amend" record through that, so a caller reading only
     # `state` would be told a stop where amending is safe.
     unapplied: bool = False
+    # The step's action was `edit` or `reword`, which stop for the caller once
+    # the commit applies -- and it conflicted instead, so this stop is the one
+    # that stop would have been. Continuing commits the resolution and moves to
+    # the next step; there is no second stop at which to make the change.
+    #
+    # Kept beside `can_amend` because the two answer questions that sound alike
+    # and are not. `can_amend` is about which commit HEAD is *now*; this is
+    # about whether there will be another chance *later*. A caller can read the
+    # first correctly, do exactly what it says, and still lose the edit.
+    action_stop_lost: bool = False
     conflicted_files: tuple[str, ...] = ()
     # Paths this server composed and staged without asking, because the two
     # sides edited different lines. Named rather than left silent: an automatic
@@ -432,6 +442,17 @@ def _conflict_guidance(
             f" A region in {', '.join(unplaced)} has no base_range: its text is not "
             "in the base file, so there is no position to give and none is guessed "
             "at. Its two diffs still say what each side did; find it by that."
+        )
+    # Said here as well as in the status report because this is the tool a caller
+    # reads at a conflict, and by the time it has resolved every region it is
+    # about to continue. A warning it saw one call earlier is one it has already
+    # scrolled past.
+    if isinstance(state, Conflicted) and state.action_stop_lost:
+        advice += (
+            f" Note before continuing: this step is `{state.action}`, whose stop "
+            "this conflict has spent. Continuing commits and moves on, so stage "
+            "any change to this commit alongside the resolutions rather than "
+            "after them."
         )
     return advice
 
@@ -1420,6 +1441,38 @@ def _advance(git: Git, git_said: str, auto_resolve: bool,
                    replayed=replayed)
 
 
+def _conflicted_guidance(state: Conflicted) -> str:
+    """What HEAD is here, and -- the expensive half -- whether it stops again.
+
+    The first half is about amending and was always right. What it left unsaid is
+    that at a conflicted `edit` or `reword` this stop *is* the one the action
+    promised: continue, and git commits the resolution and goes on to the next
+    step with the commit unchanged. A caller can follow the amending advice to
+    the letter, resolve, continue, and lose the edit -- which is exactly how it
+    was found, at the cost of replaying a 63-commit branch a second time.
+
+    So the warning goes where the decision is made, and says what to do instead
+    rather than only what not to expect: stage the change now, alongside the
+    resolution, because `--continue` commits everything staged.
+    """
+    said = (
+        f"Stopped part-way through applying {state.replaying.sha[:9]} "
+        f"({state.replaying.subject}). That commit does not exist yet, so HEAD is "
+        "still the one before it and amending would rewrite the wrong commit. "
+        "Resolve the conflicted paths, then continue."
+    )
+    if not state.action_stop_lost:
+        return said
+    intended = "change in this commit" if state.action == "edit" else "reword"
+    return said + (
+        f" This is also the only stop this step gets: `{state.action}` stops once "
+        "its commit applies, and it conflicted instead, so continuing commits the "
+        f"resolution and moves to the next step. Whatever you meant to {intended} "
+        "has to be staged now, together with the resolution -- `--continue` "
+        "commits everything staged. There is no second stop to do it at."
+    )
+
+
 def _after_apply_guidance(state: StoppedAfterApply) -> str:
     """What HEAD is at this stop, which decides whether amending means anything.
 
@@ -1593,12 +1646,8 @@ def _state_report(
                 head=_info(state.head),
                 head_is_replaying_commit=False,
                 can_amend=False,
-                guidance=(
-                    f"Stopped part-way through applying {state.replaying.sha[:9]} "
-                    f"({state.replaying.subject}). That commit does not exist yet, so "
-                    "HEAD is still the one before it and amending would rewrite the "
-                    "wrong commit. Resolve the conflicted paths, then continue."
-                ),
+                action_stop_lost=state.action_stop_lost,
+                guidance=_conflicted_guidance(state),
                 step=StepInfo(state.step.index, state.step.total),
                 action=state.action,
                 replaying=_info(state.replaying),

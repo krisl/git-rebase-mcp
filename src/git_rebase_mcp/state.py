@@ -16,6 +16,10 @@ paths sitting in the index. A false negative on the one question this server
 exists to answer. So a conflict from a cherry-pick, a revert, a merge, or from
 something that left no record of itself at all, is a state of its own rather
 than an absence.
+
+The other half of that first distinction took longer to notice, because it is
+not about which commit HEAD is -- it is about whether there will be a second
+stop at all. See `STOPPING_ACTIONS`.
 """
 
 from __future__ import annotations
@@ -39,6 +43,25 @@ INCOMING_REFS: tuple[tuple[Operation, str], ...] = (
     ("revert", "REVERT_HEAD"),
     ("merge", "MERGE_HEAD"),
 )
+
+# Todo actions that hand the caller a stop once the commit has been applied.
+#
+# When one of these *conflicts* instead, the stop it promised is the conflict
+# itself. `--continue` commits the resolution and carries straight on to the
+# next step: there is no second stop at which to make the change the action was
+# asked for. Measured, on git 2.x, in a repository built for the question -- a
+# conflicted `edit` committed the resolution and went directly to the following
+# step, and a conflicted `reword` finished the whole rebase still carrying the
+# original message.
+#
+# Nothing in git's output says so, and the shape of the mistake is quiet: the
+# caller resolves, continues, and the commit they meant to change goes past
+# unchanged. Found by losing an entire replay of a 63-commit branch to it.
+#
+# A conflicted `pick` spends no stop, because a `pick` never promised one. That
+# is why this is a set of actions rather than a property of conflicts.
+STOPPING_ACTIONS = frozenset({"edit", "reword"})
+
 
 @dataclass(frozen=True)
 class Commit:
@@ -72,6 +95,16 @@ class Conflicted:
     replaying: Commit
     head: Commit
     unmerged: tuple[str, ...]
+
+    @property
+    def action_stop_lost(self) -> bool:
+        """Whether this conflict has spent the stop the action promised.
+
+        True at a conflicted `edit` or `reword`: continuing commits and moves
+        on, so any change to this commit has to be staged before continuing
+        rather than after. See `STOPPING_ACTIONS`.
+        """
+        return self.action in STOPPING_ACTIONS
 
 
 @dataclass(frozen=True)
