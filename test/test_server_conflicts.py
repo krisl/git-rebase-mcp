@@ -692,3 +692,53 @@ def test_nothing_replayed_says_nothing(scratch: Scratch) -> None:
     report = rebase_start(f"{side}", str(scratch.path), force=True)
     assert report.status.conflicted_files == ("f",)
     assert report.status.replayed_resolutions == ()
+
+
+def test_a_resolution_that_re_adds_merged_lines_is_reported(scratch: Scratch) -> None:
+    """The failure that gets past every other check.
+
+    Markers are gone, the file parses, and a line registered twice is legal code.
+    It reaches a commit and is found by running the thing. Counting is what sees
+    it: no composition of two texts contains more copies of a line than the side
+    that had the most.
+    """
+    scratch.commit("base", f="one\nkeep\n")
+    scratch.commit("second", f="two\nkeep\n")
+    scratch.commit("third", f="three\nkeep\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    # A resolution that reaches past the contested line and repeats what was merged
+    report = resolve("f", "three\nkeep\nkeep\n", str(scratch.path))
+
+    assert [row.line for row in report.repeated] == ["keep"]
+    assert report.repeated[0].in_resolution == 2
+    assert report.repeated[0].in_branch == 1
+    assert report.repeated[0].in_replaying == 1
+    assert "More copies than either side had" in report.guidance
+
+
+def test_an_ordinary_resolution_reports_no_repeats(scratch: Scratch) -> None:
+    scratch.commit("base", f="one\nkeep\n")
+    scratch.commit("second", f="two\nkeep\n")
+    scratch.commit("third", f="three\nkeep\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = resolve("f", "three\nkeep\n", str(scratch.path))
+
+    assert report.repeated == ()
+    assert "More copies" not in report.guidance
+
+
+def test_blank_lines_are_not_counted(scratch: Scratch) -> None:
+    """They repeat everywhere and their counts say nothing."""
+    scratch.commit("base", f="one\n\nkeep\n")
+    scratch.commit("second", f="two\n\nkeep\n")
+    scratch.commit("third", f="three\n\nkeep\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = resolve("f", "three\n\n\n\nkeep\n", str(scratch.path))
+
+    assert report.repeated == ()

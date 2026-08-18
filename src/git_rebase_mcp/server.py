@@ -22,6 +22,7 @@ from typing import Literal, Never, assert_never
 from mcp.server.mcpserver import MCPServer
 
 from .conflicts import (
+    repeated_lines,
     FileConflict,
     auto_resolve_file,
     deleted_side,
@@ -303,10 +304,28 @@ class ConflictReport:
 
 
 @dataclass(frozen=True)
+class RepeatedLine:
+    """A line the resolution has more copies of than either side did."""
+
+    line: str
+    in_resolution: int
+    in_branch: int
+    in_replaying: int
+
+
+@dataclass(frozen=True)
 class ResolveReport:
     path: str
     still_conflicted: tuple[str, ...]
     guidance: str
+    # Lines the staged text has more copies of than either side had. Reported
+    # rather than refused: taking both sides legitimately doubles a line the two
+    # of them share, and a resolution is the caller's decision. But a resolution
+    # that replaced more than the contested region and re-added lines already
+    # merged below it looks exactly like this, and nothing else downstream
+    # objects -- the markers are gone, the file parses, and a route registered
+    # twice or an import repeated is legal code that reaches a commit.
+    repeated: tuple[RepeatedLine, ...] = ()
     # True when what was staged is the path's removal rather than any text. Said
     # out loud because every other resolution leaves a file behind, and a caller
     # that asked for a side without knowing that side had deleted it should hear
@@ -607,8 +626,13 @@ def resolve(
         )
     if not from_disk:
         target.write_text(content)
+    # Before staging: `git add` collapses the index stages this reads the sides from.
+    repeated = tuple(
+        RepeatedLine(line, seen, in_branch, in_replaying)
+        for line, seen, in_branch, in_replaying in repeated_lines(git, path, content)
+    )
     git.run("add", "--", path)
-    return _resolved(git, path)
+    return _resolved(git, path, repeated=repeated)
 
 
 def _resolve_one_sided(
@@ -649,7 +673,12 @@ def _side_name(side: str) -> str:
     return "the branch" if side == "branch" else "the commit being replayed"
 
 
-def _resolved(git: Git, path: str, deleted: bool = False) -> ResolveReport:
+def _resolved(
+    git: Git,
+    path: str,
+    deleted: bool = False,
+    repeated: tuple[RepeatedLine, ...] = (),
+) -> ResolveReport:
     """What is left to do, once one path has been answered."""
     remaining = tuple(git.lines("diff", "--name-only", "--diff-filter=U"))
     staged = "Staged the deletion of " if deleted else "Resolved "
@@ -657,7 +686,8 @@ def _resolved(git: Git, path: str, deleted: bool = False) -> ResolveReport:
         path=path,
         still_conflicted=remaining,
         deleted=deleted,
-        guidance=(
+        repeated=repeated,
+        guidance=_repeat_note(repeated) + (
             f"{staged}{path}. Still conflicted: {', '.join(remaining)}."
             if remaining
             else f"{staged}{path}; all paths resolved. Call proceed."
@@ -667,6 +697,28 @@ def _resolved(git: Git, path: str, deleted: bool = False) -> ResolveReport:
             else f"{staged}{path}; all paths resolved. Nothing is mid-operation, so "
             "there is nothing to continue: commit them as you would any other change."
         ),
+    )
+
+
+def _repeat_note(repeated: tuple[RepeatedLine, ...]) -> str:
+    """Say what the resolution has more of than either side, before saying what is left.
+
+    First in the guidance rather than appended, because the caller reads this to
+    decide whether to continue, and what is left to resolve is the sentence it is
+    looking for -- anything after that gets skimmed.
+    """
+    if not repeated:
+        return ""
+    shown = ", ".join(
+        f"{row.line.strip()[:60]!r} ({row.in_resolution}x here, "
+        f"{row.in_branch}x branch, {row.in_replaying}x replaying)"
+        for row in repeated[:3]
+    )
+    more = f" and {len(repeated) - 3} more" if len(repeated) > 3 else ""
+    return (
+        f"More copies than either side had: {shown}{more}. Expected if you took both "
+        "sides and they share a line; otherwise the resolution reached past the "
+        "contested region and re-added lines that were already merged. "
     )
 
 

@@ -850,3 +850,34 @@ def _trim(lines: list[str], context: int, first: bool, last: bool) -> list[str]:
     if last:
         return lines[:context] + ["..."]
     return lines[:context] + ["..."] + lines[-context:]
+
+
+def repeated_lines(git: Git, path: str, content: str) -> tuple[tuple[str, int, int, int], ...]:
+    """Lines a resolution has more copies of than either side did.
+
+    The failure this catches: a resolution that replaces more than the contested
+    region and re-adds lines already merged below it. Both sides have the line
+    once, the resolution has it twice, and nothing downstream objects -- markers
+    are gone, the file parses, a duplicate route registration or a repeated
+    import is legal code. It reaches a commit and is found by running the thing.
+
+    Counted rather than diffed on purpose. A resolution legitimately contains
+    lines from either side, in either order, and legitimately drops some; what it
+    cannot legitimately do is contain *more* copies of a line than the side that
+    had the most. That is the one arithmetic no composition of two texts
+    justifies.
+
+    Blank and whitespace-only lines are exempt: they repeat everywhere and their
+    counts say nothing.
+
+    Returns (line, in_resolution, in_branch, in_replaying), most repeated first.
+    """
+    counts = Counter(line for line in content.splitlines() if line.strip())
+    branch = Counter(_stage(git, BRANCH_SO_FAR, path).splitlines())
+    replaying = Counter(_stage(git, REPLAYING, path).splitlines())
+    over = [
+        (line, seen, branch[line], replaying[line])
+        for line, seen in counts.items()
+        if seen > max(branch[line], replaying[line])
+    ]
+    return tuple(sorted(over, key=lambda row: (row[1] - max(row[2], row[3]), row[1]), reverse=True))
