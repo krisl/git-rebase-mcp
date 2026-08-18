@@ -379,6 +379,10 @@ def locals_the_backup_tracks(git: Git, backup: Backup, revision: str = "HEAD") -
     what keep it quiet on an ordinary rebase: a path the branch deliberately
     deleted is not on disk, one that is still tracked is not at risk, and one
     that is untracked without being ignored makes git refuse rather than clobber.
+
+    `locals_the_rewrite_removed` is the other half, for the copy that is already
+    gone. Requiring the file to still be here is what made this one blind to the
+    loss actually happening -- see the note there.
     """
     before = set(git.lines("ls-tree", "-r", "--name-only", backup.sha))
     if not before:
@@ -388,6 +392,52 @@ def locals_the_backup_tracks(git: Git, backup: Backup, revision: str = "HEAD") -
         path
         for path in before - tracked_now
         if (git.repo / path).is_file() and path not in set(git.lines("ls-files"))
+    )
+    return _ignored(git, candidates) if candidates else ()
+
+
+def locals_the_rewrite_removed(
+    git: Git,
+    backup: Backup,
+    revision: str = "HEAD",
+    stashed: Sequence[str] = (),
+) -> tuple[str, ...]:
+    """Local files the rewrite has already deleted, and nothing else holds.
+
+    The same file as `locals_the_backup_tracks`, one step later. A path that the
+    old history tracked and the new one does not is deleted by the checkout that
+    moves between them -- ordinary git, and silent, because a file the new
+    history ignores is one git treats as expendable.
+
+    Rebasing *onto* a history that untracked it is exactly that checkout, so this
+    is the rebase's own doing rather than something a caller did afterwards. That
+    matters because it was got wrong once in the other direction: this check
+    existed, was dropped on the strength of a single case where the loss turned
+    out to be a hand-run `git checkout` round trip, and the conclusion drawn --
+    "a rebase does not do this" -- was false. `--onto` makes it routine. Found
+    again by `models/packages.yaml` going missing during a rebase whose report
+    said nothing was at risk, because the surviving check required the file to
+    still be there.
+
+    So both halves are needed and they are complementary: still on disk means a
+    trip through the backup tag will take it, gone from disk means the rewrite
+    already has.
+
+    Ignored-now is the discriminator, as before. A path the branch deleted on
+    purpose, or one an upstream commit removed, is also tracked-before and
+    gone-now -- and is meant to be gone; neither is ignored. Anything moved aside
+    by this server is excluded outright: it is absent because we moved it, and
+    `rebase_finish` puts it back.
+    """
+    before = set(git.lines("ls-tree", "-r", "--name-only", backup.sha))
+    if not before:
+        return ()
+    tracked_now = set(git.lines("ls-tree", "-r", "--name-only", revision))
+    aside = set(stashed)
+    candidates = sorted(
+        path
+        for path in before - tracked_now
+        if path not in aside and not (git.repo / path).exists()
     )
     return _ignored(git, candidates) if candidates else ()
 

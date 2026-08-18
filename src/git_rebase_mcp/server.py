@@ -42,6 +42,7 @@ from .invariants import (
     has_markers,
     load_session,
     locals_the_backup_tracks,
+    locals_the_rewrite_removed,
     record_backup,
     same_tree,
     save_session,
@@ -862,6 +863,12 @@ class StartReport:
     stashed: tuple[str, ...]
     status: StatusReport
     guidance: str
+    # Local files this rebase has already deleted by checking out a history that
+    # does not track them. Reported here rather than only at the finish because
+    # here is where it happened, and the sooner it is said the less of the run has
+    # to be re-read to understand it. Last in the class because it has a default
+    # and the three above do not. See `locals_the_rewrite_removed`.
+    lost_locals: tuple[str, ...] = ()
 
 
 @mcp.tool()
@@ -1059,9 +1066,11 @@ def rebase_start(
     if not result.ok and not is_rebasing(read_state(git)):
         _withdraw_start(git, backup, stashed, stash_ref, result)
     stopped = _advance(git, _git_said(result), auto_resolve, _replayed(result))
+    lost = locals_the_rewrite_removed(git, backup, stashed=stashed)
     return StartReport(
         backup_ref=backup.ref,
         stashed=stashed,
+        lost_locals=lost,
         status=stopped,
         guidance=(
             # A rebase with no conflicts in it is over by the time this returns,
@@ -1074,6 +1083,7 @@ def rebase_start(
             else f"Started. The tip beforehand is tagged {backup.ref}; "
             "rebase_finish checks the result against it. "
         )
+        + _lost_locals_note(backup.ref, lost)
         + stopped.guidance,
     )
 
@@ -2090,6 +2100,30 @@ class FinishReport:
     # because the tag still tracks them and this branch no longer does. Never a
     # problem: the rewrite did what it was asked. See `locals_the_backup_tracks`.
     fragile_locals: tuple[str, ...] = ()
+    # And the ones it has already deleted, which is the same situation one step
+    # later. Both halves are reported: still here means the backup tag will take
+    # it, gone means the rewrite already has.
+    lost_locals: tuple[str, ...] = ()
+
+
+def _lost_locals_note(backup_ref: str, lost: Sequence[str]) -> str:
+    """What to say about a local file the rewrite has already deleted.
+
+    Shared by the start and the finish report so the advice cannot drift. Naming
+    the command matters more than naming the cause: the content is in the backup
+    tag and nowhere else, and this is the only place that knows both.
+    """
+    if not lost:
+        return ""
+    listed = ", ".join(lost)
+    it = "it" if len(lost) == 1 else "them"
+    return (
+        f"{listed} {'was' if len(lost) == 1 else 'were'} tracked at {backup_ref} "
+        f"and this history does not track {it}, so moving between the two deleted "
+        f"the working {'copy' if len(lost) == 1 else 'copies'} -- silently, since "
+        f"{it} {'is' if len(lost) == 1 else 'are'} ignored here. Nothing else "
+        f"holds {it}: restore with `git show {backup_ref}:<path> > <path>`. "
+    )
 
 
 def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> str:
@@ -2250,6 +2284,7 @@ def rebase_finish(
     marker_hits = commits_with_markers(git, f"{session.base_sha}..HEAD")
     carried = _carried_now(git, session.carried)
     fragile = locals_the_backup_tracks(git, session.backup)
+    lost = locals_the_rewrite_removed(git, session.backup, stashed=session.stashed)
     problems: list[str] = []
     if change and not change.reordered_only and not allow_change:
         problems.append(
@@ -2295,6 +2330,7 @@ def rebase_finish(
         commit_detail=comparison.detail if comparison and include_diff else None,
         tree_identical=unchanged_tree,
         fragile_locals=fragile,
+        lost_locals=lost,
         commits_with_markers=tuple(hit.sha for hit in marker_hits),
         commits=tuple(
             _commit_info(git, sha)
@@ -2312,6 +2348,7 @@ def rebase_finish(
             )
             + waived
             + _what_happened_to_the_stack(carried)
+            + _lost_locals_note(session.backup_ref, lost)
             + fragile_note
             + "Anything moved aside was restored. The tip before the rebase is "
             f"still tagged {session.backup_ref}."
@@ -2321,6 +2358,7 @@ def rebase_finish(
             + f". The branch before the rebase is at {session.backup_ref}; "
             "`git reset --hard` to it to undo. "
             + _what_happened_to_the_stack(carried)
+            + _lost_locals_note(session.backup_ref, lost)
             + fragile_note
         ),
     )
