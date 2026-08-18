@@ -162,16 +162,17 @@ a cherry-pick is not doing.
 | Tool | | Works on |
 | --- | --- | --- |
 | `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. | rebase |
-| `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `base` is the upstream and `onto=` is where the commits land, for a branch cut from history that has since been rewritten. `edit=[sha, ...]` builds the todo for you — those commits stop, the rest are picked — so the common case needs no list. `autosquash` folds `fixup!` commits in; `update_refs` carries every other branch pointing into the range along, which a stack of branches on one another needs. | rebase |
+| `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `base` is the upstream and `onto=` is where the commits land, for a branch cut from history that has since been rewritten. `edit=[sha, ...]` builds the todo for you — those commits stop, the rest are picked — or `edit_every=` for all of them and `break_first=` for a stop before the first commit, where a baseline is measured. `autosquash` folds `fixup!` commits in; `update_refs` carries every other branch pointing into the range along, which a stack of branches on one another needs. | rebase |
 | `status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. Reports a rebase that has ended and not been checked, rather than only that none is running. Every report also names the checkout it is about — `worktree` and `branch` — so an answer from here can be told apart from one a shell gave about a different worktree of the same repository, and `replayed_resolutions` names any conflict git answered from its recorded memory rather than fresh. | any |
 | `conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the incoming side did to each file. | any |
 | `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers, unless `allow_markers=` says the file is meant to have them. Where one side deleted the path, `take` names a side rather than a text, so taking that side stages the deletion.| any |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. Not needed to fold a change in: staging it and calling `proceed` does that. | rebase |
 | `rebase_split` | Takes this step's commit back out, changes left in the tree, to commit as several. | rebase |
-| `proceed` | Carries on, by the operation's own `--continue`. Refuses while anything is unmerged, or while part of this step's commit is left outside a commit. | any |
+| `proceed` | Carries on, by the operation's own `--continue`. Refuses while anything is unmerged, or while part of this step's commit is left outside a commit. `message=` names the commit a conflicted resolution is about to become — the only place it can be named, since the commit does not exist yet and a conflicted `edit` gets no later stop. | any |
 | `skip` | Drops the commit being applied — for one already in the base. | rebase, cherry-pick, revert |
 | `rebase_todo` | The steps left, and replaces them. Refuses to drop a commit. | rebase |
 | `rebase_finish` | Checks the branch still makes the same change to its base, and names any commit that brought a conflict marker to a file. `tree_identical` says whether a difference is a redistribution or a loss, and a difference is read against what the run actually did — amending explains one, and so does resolving a conflict or staging something at an `edit` stop, so a rebase that did any of those is told which rather than told its own work looks like damage. When the change moved, `branch_change` names the paths whose contribution moved and by how many lines — the difference itself, not a diff between the two tips, which on a rebase onto newer upstream work is mostly the new base's own commits — and `changed_commits` names the commits that account for it — dropped, added, or altered — with `include_diff=` adding git's commit-by-commit rendering. `allow_change=`/`allow_markers=` waive either, and still report it. `fragile_locals` names any file the rewrite made local that the backup tag still tracks, because checking that tag out and coming back deletes it. A rebase started with `update_refs` also reports, per branch it was asked to carry, whether that branch actually moved — git exits zero either way, and a sibling left behind points into history the rebase replaced. | rebase started here |
+| `rebase_compare` | Pairs the commits replayed so far against the originals, mid-rebase. `changed` empty means every one carries the patch it came from; `pending` is the tail not reached yet, which pairs as dropped and is not lost. | rebase started here |
 | `abort` | Abandons the operation and puts back what was moved aside. | rebase, cherry-pick, revert, merge |
 
 The prefix carries the distinction: `rebase_` is for the tools that only make
@@ -184,8 +185,16 @@ thing that catches a step which applies cleanly and still leaves the tree
 broken -- a resolution that drops a line, say, so the file no longer parses.
 Use it.
 
-Add `check_edits_only=True` if the branch was not green at every commit to begin
-with, which most are not: a budget or a fixture raised one commit after the code
+`check_halts=False` stops it being a gate at all: the command runs at each stop
+and the result comes back in the report, and nothing halts. That is the shape for
+a rebase somebody is watching, where the question at each stop is "what does the
+suite say here?" held against a baseline — and where a gate would halt on the
+branch's own history instead. Asked to replay seven commits and test each, I did
+not reach for the gate at all: four of the seven were legitimately red, so the
+suite got run by hand at every stop.
+
+Add `check_edits_only=True` if you want a gate but the branch was not green at
+every commit to begin with, which most are not: a budget or a fixture raised one commit after the code
 that needed it is red in between, and a check after every commit then halts the
 rebase on history that was already like that. Narrowing it to the commits you
 stop at keeps the part that was wanted — prove the commits I changed are sound —
