@@ -12,6 +12,7 @@ So the todo is compared against the commits in the range before it is used.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
@@ -265,3 +266,41 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
 def _resolve(git: Git, revision: str) -> str | None:
     result = git.run("rev-parse", "--verify", "--quiet", f"{revision}^{{commit}}", check=False)
     return result.stdout.strip() or None
+
+
+def todo_stopping_at(
+    git: Git, base: str, stop_at: Sequence[str], action: str = "edit"
+) -> list[str]:
+    """A todo that replays the whole range and stops at the named commits.
+
+    The overwhelmingly common shape of a driven rebase, and the one that was
+    most expensive to ask for. Marking 21 of 63 commits meant sending all 63
+    lines, which is 12KB of JSON that has to be generated somewhere else and
+    pasted in -- three times over on the rebase that prompted this, because
+    every change of mind about which commits to stop at meant sending the whole
+    list again.
+
+    Building it here instead cannot drop a commit, which is the other half of
+    the argument: a hand-written list of 63 lines is exactly where one goes
+    missing silently, and `check_plan` exists because that is what happens.
+    Every commit in the range is named by construction, so the only thing left
+    to get wrong is which ones stop.
+
+    A revision that is not in the range raises rather than being ignored: it is
+    a typo or a stale sha, and honouring the rest of the request would give a
+    rebase that runs to the end without ever stopping where it was asked to.
+    """
+    commits = commits_in_range(git, base)
+    wanted: dict[str, str] = {}
+    for revision in stop_at:
+        resolved = _resolve(git, revision)
+        if resolved is None or all(commit.sha != resolved for commit in commits):
+            raise ValueError(
+                f"{revision} is not a commit in {base}..HEAD, so a todo built from "
+                "it would replay the range without stopping there."
+            )
+        wanted[resolved] = revision
+    return [
+        f"{action if commit.sha in wanted else 'pick'} {commit.sha} {commit.subject}"
+        for commit in commits
+    ]
