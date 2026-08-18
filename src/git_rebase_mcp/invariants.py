@@ -340,6 +340,60 @@ def has_markers(text: str) -> bool:
     return any(line.startswith(MARKER_PREFIXES) for line in text.splitlines())
 
 
+def locals_the_backup_tracks(git: Git, backup: Backup, revision: str = "HEAD") -> tuple[str, ...]:
+    """Local files that a trip through the backup tag would destroy.
+
+    A rewrite that stops tracking a file -- `git rm --cached`, plus a line in
+    .gitignore -- leaves a working copy that is now the only one there is. The
+    backup tag still tracks it, at the content it had before. So:
+
+        git checkout <backup-tag>   # writes the tracked version over the local one
+        git checkout <branch>       # the branch does not track it: git deletes it
+
+    Both steps are silent, and the second is silent *because* the file is
+    ignored: git refuses to clobber an untracked file, and makes an exception for
+    an ignored one. A file this rewrite has just started ignoring is exactly the
+    exception.
+
+    Nothing here causes that. What makes it worth reporting is that this server
+    hands out the tag and recommends comparing against it -- and the file it
+    destroys is the kind that holds machine-local configuration, which is
+    unrecoverable and whose absence surfaces somewhere else entirely. It cost an
+    hour: three tests failing on a missing package, an editor serving nothing,
+    and no path back from either symptom to a `git checkout` two steps earlier.
+
+    Reported forward, before any of it has happened, because that is the only
+    moment the warning can still be acted on. The four conditions together are
+    what keep it quiet on an ordinary rebase: a path the branch deliberately
+    deleted is not on disk, one that is still tracked is not at risk, and one
+    that is untracked without being ignored makes git refuse rather than clobber.
+    """
+    before = set(git.lines("ls-tree", "-r", "--name-only", backup.sha))
+    if not before:
+        return ()
+    tracked_now = set(git.lines("ls-tree", "-r", "--name-only", revision))
+    candidates = sorted(
+        path
+        for path in before - tracked_now
+        if (git.repo / path).is_file() and path not in set(git.lines("ls-files"))
+    )
+    return _ignored(git, candidates) if candidates else ()
+
+
+def _ignored(git: Git, paths: Sequence[str]) -> tuple[str, ...]:
+    """Which of `paths` the current ignore rules match.
+
+    `--no-index` so the answer is about the rules rather than about the index:
+    without it git declines to answer for anything it tracks, and these paths are
+    asked about precisely because tracking is what they have just lost. Exit
+    status 1 is how it reports matching nothing.
+    """
+    found = git.run("check-ignore", "--no-index", "--", *paths, check=False)
+    if not found.ok:
+        return ()
+    return tuple(line for line in found.stdout.splitlines() if line)
+
+
 @dataclass(frozen=True)
 class CarriedRef:
     """A branch `--update-refs` is expected to move, and where it pointed before.

@@ -40,6 +40,7 @@ from .invariants import (
     compare_commits,
     has_markers,
     load_session,
+    locals_the_backup_tracks,
     record_backup,
     same_tree,
     save_session,
@@ -1808,6 +1809,10 @@ class FinishReport:
     # them, and the one report a caller reads should not have to be reconstructed
     # from merge-base by hand to know that a stack survived.
     carried_refs: tuple[RefCarry, ...] = ()
+    # Local files that a trip through the backup tag would silently destroy,
+    # because the tag still tracks them and this branch no longer does. Never a
+    # problem: the rewrite did what it was asked. See `locals_the_backup_tracks`.
+    fragile_locals: tuple[str, ...] = ()
 
 
 def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> str:
@@ -1943,6 +1948,7 @@ def rebase_finish(
     )
     marker_hits = commits_with_markers(git, f"{session.base_sha}..HEAD")
     carried = _carried_now(git, session.carried)
+    fragile = locals_the_backup_tracks(git, session.backup)
     problems: list[str] = []
     if change and not change.reordered_only and not allow_change:
         problems.append(
@@ -1959,6 +1965,19 @@ def rebase_finish(
     waived = f"Conflict markers are committed in {named_markers}, allowed. " if (
         marker_hits and allow_markers
     ) else ""
+    # Said whether or not the rest of the check passed, and never as a problem:
+    # the rewrite did what it was asked. What is worth knowing is that the tag
+    # this report keeps recommending is now dangerous to check out, and only this
+    # report knows both the tag and which paths it would take with it.
+    fragile_note = (
+        f"{', '.join(fragile)} {'is' if len(fragile) == 1 else 'are'} local now "
+        f"and {session.backup_ref} still tracks {'it' if len(fragile) == 1 else 'them'}: "
+        f"checking that tag out overwrites {'it' if len(fragile) == 1 else 'them'} and "
+        "coming back deletes it, silently, since it is ignored. Copy it aside "
+        "before using the tag to compare. "
+        if fragile
+        else ""
+    )
 
     restored = (
         _unstash(git, session.stashed, session.stash_ref) if not problems else ()
@@ -1974,6 +1993,7 @@ def rebase_finish(
         changed_commits=comparison.changes if comparison else (),
         commit_detail=comparison.detail if comparison and include_diff else None,
         tree_identical=unchanged_tree,
+        fragile_locals=fragile,
         commits_with_markers=tuple(hit.sha for hit in marker_hits),
         commits=tuple(
             _commit_info(git, sha)
@@ -1991,14 +2011,16 @@ def rebase_finish(
             )
             + waived
             + _what_happened_to_the_stack(carried)
+            + fragile_note
             + "Anything moved aside was restored. The tip before the rebase is "
             f"still tagged {session.backup_ref}."
             if not problems
             else "Not finished: "
             + "; ".join(problems)
             + f". The branch before the rebase is at {session.backup_ref}; "
-            "`git reset --hard` to it to undo."
+            "`git reset --hard` to it to undo. "
             + _what_happened_to_the_stack(carried)
+            + fragile_note
         ),
     )
 
