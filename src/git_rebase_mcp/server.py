@@ -1161,7 +1161,13 @@ def _with_checks(
         match = TODO_LINE.match(line)
         if not match:
             continue
-        if edits_only and match["action"].lower() not in STOPPING_ACTIONS:
+        action = match["action"].lower()
+        # A drop creates no commit, so the tree at the step after it is the tree
+        # that was already checked. Running the suite again there says the same
+        # thing at the same price, and a todo of mostly drops pays it repeatedly.
+        if action in DROPPING_ACTIONS:
+            continue
+        if edits_only and action not in STOPPING_ACTIONS:
             continue
         woven.append(f"exec {check_command}")
     return woven

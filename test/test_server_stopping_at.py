@@ -104,3 +104,23 @@ class TestStoppingEverywhere:
     def test_a_todo_of_your_own_still_refuses_them(self, series: Scratch) -> None:
         with pytest.raises(ValueError, match="cannot be combined"):
             rebase_start("HEAD~3", str(series.path), todo=["pick HEAD"], break_first=True)
+
+
+def test_a_dropped_step_gets_no_check(scratch: Scratch) -> None:
+    """A drop creates no commit, so the tree after it is the tree already checked.
+
+    Counted on the todo rather than by watching the command run: the exec lines
+    are what git will execute, and a check woven after a step that commits
+    nothing is a suite run bought twice at the same price.
+    """
+    from git_rebase_mcp.server import _with_checks
+
+    woven = _with_checks(["pick aaaaaaa", "drop bbbbbbb", "edit ccccccc"], "make test")
+
+    assert woven == [
+        "pick aaaaaaa",
+        "exec make test",
+        "drop bbbbbbb",
+        "edit ccccccc",
+        "exec make test",
+    ]
