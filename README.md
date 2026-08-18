@@ -107,6 +107,16 @@ commit *added*: the reset leaves it untracked, and `git rebase --continue`
 neither refuses nor picks it up. It reports success, and the change is simply
 not in the branch.
 
+**Knows the upstream from the landing place.** `git rebase --onto` exists because
+a branch cut from a history that has since been rewritten needs both: the old
+upstream is the only thing that still says which commits are the branch's own,
+and the rewritten history does not, because the same work is there under other
+shas. Given only the landing place, a branch of seven commits reads as seventy —
+and the checks then fire correctly and unhelpfully, refusing over the sixty-three
+a todo "would drop". `onto=` says what was meant instead, and the finish check
+measures `upstream..old tip` against `onto..new tip` rather than guessing a
+merge-base that reaches back past the upstream.
+
 **Records where the branch was, and checks the result against it.** What must
 stay the same is the change the branch makes to its base -- not the resulting
 tree, which changes for good reason when the rebase also moves onto newer
@@ -152,7 +162,7 @@ a cherry-pick is not doing.
 | Tool | | Works on |
 | --- | --- | --- |
 | `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. | rebase |
-| `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `edit=[sha, ...]` builds the todo for you — those commits stop, the rest are picked — so the common case needs no list. `autosquash` folds `fixup!` commits in; `update_refs` carries every other branch pointing into the range along, which a stack of branches on one another needs. | rebase |
+| `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `base` is the upstream and `onto=` is where the commits land, for a branch cut from history that has since been rewritten. `edit=[sha, ...]` builds the todo for you — those commits stop, the rest are picked — so the common case needs no list. `autosquash` folds `fixup!` commits in; `update_refs` carries every other branch pointing into the range along, which a stack of branches on one another needs. | rebase |
 | `status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. Reports a rebase that has ended and not been checked, rather than only that none is running. Every report also names the checkout it is about — `worktree` and `branch` — so an answer from here can be told apart from one a shell gave about a different worktree of the same repository, and `replayed_resolutions` names any conflict git answered from its recorded memory rather than fresh. | any |
 | `conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the incoming side did to each file. | any |
 | `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers, unless `allow_markers=` says the file is meant to have them. Where one side deleted the path, `take` names a side rather than a text, so taking that side stages the deletion.| any |
