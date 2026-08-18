@@ -14,12 +14,15 @@ from __future__ import annotations
 import re
 import shlex
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from functools import wraps
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Literal, Never, assert_never
+from typing import Any, Literal, Never, ParamSpec, TypeVar, assert_never, cast
 
 from mcp.server.mcpserver import MCPServer
+from mcp.types import CallToolResult, TextContent
+from pydantic import TypeAdapter
 
 from .conflicts import (
     repeated_lines,
@@ -32,6 +35,7 @@ from .conflicts import (
     take_side,
 )
 from .git import Git, GitError, GitResult
+from .render import render
 from .invariants import (
     Change,
     Backup,
@@ -228,7 +232,6 @@ class StatusReport:
     check: CheckResult | None = None
 
 
-@mcp.tool()
 def status(repo: str = ".") -> StatusReport:
     """Report what `repo` is currently doing.
 
@@ -334,7 +337,6 @@ class ResolveReport:
     deleted: bool = False
 
 
-@mcp.tool()
 def conflicts(
     repo: str = ".",
     context: int = 3,
@@ -558,7 +560,6 @@ def _file_report(
     )
 
 
-@mcp.tool()
 def resolve(
     path: str,
     content: str | None = None,
@@ -747,7 +748,6 @@ class TodoReport:
     guidance: str
 
 
-@mcp.tool()
 def rebase_todo(
     repo: str = ".", todo: list[str] | None = None, force: bool = False
 ) -> TodoReport:
@@ -831,7 +831,6 @@ class PreflightReport:
     guidance: str
 
 
-@mcp.tool()
 def rebase_preflight(
     base: str, repo: str = ".", todo: list[str] | None = None, onto: str | None = None
 ) -> PreflightReport:
@@ -943,7 +942,6 @@ class StartReport:
     lost_locals: tuple[str, ...] = ()
 
 
-@mcp.tool()
 def rebase_start(
     base: str,
     repo: str = ".",
@@ -1275,7 +1273,6 @@ class AmendReport:
     guidance: str
 
 
-@mcp.tool()
 def rebase_amend(
     repo: str = ".", message: str | None = None, stage_tracked: bool = False
 ) -> AmendReport:
@@ -1337,7 +1334,6 @@ class SplitReport:
     guidance: str
 
 
-@mcp.tool()
 def rebase_split(repo: str = ".") -> SplitReport:
     """Take the commit this step just applied back out, keeping its changes.
 
@@ -1501,7 +1497,6 @@ def _why_not_amendable(report: StatusReport) -> str:
     )
 
 
-@mcp.tool()
 def proceed(
     repo: str = ".",
     auto_resolve: bool = False,
@@ -2438,7 +2433,6 @@ def _what_happened_to_the_stack(carried: Sequence[RefCarry]) -> str:
     )
 
 
-@mcp.tool()
 def rebase_finish(
     repo: str = ".",
     allow_change: bool = False,
@@ -2610,7 +2604,6 @@ class CompareReport:
     guidance: str
 
 
-@mcp.tool()
 def rebase_compare(repo: str = ".", include_diff: bool = False) -> CompareReport:
     """Pair the commits replayed so far against the originals, mid-rebase.
 
@@ -2689,7 +2682,6 @@ class AbortReport:
     guidance: str
 
 
-@mcp.tool()
 def skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     """Drop the commit being applied and carry on.
 
@@ -2723,7 +2715,6 @@ def skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     return _advance(git, _git_said(result), auto_resolve, _replayed(result))
 
 
-@mcp.tool()
 def abort(repo: str = ".") -> AbortReport:
     """Abandon whatever is in progress and put back anything that was moved aside.
 
@@ -2787,3 +2778,49 @@ def _stash_index(git: Git, sha: str) -> int | None:
 
 def main() -> None:
     mcp.run()
+
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+
+def _rendered(fn: Callable[_P, _R]) -> Callable[_P, CallToolResult]:
+    """Register a tool so its result carries a reading of itself as well as its fields.
+
+    The fields go on in `structured_content`, unchanged and still schema-checked;
+    the content block gets `render()`, which is what a person watching sees
+    instead of a JSON dump of a rebase they are in the middle of.
+
+    Applied at registration rather than to the function, so everything in-process
+    -- the tests above all, and one tool calling another -- keeps getting the
+    dataclass it asked for. `wraps` carries the annotations over, which is where
+    the output schema comes from.
+    """
+
+    @wraps(fn)
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> CallToolResult:
+        report = fn(*args, **kwargs)
+        dumped = TypeAdapter(type(report)).dump_python(report, mode="json")
+        return CallToolResult(
+            content=[TextContent(type="text", text=render(report))],
+            structured_content=cast("dict[str, Any]", dumped),
+        )
+
+    return wrapper
+
+
+# One call each rather than a loop: the tools have different signatures, and a
+# sequence of them is a union no generic wrapper can be matched against.
+mcp.tool(name="status")(_rendered(status))
+mcp.tool(name="conflicts")(_rendered(conflicts))
+mcp.tool(name="resolve")(_rendered(resolve))
+mcp.tool(name="rebase_todo")(_rendered(rebase_todo))
+mcp.tool(name="rebase_preflight")(_rendered(rebase_preflight))
+mcp.tool(name="rebase_start")(_rendered(rebase_start))
+mcp.tool(name="rebase_amend")(_rendered(rebase_amend))
+mcp.tool(name="rebase_split")(_rendered(rebase_split))
+mcp.tool(name="proceed")(_rendered(proceed))
+mcp.tool(name="rebase_finish")(_rendered(rebase_finish))
+mcp.tool(name="rebase_compare")(_rendered(rebase_compare))
+mcp.tool(name="skip")(_rendered(skip))
+mcp.tool(name="abort")(_rendered(abort))
