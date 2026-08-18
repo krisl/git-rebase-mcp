@@ -2327,6 +2327,94 @@ def rebase_finish(
 
 
 @dataclass(frozen=True)
+class CompareReport:
+    """How the commits replayed so far compare with the ones they came from."""
+
+    replayed: int
+    total: int
+    changed: tuple[CommitChange, ...]
+    # Commits of the original range this rebase has not reached yet. They pair as
+    # "dropped" because they are genuinely not there -- but they are not lost,
+    # they are pending, and calling that a difference mid-run would make the
+    # report unreadable at every stop but the last.
+    pending: tuple[str, ...]
+    detail: str | None
+    guidance: str
+
+
+@mcp.tool()
+def rebase_compare(repo: str = ".", include_diff: bool = False) -> CompareReport:
+    """Pair the commits replayed so far against the originals, mid-rebase.
+
+    What `rebase_finish` does at the end, available while the rebase is still
+    running -- because the question "was that commit replayed faithfully?" is
+    asked at every stop, not once. A test suite cannot answer it: it reports the
+    state of the branch, which is the branch's own business, and says nothing
+    about whether this replay matches what it was replaying. Every stop of a real
+    seven-commit rebase had `git range-diff` built by hand for exactly this, which
+    is the tool asking for something it already knows how to do.
+
+    `changed` is the commits whose content differs, paired before and after. An
+    empty list is the answer worth wanting: every commit reached so far carries
+    the same patch it did. `pending` is the tail not yet replayed, kept separate
+    so it does not read as loss.
+
+    A commit altered by more than `range-diff`'s creation threshold cannot be
+    paired with its original, and comes back as a drop and an add of the same
+    subject rather than one "changed". That reading is passed on rather than
+    tidied: collapsing such a pair would also collapse a genuine drop and add
+    that happened to share a subject, which is the one this check exists to see.
+
+    Read-only, and safe at any stop -- including a conflicted one, where the
+    commit part-way through is simply not in the comparison yet.
+    """
+    git = _git(repo)
+    session = load_session(git)
+    if session is None:
+        raise ValueError(
+            "No rebase recorded by this server; there is nothing to compare "
+            "against. rebase_finish clears the record once it has checked a "
+            "finished rebase."
+        )
+    fork = session.upstream_sha or None
+    original = git.lines(
+        "rev-list", "--reverse", f"{fork or session.base_sha}..{session.backup_sha}"
+    )
+    replayed = git.lines("rev-list", "--reverse", f"{session.base_sha}..HEAD")
+    pending = frozenset(original[len(replayed):])
+    comparison = compare_commits(git, session.backup, session.base_sha, fork=fork)
+    changed = tuple(
+        change
+        for change in comparison.changes
+        if not (change.after is None and change.before in pending)
+    )
+    faithful = len(replayed) - len(changed)
+    return CompareReport(
+        replayed=len(replayed),
+        total=len(original),
+        changed=changed,
+        pending=tuple(sorted(pending)),
+        detail=comparison.detail if include_diff else None,
+        guidance=(
+            f"{len(replayed)} of {len(original)} replayed"
+            + (f", {len(pending)} still to come" if pending else "")
+            + ". "
+            + (
+                f"All {faithful} carry the patch they came from."
+                if not changed
+                else f"{len(changed)} differ: "
+                + ", ".join(
+                    f"{c.subject} ({c.status})" for c in changed
+                )
+                + ". That is damage unless you made it -- a resolution that "
+                "composed two sides, or something staged into the commit on "
+                "purpose."
+            )
+        ),
+    )
+
+
+@dataclass(frozen=True)
 class AbortReport:
     head: CommitInfo
     restored: tuple[str, ...]
