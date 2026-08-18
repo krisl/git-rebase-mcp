@@ -10,6 +10,7 @@ from git_rebase_mcp.invariants import (
     Session,
     clear_session,
     commits_with_markers,
+    compare_commits,
     load_session,
     save_session,
     has_markers,
@@ -308,3 +309,50 @@ def test_an_unreadable_session_is_treated_as_absent(scratch: Scratch) -> None:
     scratch.commit("base", a="one\n")
     scratch.git.git_path("rebase-mcp.json").write_text("{not json")
     assert load_session(scratch.git) is None
+
+
+class TestAnExplicitForkPoint:
+    """For the rebase given an onto: the two sides are measured from different
+    places on purpose, and the merge-base is not one of them."""
+
+    def test_it_measures_the_old_side_from_where_it_is_told(
+        self, scratch: Scratch
+    ) -> None:
+        """The shape that needs it: the landing place shares only history older
+        than the upstream, so the merge-base reaches back past it and counts the
+        upstream's own commits as part of the branch's change."""
+        scratch.commit("root", f="one\n")
+        root = scratch.git.out("rev-parse", "HEAD")
+        scratch.commit("upstream work", u="up\n")
+        upstream = scratch.git.out("rev-parse", "HEAD")
+        scratch.commit("the branch's own", g="mine\n")
+        backup = record_backup(scratch.git)
+
+        scratch.git.run("checkout", "-q", "-b", "landing", root)
+        scratch.commit("elsewhere", h="theirs\n")
+        onto = scratch.git.out("rev-parse", "HEAD")
+        scratch.commit("the branch's own", g="mine\n")
+
+        # Told where the old side starts, both sides contribute the same thing.
+        assert branch_change(scratch.git, backup, onto, fork=upstream) is None
+        # Left to guess, the merge-base is `root`, so "upstream work" is counted
+        # as the branch's and the check reports a loss that did not happen.
+        assert branch_change(scratch.git, backup, onto) is not None
+
+    def test_the_commit_pairing_takes_it_too(self, scratch: Scratch) -> None:
+        scratch.commit("root", f="one\n")
+        root = scratch.git.out("rev-parse", "HEAD")
+        scratch.commit("upstream work", u="up\n")
+        upstream = scratch.git.out("rev-parse", "HEAD")
+        scratch.commit("the branch's own", g="mine\n")
+        backup = record_backup(scratch.git)
+
+        scratch.git.run("checkout", "-q", "-b", "landing", root)
+        scratch.commit("elsewhere", h="theirs\n")
+        onto = scratch.git.out("rev-parse", "HEAD")
+        scratch.commit("the branch's own", g="mine\n")
+
+        paired = compare_commits(scratch.git, backup, onto, fork=upstream)
+        assert paired.changes == ()  # nothing moved
+        guessed = compare_commits(scratch.git, backup, onto)
+        assert any(c.subject == "upstream work" for c in guessed.changes)

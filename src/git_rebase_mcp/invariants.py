@@ -80,15 +80,24 @@ class Change:
     summary: str
 
 
-def branch_change(git: Git, backup: Backup, base: str, revision: str = "HEAD") -> Change | None:
+def branch_change(
+    git: Git, backup: Backup, base: str, revision: str = "HEAD", fork: str | None = None
+) -> Change | None:
     """How the branch's own contribution differs from before, or None.
 
     A rebase must not alter what the branch does to its base. Comparing that,
     rather than the resulting tree, is what makes the check hold when the rebase
     also moves onto newer upstream work -- where the tree changes for a
     perfectly good reason and only the branch's own diff should not.
+
+    `fork` says where the branch's *old* contribution starts, for the rebase that
+    was given an explicit onto. Then the two sides are measured from different
+    places on purpose -- `upstream..old tip` against `onto..new tip` -- and the
+    merge-base guessed at below is the wrong one: with an onto that shares only
+    distant history it reaches back past the upstream and calls every commit
+    between them part of the branch's own change.
     """
-    fork = _fork_point(git, backup.sha, base)
+    fork = fork or _fork_point(git, backup.sha, base)
     if _contribution(git, fork, backup.sha) == _contribution(git, base, revision):
         return None
     before = _changed_lines(git, fork, backup.sha)
@@ -188,7 +197,7 @@ STATUS = {"!": "changed", "<": "dropped", ">": "added"}
 
 
 def compare_commits(
-    git: Git, backup: Backup, base: str, revision: str = "HEAD"
+    git: Git, backup: Backup, base: str, revision: str = "HEAD", fork: str | None = None
 ) -> BranchComparison:
     """Pair the branch's commits before and after, and name the ones that moved.
 
@@ -201,8 +210,11 @@ def compare_commits(
     and matches commits across a rewrite by content rather than by position. It
     also sees a reworded commit, which the patch-id check by design cannot --
     the message is not part of the change a branch makes to its base.
+
+    `fork` as in `branch_change`: where the old side starts, when an explicit
+    onto means it is not the merge-base.
     """
-    fork = _fork_point(git, backup.sha, base)
+    fork = fork or _fork_point(git, backup.sha, base)
     found = git.run(
         "range-diff", f"{fork}..{backup.sha}", f"{base}..{revision}", check=False
     )
