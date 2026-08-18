@@ -476,9 +476,11 @@ def _conflict_guidance(
     if isinstance(state, Conflicted) and state.action_stop_lost:
         advice += (
             f" Note before continuing: this step is `{state.action}`, whose stop "
-            "this conflict has spent. Continuing commits and moves on, so stage "
-            "any change to this commit alongside the resolutions rather than "
-            "after them."
+            "this conflict has spent -- git commits the resolution and moves on. "
+            "`proceed` queues a break to give the stop back, so the commit can "
+            "still be changed once it exists; `proceed(keep_stop=False)` takes "
+            "git's behaviour, and then any change to this commit has to be "
+            "staged alongside the resolutions rather than after them."
         )
     return advice
 
@@ -1217,8 +1219,9 @@ def rebase_amend(
     # `unapplied` is refused here rather than left to the isinstance check: git's
     # own "you may amend" record survives the commit being taken back out, so the
     # state is the same one and the commit it names is no longer there.
-    if not isinstance(state, StoppedAfterApply) or state.unapplied:
-        raise ValueError(_why_not_amendable(_report(state)))
+    restored = _is_restored_stop(git, state)
+    if not restored and (not isinstance(state, StoppedAfterApply) or state.unapplied):
+        raise ValueError(_why_not_amendable(_report(state, git=git)))
 
     before = _info(state.head)
     if stage_tracked:
@@ -1236,8 +1239,9 @@ def rebase_amend(
     # conflict went the wrong way. `applied` names the step rather than the
     # commit, so amending the same one twice stays one entry.
     session = load_session(git)
-    if session is not None and state.applied and state.applied not in session.amended:
-        save_session(git, replace(session, amended=(*session.amended, state.applied)))
+    applied = state.applied if isinstance(state, StoppedAfterApply) else before.sha
+    if session is not None and applied and applied not in session.amended:
+        save_session(git, replace(session, amended=(*session.amended, applied)))
     after = _commit_info(git, "HEAD")
     return AmendReport(
         before=before,
@@ -1422,7 +1426,10 @@ def _why_not_amendable(report: StatusReport) -> str:
 
 @mcp.tool()
 def proceed(
-    repo: str = ".", auto_resolve: bool = False, message: str | None = None
+    repo: str = ".",
+    auto_resolve: bool = False,
+    message: str | None = None,
+    keep_stop: bool = True,
 ) -> StatusReport:
     """Carry on with whatever is in progress, and report where it stops next.
 
@@ -1444,6 +1451,14 @@ def proceed(
 
     `auto_resolve` behaves as it does in rebase_start, and is off for the same
     reason: deciding a conflict without reading it is not this tool's job.
+
+    `keep_stop` gives back the stop a conflicted `edit` or `reword` spends on
+    its conflict, by queueing a `break` in front of the remaining steps: the
+    resolution is committed and the rebase stops again immediately, with that
+    commit as HEAD and `rebase_amend` applying to it. On by default, because
+    without it the caller has to have known to stage the whole of its change
+    before continuing, and the one that did not gets no second chance. Pass
+    False to continue straight past, which is git's own behaviour.
     """
     git = _git(repo)
     state = read_state(git)
@@ -1462,10 +1477,111 @@ def proceed(
     if command is None:
         raise ValueError(_nothing_to_carry_on(git, state))
     _record_handwork(git, state)
+    restored = _restore_lost_stop(git, state) if keep_stop else False
     # Stopping again on the next conflict is an ordinary outcome, not a failure,
     # so the exit status is read from the state rather than from git.
     result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
-    return _advance(git, _git_said(result), auto_resolve, _replayed(result))
+    report = _advance(git, _git_said(result), auto_resolve, _replayed(result))
+    if not restored:
+        return _forget_restored_stop(git, report)
+    _remember_restored_stop(git, report)
+    return replace(
+        report, can_amend=True, guidance=_kept_stop_guidance(report)
+    )
+
+
+def _remember_restored_stop(git: Git, report: StatusReport) -> None:
+    """Record which commit the restored stop is holding.
+
+    Nothing in the repository says it. Git writes `rebase-merge/amend` at an
+    `edit` stop and writes nothing at a `break`, so a later `status` reading the
+    same stop would call it unamendable -- correctly for every other break, and
+    wrongly for this one.
+
+    Beside git's own rebase state rather than in the session, for two reasons:
+    this server drives rebases it did not start, which have no session at all,
+    and the fact is true of one stop of one rebase rather than of the run. It
+    goes away when `rebase-merge/` does, which is exactly when it stops being
+    true.
+    """
+    _restored_stop_file(git).write_text(report.head.sha + "\n")
+
+
+def _forget_restored_stop(git: Git, report: StatusReport) -> StatusReport:
+    """Clear the record once the rebase has moved off that stop.
+
+    Left behind, it would make some later break -- or the same sha reached
+    again -- read as amendable when the step behind it was somebody else's.
+    """
+    _restored_stop_file(git).unlink(missing_ok=True)
+    return report
+
+
+def _restored_stop_file(git: Git) -> Path:
+    return git.git_path("rebase-merge/rebase-mcp-restored-stop")
+
+
+def _is_restored_stop(git: Git | None, state: RebaseState) -> bool:
+    """Whether this break is the one queued for a stop a conflict spent.
+
+    By the commit, not by the fact of a break: a caller's own `break` reaches
+    the same state, and HEAD there is the previous step's commit rather than
+    one it asked to edit.
+    """
+    if git is None or not isinstance(state, StoppedWithoutApply):
+        return False
+    path = _restored_stop_file(git)
+    return path.exists() and path.read_text().strip() == state.head.sha
+
+
+def _restore_lost_stop(git: Git, state: RebaseState) -> bool:
+    """Queue a `break` so an `edit` that conflicted still gets its stop.
+
+    `edit` promises a stop at which the commit can be changed. When the commit
+    conflicts, the stop is spent on the conflict instead: `--continue` commits
+    the resolution and moves on, and the caller who did exactly what the
+    amending advice said finds the commit went past unchanged. Warning about it
+    was the first answer, and warning is what a caller reads *after* choosing
+    the mode it is now stuck in.
+
+    A `break` at the head of the remaining steps gives the stop back. Git
+    commits the resolution, reaches the break immediately, and stops with HEAD
+    on the commit that was just created -- which is the stop `edit` described,
+    arriving one step later than it would have. `rebase_amend` works there.
+
+    Before any leading `exec`, deliberately: the check then runs on the commit
+    as amended rather than on the resolution as first staged, which is the
+    question a per-commit check is being asked.
+
+    Only for a rebase, and only for the actions that promised a stop. A
+    conflicted `pick` promised nothing, and inserting a stop it did not ask for
+    would be this tool inventing steps.
+    """
+    if not is_rebasing(state):
+        return False
+    # Not `isinstance(state, Conflicted)`: staging the resolution takes those
+    # paths out of the unmerged list, so by the time a caller continues, the same
+    # stop reads as StoppedWithoutApply. `_pending_commit` is the question that
+    # survives that -- see its own note, which this is the third instance of.
+    if not _pending_commit(git, state):
+        return False
+    action = getattr(state, "action", "").lower()
+    if action not in STOPPING_ACTIONS:
+        return False
+    path = git.git_path("rebase-merge/git-rebase-todo")
+    if not path.exists():
+        return False
+    path.write_text("break\n" + path.read_text())
+    return True
+
+
+def _kept_stop_guidance(report: StatusReport) -> str:
+    """Say the stop is the one the conflict spent, so it is not read as a new one."""
+    return (
+        "Stopped at a break queued in place of the stop this step's conflict "
+        "spent, so the commit it just created can still be changed: it is HEAD "
+        "now, and rebase_amend applies to it. Call proceed when it is right. "
+    ) + report.guidance
 
 
 def _set_pending_message(git: Git, state: RebaseState, message: str) -> None:
@@ -1725,12 +1841,14 @@ def _conflicted_guidance(state: Conflicted) -> str:
         return said
     intended = "change in this commit" if state.action == "edit" else "reword"
     return said + (
-        f" This is also the only stop this step gets: `{state.action}` stops once "
-        "its commit applies, and it conflicted instead, so continuing commits the "
-        f"resolution and moves to the next step. Whatever you meant to {intended} "
-        "has to be staged now, together with the resolution -- `--continue` "
-        "commits everything staged. There is no second stop to do it at, and "
-        "`proceed(message=...)` is how the message gets set, for the same reason."
+        f" This conflict has spent the stop `{state.action}` promised: git commits "
+        "the resolution and moves to the next step. `proceed` gives that stop back, "
+        "by queueing a break -- the rebase stops again immediately with the new "
+        "commit as HEAD, and rebase_amend applies to it there, so the "
+        f"{intended} can wait until you have seen what the resolution made. "
+        "`proceed(keep_stop=False)` continues straight past instead, in which case "
+        "everything has to be staged now, since `--continue` commits what is "
+        "staged, and `proceed(message=...)` is the only way to set the message."
     )
 
 
@@ -2039,6 +2157,7 @@ def _state_report(
                 replaying=_info(state.replaying),
             )
         case StoppedWithoutApply():
+            restored = _is_restored_stop(git, state)
             return StatusReport(
                 git_said=git_said,
                 auto_resolved=auto_resolved,
@@ -2047,9 +2166,13 @@ def _state_report(
                 operation="rebase",
                 head=_info(state.head),
                 head_is_replaying_commit=False,
-                can_amend=False,
+                can_amend=restored,
                 guidance=(
-                    f"Stopped at `{state.action}`, which applied nothing. HEAD is "
+                    "Stopped at a break queued in place of the stop the last "
+                    "step's conflict spent. HEAD is the commit that step "
+                    "created, so rebase_amend applies to it."
+                    if restored
+                    else f"Stopped at `{state.action}`, which applied nothing. HEAD is "
                     "whatever the previous step left, not a commit this step "
                     "created, so it is not the one to amend."
                 ),

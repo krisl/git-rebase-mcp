@@ -44,8 +44,9 @@ def test_the_refusal_says_what_to_do_instead(three_commits: Scratch) -> None:
 
     with pytest.raises(ValueError) as caught:
         rebase_amend(str(three_commits.path))
-    # What to do instead names the tools that do it.
+    # What to do instead: read the conflict, resolve it, and take the stop back.
     assert "Read the conflicted paths with `conflicts`" in str(caught.value)
+    assert "gives that stop back" in str(caught.value)
 
 
 def test_amending_after_an_applied_stop_is_allowed(three_commits: Scratch) -> None:
