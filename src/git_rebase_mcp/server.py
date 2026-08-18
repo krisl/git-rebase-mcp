@@ -1344,6 +1344,7 @@ def proceed(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     command = _carry_on_command(state)
     if command is None:
         raise ValueError(_nothing_to_carry_on(git, state))
+    _record_handwork(git, state)
     # Stopping again on the next conflict is an ordinary outcome, not a failure,
     # so the exit status is read from the state rather than from git.
     result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
@@ -1529,6 +1530,40 @@ def _conflicted_guidance(state: Conflicted) -> str:
         "has to be staged now, together with the resolution -- `--continue` "
         "commits everything staged. There is no second stop to do it at."
     )
+
+
+def _record_handwork(git: Git, state: RebaseState) -> None:
+    """Note that this continue is about to put a decision into a commit.
+
+    Continuing from an `edit` stop with something staged folds it into the
+    commit. That is the path this server recommends over `rebase_amend` --
+    "staging it and calling proceed does that" -- and it was the one that left no
+    trace: the finish check then read the tool's own advice as possible damage,
+    with a hard reset as the only exit offered.
+
+    Read at the continue rather than when the stop is reported, because at the
+    moment it is reported nothing is staged yet. Written before git runs rather
+    than after, so a note is never lost to a process that dies between
+    committing and recording; the cost is a note for a continue git then
+    refused, which is the harmless direction -- it can only make the finish
+    check more forgiving, and the refusals are guarded before this is reached.
+
+    A missing session means a rebase this server did not start, which has nothing
+    to check against and so nothing to record for.
+    """
+    session = load_session(git)
+    if session is None:
+        return
+    if not isinstance(state, StoppedAfterApply) or not state.applied:
+        return
+    # Nothing staged means an ordinary continue, which changes no content: at
+    # this stop the commit has just been created, so the index matches HEAD until
+    # somebody puts something in it.
+    if git.succeeds("diff", "--cached", "--quiet"):
+        return
+    if state.applied in session.amended:
+        return
+    save_session(git, replace(session, amended=(*session.amended, state.applied)))
 
 
 def _after_apply_guidance(state: StoppedAfterApply) -> str:
