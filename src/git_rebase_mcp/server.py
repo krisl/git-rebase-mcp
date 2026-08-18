@@ -47,6 +47,7 @@ from .invariants import (
 )
 from .plan import DROPPING_ACTIONS, TODO_LINE, check_plan, todo_stopping_at
 from .state import (
+    STOPPING_ACTIONS,
     Applying,
     Commit,
     Conflicted,
@@ -839,6 +840,7 @@ def rebase_start(
     autosquash: bool = False,
     update_refs: bool = False,
     check_command: str | None = None,
+    check_edits_only: bool = False,
     auto_resolve: bool = False,
     force: bool = False,
 ) -> StartReport:
@@ -868,6 +870,12 @@ def rebase_start(
 
     `check_command` is run after every commit, which is the only thing that
     catches a step that applies cleanly but leaves the tree broken.
+    `check_edits_only` runs it after the commits you stop at instead of after all
+    of them, which is what you want whenever the branch was not green at every
+    commit to begin with -- most branches, since a budget or a fixture raised one
+    commit after the code that needed it is red in between, and a per-commit
+    check then halts the rebase on history that was already like that before you
+    touched it.
 
     `auto_resolve` composes conflicts where the two sides touched different
     lines and carries on without stopping. Off by default: lines that do not
@@ -909,6 +917,8 @@ def rebase_start(
             "`edit` generates that todo, so they would be discarded. Use a todo "
             "of your own with the update-ref lines in it, or drop `edit`."
         )
+    if check_edits_only and not check_command:
+        raise ValueError("check_edits_only says when to run check_command, which is unset.")
     git = _git(repo)
     if edit is not None:
         todo = todo_stopping_at(git, base, edit)
@@ -938,7 +948,7 @@ def rebase_start(
     if todo is not None:
         # A supplied todo replaces whatever git generates, so --exec would be
         # discarded with it; the exec lines have to be woven in here instead.
-        lines = _with_checks(todo, check_command)
+        lines = _with_checks(todo, check_command, check_edits_only)
         todo_file = git.git_path("rebase-mcp-todo")
         todo_file.write_text("\n".join(lines) + "\n")
         # Git runs this through a shell, so the path is quoted for one. A repo
@@ -1032,14 +1042,30 @@ def _withdraw_start(
     raise GitError(result)
 
 
-def _with_checks(todo: list[str], check_command: str | None) -> list[str]:
+def _with_checks(
+    todo: list[str], check_command: str | None, edits_only: bool = False
+) -> list[str]:
+    """Weave the check in after the commits it is meant to be run on.
+
+    After every commit by default. `edits_only` narrows it to the steps that
+    stop, which is the answer to a check that keeps failing on history rather
+    than on the caller's work: a branch is rarely green at every commit -- a line
+    budget raised one commit after the file that outgrew it is red in between --
+    and a per-commit check then halts the rebase on a state that was already like
+    that. Narrowing keeps the part that was wanted, "prove the commits I changed
+    are sound", and drops the part that only rediscovers what the branch was.
+    """
     if not check_command:
         return todo
     woven: list[str] = []
     for line in todo:
         woven.append(line)
-        if TODO_LINE.match(line):
-            woven.append(f"exec {check_command}")
+        match = TODO_LINE.match(line)
+        if not match:
+            continue
+        if edits_only and match["action"].lower() not in STOPPING_ACTIONS:
+            continue
+        woven.append(f"exec {check_command}")
     return woven
 
 
