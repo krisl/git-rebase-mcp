@@ -850,6 +850,8 @@ def rebase_start(
     # After the todo, not beside `base` where it reads better: callers pass the
     # todo positionally, and moving it along is a silent change of meaning.
     onto: str | None = None,
+    edit_every: bool = False,
+    break_first: bool = False,
     autosquash: bool = False,
     update_refs: bool = False,
     check_command: str | None = None,
@@ -878,6 +880,12 @@ def rebase_start(
     still there for anything that reorders, drops or squashes. Being a way of
     generating the todo, it cannot be combined with `autosquash` or
     `update_refs`, which are the others.
+
+    `edit_every` stops at all of them instead of at named ones, which is what
+    "rebase and check each commit" means; naming seven shas was a long way of
+    saying it. `break_first` puts a stop in front of the first commit, with
+    nothing of the branch applied -- where a baseline is measured, and the only
+    place it can be. Both generate the todo, so the same exclusions apply.
 
     `autosquash` folds every `fixup!` and `squash!` in the range into the commit
     its subject names, which is the workflow `git commit --fixup` sets up. It
@@ -918,14 +926,21 @@ def rebase_start(
             "todo of your own would discard them. Put the update-ref lines in "
             "your todo, or start without one."
         )
-    if edit is not None and todo is not None:
+    generating = edit is not None or edit_every or break_first
+    if generating and todo is not None:
         raise ValueError(
-            "edit builds the todo, so it cannot be combined with one. Put the "
-            "`edit` lines in the todo itself."
+            "edit, edit_every and break_first build the todo, so they cannot be "
+            "combined with one. Put the `edit` and `break` lines in the todo "
+            "itself."
         )
-    if autosquash and edit is not None:
+    if edit is not None and edit_every:
+        raise ValueError(
+            "edit_every stops at all of them, so naming some as well says two "
+            "different things. Pass one."
+        )
+    if autosquash and generating:
         raise ValueError("autosquash generates the todo, so it cannot be given `edit`.")
-    if update_refs and edit is not None:
+    if update_refs and generating:
         # `edit` generates a todo and hands it over as one, so the update-ref
         # lines git would have written go the same way a caller's todo sends
         # them: nowhere, silently, leaving the sibling branches on commits that
@@ -941,8 +956,10 @@ def rebase_start(
     if check_edits_only and not check_command:
         raise ValueError("check_edits_only says when to run check_command, which is unset.")
     git = _git(repo)
-    if edit is not None:
-        todo = todo_stopping_at(git, base, edit)
+    if generating:
+        todo = todo_stopping_at(
+            git, base, edit, every=edit_every, break_first=break_first
+        )
     preflight = rebase_preflight(base, repo, todo, onto)
     if not preflight.safe_to_start and not force:
         raise ValueError(f"Refusing to start. {preflight.guidance}")

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from git_rebase_mcp.server import rebase_start, status
+from git_rebase_mcp.server import proceed, rebase_start, status
 
 from scratch import Scratch
 
@@ -67,3 +67,40 @@ def test_it_cannot_be_combined_with_update_refs(series: Scratch) -> None:
     branches on commits that no longer exist."""
     with pytest.raises(ValueError, match="update_refs"):
         rebase_start("HEAD~3", str(series.path), edit=["HEAD~1"], update_refs=True)
+
+
+class TestStoppingEverywhere:
+
+    def test_it_stops_at_the_first_commit(self, series: Scratch) -> None:
+        report = rebase_start("HEAD~3", str(series.path), edit_every=True)
+        assert report.status.replaying is not None
+        assert report.status.replaying.subject == "adds b"
+
+    def test_break_first_stops_with_nothing_applied(self, series: Scratch) -> None:
+        """HEAD is the base, so a suite run here is the baseline the rest is
+        measured against."""
+        base = series.git.out("rev-parse", "HEAD~3")
+        report = rebase_start("HEAD~3", str(series.path), edit_every=True, break_first=True)
+
+        assert report.status.state == "stopped_without_apply"
+        assert report.status.action == "break"
+        assert report.status.head.sha == base
+
+    def test_it_reaches_every_commit(self, series: Scratch) -> None:
+        rebase_start("HEAD~3", str(series.path), edit_every=True, break_first=True)
+        seen = []
+        for _ in range(4):
+            report = proceed(str(series.path))
+            if report.replaying is not None:
+                seen.append(report.replaying.subject)
+            if report.state == "not_rebasing":
+                break
+        assert seen == ["adds b", "adds c", "adds d"]
+
+    def test_naming_some_and_asking_for_all_is_refused(self, series: Scratch) -> None:
+        with pytest.raises(ValueError, match="two different things"):
+            rebase_start("HEAD~3", str(series.path), edit=["HEAD"], edit_every=True)
+
+    def test_a_todo_of_your_own_still_refuses_them(self, series: Scratch) -> None:
+        with pytest.raises(ValueError, match="cannot be combined"):
+            rebase_start("HEAD~3", str(series.path), todo=["pick HEAD"], break_first=True)

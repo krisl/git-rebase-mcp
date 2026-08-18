@@ -269,9 +269,23 @@ def _resolve(git: Git, revision: str) -> str | None:
 
 
 def todo_stopping_at(
-    git: Git, base: str, stop_at: Sequence[str], action: str = "edit"
+    git: Git,
+    base: str,
+    stop_at: Sequence[str] | None = None,
+    action: str = "edit",
+    every: bool = False,
+    break_first: bool = False,
 ) -> list[str]:
-    """A todo that replays the whole range and stops at the named commits.
+    """A todo that replays the whole range and stops where it is told to.
+
+    `every` stops at all of them, which is what "rebase and check each commit"
+    means and what naming them one by one was a long way of saying. `break_first`
+    puts a `break` in front, so there is a stop with nothing of the branch
+    applied yet -- where a baseline is measured, and the only place it can be.
+
+    Both were missing on the first outing of this function: a seven-commit branch
+    to be tested at every step still had its todo written out by hand, which is
+    the thing this exists to avoid.
 
     The overwhelmingly common shape of a driven rebase, and the one that was
     most expensive to ask for. Marking 21 of 63 commits meant sending all 63
@@ -291,8 +305,17 @@ def todo_stopping_at(
     rebase that runs to the end without ever stopping where it was asked to.
     """
     commits = commits_in_range(git, base)
+    if every and stop_at:
+        raise ValueError(
+            "every stops at all of them, so naming some as well says two "
+            "different things. Pass one."
+        )
+    if every:
+        return (["break"] if break_first else []) + [
+            f"{action} {commit.sha} {commit.subject}" for commit in commits
+        ]
     wanted: dict[str, str] = {}
-    for revision in stop_at:
+    for revision in stop_at or ():
         resolved = _resolve(git, revision)
         if resolved is None or all(commit.sha != resolved for commit in commits):
             raise ValueError(
@@ -300,7 +323,7 @@ def todo_stopping_at(
                 "it would replay the range without stopping there."
             )
         wanted[resolved] = revision
-    return [
+    return (["break"] if break_first else []) + [
         f"{action if commit.sha in wanted else 'pick'} {commit.sha} {commit.subject}"
         for commit in commits
     ]

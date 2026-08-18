@@ -79,3 +79,36 @@ def test_a_commit_outside_the_range_is_refused(series: Scratch) -> None:
 def test_a_revision_that_names_nothing_is_refused(series: Scratch) -> None:
     with pytest.raises(ValueError, match="not a commit in"):
         todo_stopping_at(series.git, "HEAD~3", ["no-such-thing"])
+
+
+class TestStoppingEverywhere:
+    """What "rebase and check each commit" means, which naming every sha was a
+    long way of saying -- and did not cover the baseline at all."""
+
+    def test_every_commit_stops(self, series: Scratch) -> None:
+        todo = todo_stopping_at(series.git, "HEAD~3", every=True)
+        assert [line.split(maxsplit=1)[0] for line in todo] == ["edit"] * 3
+
+    def test_break_first_puts_a_stop_before_any_of_them(self, series: Scratch) -> None:
+        """With nothing of the branch applied, which is where a baseline is
+        measured and the only place it can be."""
+        todo = todo_stopping_at(series.git, "HEAD~3", every=True, break_first=True)
+        assert todo[0] == "break"
+        assert len(todo) == 4
+
+    def test_break_first_works_with_named_commits_too(self, series: Scratch) -> None:
+        todo = todo_stopping_at(series.git, "HEAD~3", ["HEAD"], break_first=True)
+        assert todo[0] == "break"
+        assert [line.split(maxsplit=1)[0] for line in todo[1:]] == [
+            "pick",
+            "pick",
+            "edit",
+        ]
+
+    def test_naming_some_and_asking_for_all_is_refused(self, series: Scratch) -> None:
+        with pytest.raises(ValueError, match="two different things"):
+            todo_stopping_at(series.git, "HEAD~3", ["HEAD"], every=True)
+
+    def test_every_takes_the_action_too(self, series: Scratch) -> None:
+        todo = todo_stopping_at(series.git, "HEAD~3", every=True, action="reword")
+        assert all(line.startswith("reword ") for line in todo)
