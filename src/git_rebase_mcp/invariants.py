@@ -436,6 +436,12 @@ class Session:
     # but a relative name like HEAD~2 points somewhere else once history has
     # been rewritten, so it cannot be used to name the range afterwards.
     base_sha: str
+    # Where the branch sat before, when a rebase was given an explicit onto and
+    # so `base_sha` names where it lands instead. Empty for the ordinary rebase,
+    # where the two are the same commit and the merge-base finds it anyway. It is
+    # what the finish check measures the old contribution from: see the `fork`
+    # argument of `branch_change`.
+    upstream_sha: str = ""
     stashed: tuple[str, ...] = ()
     # The stash entry holding the moved-aside files, so restoring targets that
     # entry rather than the top of the stash stack -- which is what a stash the
@@ -515,6 +521,7 @@ def load_session(git: Git) -> Session | None:
             backup_tree=str(raw["backup_tree"]),
             base=str(raw["base"]),
             base_sha=str(raw["base_sha"]),
+            upstream_sha=str(raw.get("upstream_sha") or ""),
             stashed=stashed,
             stash_ref=str(stash_ref) if stash_ref is not None else None,
             check_command=str(command) if command is not None else None,

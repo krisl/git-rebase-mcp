@@ -737,7 +737,7 @@ class PreflightReport:
 
 @mcp.tool()
 def rebase_preflight(
-    base: str, repo: str = ".", todo: list[str] | None = None
+    base: str, repo: str = ".", todo: list[str] | None = None, onto: str | None = None
 ) -> PreflightReport:
     """Check what a rebase would do, without starting it or changing anything.
 
@@ -745,11 +745,15 @@ def rebase_preflight(
     in the range, commits whose change is already in the base under a different
     sha, anything already in progress or uncommitted, and untracked files a
     replayed commit would collide with.
+
+    `onto` where the rebase will be given one: it does not change which commits
+    are replayed -- that is `base..HEAD` either way -- but it is the tree that
+    gets checked out, so it decides which untracked files are in the way.
     """
     git = _git(repo)
     check = check_plan(git, base, todo)
     blocking = _blocking(git)
-    collisions = _untracked_collisions(git, base)
+    collisions = _untracked_collisions(git, base, onto)
 
     problems = [*blocking, *check.problems]
     return PreflightReport(
@@ -810,16 +814,21 @@ def _refs_into_range(git: Git, base: str) -> tuple[CarriedRef, ...]:
     return tuple(found)
 
 
-def _untracked_collisions(git: Git, base: str) -> tuple[str, ...]:
+def _untracked_collisions(git: Git, base: str, onto: str | None = None) -> tuple[str, ...]:
     """Untracked files that checking out the range would refuse to overwrite.
 
     A rebase stops dead on these before doing anything, which is confusing when
     the file is unrelated scratch work that merely shares a name.
+
+    Two different questions, and an explicit onto separates them: the tree that
+    gets checked out is the landing place's, while the commits whose paths are
+    also about to be written are `base..HEAD` -- the upstream's range. Reading
+    both from one revision was right only while they were the same commit.
     """
     untracked = set(git.lines("ls-files", "--others", "--exclude-standard"))
     if not untracked:
         return ()
-    known = set(git.lines("ls-tree", "-r", "--name-only", base))
+    known = set(git.lines("ls-tree", "-r", "--name-only", onto or base))
     known.update(git.lines("log", "--name-only", "--format=", f"{base}..HEAD"))
     return tuple(sorted(untracked & known))
 
@@ -838,6 +847,9 @@ def rebase_start(
     repo: str = ".",
     todo: list[str] | None = None,
     edit: list[str] | None = None,
+    # After the todo, not beside `base` where it reads better: callers pass the
+    # todo positionally, and moving it along is a silent change of meaning.
+    onto: str | None = None,
     autosquash: bool = False,
     update_refs: bool = False,
     check_command: str | None = None,
@@ -850,6 +862,14 @@ def rebase_start(
     Refuses anything rebase_preflight called unsafe, unless `force`. Before
     starting it tags the current tip, so the result can be checked against it,
     and moves aside untracked files a replayed commit would collide with.
+
+    `base` is the upstream: the commits replayed are `base..HEAD`. `onto` is
+    where they land, and defaults to `base`, which is the ordinary rebase. Pass
+    it when the two differ -- replaying a branch onto a rewritten version of the
+    history it was cut from, above all, where the old upstream still says which
+    commits are the branch's own and the new one no longer does. Naming the
+    landing place as `base` instead would put every commit the two have not got
+    in common into the range.
 
     `edit` is the short way to say "replay the whole range, stop at these": pass
     the commits to stop at and the todo is built here, every other commit
@@ -923,7 +943,7 @@ def rebase_start(
     git = _git(repo)
     if edit is not None:
         todo = todo_stopping_at(git, base, edit)
-    preflight = rebase_preflight(base, repo, todo)
+    preflight = rebase_preflight(base, repo, todo, onto)
     if not preflight.safe_to_start and not force:
         raise ValueError(f"Refusing to start. {preflight.guidance}")
 
@@ -935,8 +955,15 @@ def rebase_start(
             backup_ref=backup.ref,
             backup_sha=backup.sha,
             backup_tree=backup.tree,
-            base=base,
-            base_sha=git.out("rev-parse", f"{base}^{{commit}}"),
+            base=onto or base,
+            # Where the branch sits afterwards, which is the onto: every range
+            # the finish check reads is `base_sha..HEAD`.
+            base_sha=git.out("rev-parse", f"{onto or base}^{{commit}}"),
+            # And where it sat before, which is the upstream. Only recorded when
+            # the two differ, since otherwise the merge-base finds it anyway.
+            upstream_sha=(
+                git.out("rev-parse", f"{base}^{{commit}}") if onto is not None else ""
+            ),
             stashed=stashed,
             stash_ref=stash_ref,
             check_command=check_command,
@@ -956,7 +983,9 @@ def rebase_start(
         # named `re'po` used to make the editor command fail to parse, and the
         # rebase then silently did nothing with the todo.
         config += ["-c", f"sequence.editor=cp {shlex.quote(str(todo_file))}"]
-    else:
+    if onto is not None:
+        args += ["--onto", onto]
+    if todo is None:
         if autosquash:
             args.append("--autosquash")
         if update_refs:
@@ -2007,13 +2036,19 @@ def rebase_finish(
     if session is None:
         raise ValueError("No rebase recorded by this server; nothing to check against.")
 
-    change = branch_change(git, session.backup, session.base_sha)
+    # `upstream_sha` is set only for a rebase given an explicit onto, where the
+    # merge-base of the old tip and the landing place is not where the branch's
+    # own contribution began.
+    fork = session.upstream_sha or None
+    change = branch_change(git, session.backup, session.base_sha, fork=fork)
     difference = change.summary if change else None
     unchanged_tree = bool(change) and same_tree(git, session.backup)
     # Only when something moved: pairing every commit costs a range-diff over
     # the whole branch, and there is nothing to attribute when nothing changed.
     comparison = (
-        compare_commits(git, session.backup, session.base_sha) if change else None
+        compare_commits(git, session.backup, session.base_sha, fork=fork)
+        if change
+        else None
     )
     marker_hits = commits_with_markers(git, f"{session.base_sha}..HEAD")
     carried = _carried_now(git, session.carried)
