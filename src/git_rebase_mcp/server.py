@@ -33,6 +33,7 @@ from .conflicts import (
 )
 from .git import Git, GitError, GitResult
 from .invariants import (
+    Change,
     Backup,
     CarriedRef,
     CommitChange,
@@ -2334,6 +2335,26 @@ def _lost_locals_note(backup_ref: str, lost: Sequence[str]) -> str:
     )
 
 
+def _how_much_moved(change: Change) -> str:
+    """State the size, so `allow_change` is a judgement rather than a formality.
+
+    Whoever passes it already knows something changed -- they changed it. What
+    they cannot tell from "the branch no longer makes the same change" is whether
+    the amount fits what they did, and a table underneath is read as evidence of
+    the thing already agreed to rather than as a quantity to check.
+
+    Found the hard way: a one-line fix to one commit produced nine moved lines,
+    because the resolution that carried it re-added three lines that were already
+    merged. The table said so. The sentence did not, and the sentence is what got
+    read.
+    """
+    return (
+        f" The difference is {change.lines} line{'' if change.lines == 1 else 's'} "
+        f"across {change.paths} file{'' if change.paths == 1 else 's'}; if that is "
+        "more than what you changed, the extra is the part to look at"
+    )
+
+
 def _why_the_change_might_be_meant(session: Session, unchanged_tree: bool) -> str:
     """The reading of a moved branch change that fits what this run actually did.
 
@@ -2498,6 +2519,7 @@ def rebase_finish(
         problems.append(
             "the branch no longer makes the same change to its base"
             + _why_the_change_might_be_meant(session, unchanged_tree)
+            + _how_much_moved(change)
             + f":\n{change.summary}"
         )
     named_markers = ", ".join(f"{hit.sha[:9]} ({hit.subject})" for hit in marker_hits)

@@ -78,6 +78,13 @@ class Change:
     # rather than a diff between the two tips, which on a rebase onto newer
     # upstream work is mostly the new base's own commits.
     summary: str
+    # The same difference as two numbers, so the size can be said in a sentence
+    # rather than only drawn in a table. What the refusal needs is not the detail
+    # -- that is what `summary` is -- but whether the size fits what the caller
+    # did, since `allow_change` is passed by someone who already knows something
+    # changed and is deciding whether *this much* changed.
+    paths: int = 0
+    lines: int = 0
 
 
 def branch_change(
@@ -105,7 +112,28 @@ def branch_change(
     return Change(
         reordered_only=before == after,
         summary=_moved_contribution(before, after),
+        **_moved_size(before, after),
     )
+
+
+def _moved_size(
+    before: dict[str, list[str]], after: dict[str, list[str]]
+) -> dict[str, int]:
+    """How much moved, as the two numbers a sentence can carry.
+
+    Same arithmetic as `_moved_contribution`, which draws it per path. Counted
+    again rather than parsed back out of that text, because a number recovered
+    from prose is a number that stops agreeing with it the first time the prose
+    is reworded.
+    """
+    paths = lines = 0
+    for path in sorted(set(before) | set(after)):
+        was, now = Counter(before.get(path, ())), Counter(after.get(path, ()))
+        moved = sum((was - now).values()) + sum((now - was).values())
+        if moved:
+            paths += 1
+            lines += moved
+    return {"paths": paths, "lines": lines}
 
 
 def _moved_contribution(

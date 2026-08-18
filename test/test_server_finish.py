@@ -494,3 +494,19 @@ def test_a_clean_rebase_names_no_changed_commits(series: Scratch) -> None:
     b, c = two(series)
     rebase_start("HEAD~2", str(series.path), [f"pick {c}", f"pick {b}"])
     assert rebase_finish(str(series.path)).changed_commits == ()
+
+
+def test_the_refusal_says_how_much_moved(series: Scratch) -> None:
+    """`allow_change` is passed by someone who knows something changed; what they
+    cannot see without this is whether the amount fits what they did."""
+    b, c = two(series)
+    rebase_start("HEAD~2", str(series.path), [f"edit {b}", f"pick {c}"])
+    series.write("extra", "one\ntwo\n")
+    series.git.run("add", "extra")
+    proceed(str(series.path))
+
+    report = rebase_finish(str(series.path))
+
+    assert not report.ok
+    assert "The difference is 2 lines across 1 file" in report.guidance
+    assert "more than what you changed" in report.guidance
