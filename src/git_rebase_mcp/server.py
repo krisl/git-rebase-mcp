@@ -918,7 +918,10 @@ def rebase_start(
     "rebase and check each commit" means; naming seven shas was a long way of
     saying it. `break_first` puts a stop in front of the first commit, with
     nothing of the branch applied -- where a baseline is measured, and the only
-    place it can be. Both generate the todo, so the same exclusions apply.
+    place it can be. Both generate the todo, so the same exclusions apply, and
+    that includes a `todo` of your own: they are ways of writing one, not
+    modifiers on one. A hand-written todo needs no flag for this -- `break` is
+    an ordinary step, so put the line where you want the stop.
 
     `autosquash` folds every `fixup!` and `squash!` in the range into the commit
     its subject names, which is the workflow `git commit --fixup` sets up. It
@@ -931,20 +934,23 @@ def rebase_start(
     the generated todo, so it cannot be combined with one of your own.
 
     `check_command` is run after every commit, which is the only thing that
-    catches a step that applies cleanly but leaves the tree broken.
-    `check_edits_only` runs it after the commits you stop at instead of after all
-    of them, which is what you want whenever the branch was not green at every
-    commit to begin with -- most branches, since a budget or a fixture raised one
-    commit after the code that needed it is red in between, and a per-commit
-    check then halts the rebase on history that was already like that before you
-    touched it.
+    catches a step that applies cleanly but leaves the tree broken. Not after a
+    `drop`, which creates no commit and so leaves the tree that was already
+    checked. As a gate it is git's own `--exec`, so what it printed arrives in
+    `git_said` rather than in a field: reaching the next stop is what says it
+    passed. `check_edits_only` runs it after the commits you stop at instead of
+    after all of them, which is what you want whenever the branch was not green
+    at every commit to begin with -- most branches, since a budget or a fixture
+    raised one commit after the code that needed it is red in between, and a
+    per-commit check then halts the rebase on history that was already like that
+    before you touched it.
 
     `check_halts=False` stops it being a gate at all: the command runs at each
-    stop and its result comes back in the report, and nothing halts. That is the
-    shape for a rebase somebody is watching -- the answer wanted at each stop is
-    "what does the suite say here?", compared against a baseline, and a branch is
-    rarely green at every commit of its own history. It is skipped at a
-    conflicted stop, where the tree still holds markers.
+    stop and its result comes back as `check` in the report, and nothing halts.
+    That is the shape for a rebase somebody is watching -- the answer wanted at
+    each stop is "what does the suite say here?", compared against a baseline,
+    and a branch is rarely green at every commit of its own history. It is
+    skipped at a conflicted stop, where the tree still holds markers.
 
     `auto_resolve` composes conflicts where the two sides touched different
     lines and carries on without stopping. Off by default: lines that do not
@@ -970,8 +976,9 @@ def rebase_start(
     if generating and todo is not None:
         raise ValueError(
             "edit, edit_every and break_first build the todo, so they cannot be "
-            "combined with one. Put the `edit` and `break` lines in the todo "
-            "itself."
+            "combined with one. They are ways of writing a todo rather than "
+            "modifiers on one: put the `edit` and `break` lines in yours -- "
+            "`break` is an ordinary step and can go anywhere, including first."
         )
     if edit is not None and edit_every:
         raise ValueError(
