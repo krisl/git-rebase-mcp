@@ -1716,7 +1716,10 @@ def _conflicted_guidance(state: Conflicted) -> str:
         f"Stopped part-way through applying {state.replaying.sha[:9]} "
         f"({state.replaying.subject}). That commit does not exist yet, so HEAD is "
         "still the one before it and amending would rewrite the wrong commit. "
-        "Resolve the conflicted paths, then continue."
+        "Read the conflicted paths with `conflicts`, which reports each region "
+        "as what the two sides did rather than as markers, stage each answer "
+        "with `resolve`, then continue. `rebase_compare` says whether what has "
+        "been replayed so far still matches the originals."
     )
     if not state.action_stop_lost:
         return said

@@ -38,7 +38,7 @@ def test_a_conflicted_edit_says_it_is_the_only_stop(three_commits: Scratch) -> N
     assert "staged now" in report.guidance
     # The advice that was already there has to survive: the caller still has to
     # resolve, and a warning that replaced the instruction would be a step back.
-    assert "Resolve the conflicted paths" in report.guidance
+    assert "Read the conflicted paths with `conflicts`" in report.guidance
 
 
 def test_a_conflicted_pick_spends_no_stop(three_commits: Scratch) -> None:
