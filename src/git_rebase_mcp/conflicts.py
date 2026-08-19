@@ -870,8 +870,18 @@ def repeated_lines(git: Git, path: str, content: str) -> tuple[tuple[str, int, i
     Blank and whitespace-only lines are exempt: they repeat everywhere and their
     counts say nothing.
 
+    Nothing is reported when neither side has a stage recorded. Staging a path
+    takes its stages out of the index, so a caller that resolves in two calls --
+    `take` a side, then stage the edit -- reaches the second one with nothing to
+    compare against. Empty text is the honest reading of a side that is absent
+    (see `_stage`), but it is the wrong reading here: every line in the file then
+    counts as more copies than either side had, and a check that fires on all of
+    them is worse than no check. This is how it was found.
+
     Returns (line, in_resolution, in_branch, in_replaying), most repeated first.
     """
+    if not (_present(git, BRANCH_SO_FAR, path) or _present(git, REPLAYING, path)):
+        return ()
     counts = Counter(line for line in content.splitlines() if line.strip())
     branch = Counter(_stage(git, BRANCH_SO_FAR, path).splitlines())
     replaying = Counter(_stage(git, REPLAYING, path).splitlines())

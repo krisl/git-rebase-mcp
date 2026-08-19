@@ -759,3 +759,28 @@ def test_the_guidance_says_how_much_is_contested(scratch: Scratch) -> None:
     assert "git merged already" in report.guidance
     # And that the two ways of answering compose.
     assert "take the closer side first" in report.guidance
+
+
+def test_a_path_with_no_stages_left_reports_no_repeats(scratch: Scratch) -> None:
+    """Resolving in two calls -- take a side, then stage the edit -- reaches the
+    second call with the stages already gone.
+
+    Empty text is the honest reading of an absent side everywhere else, and the
+    wrong one here: every line in the file would count as more copies than either
+    side had. The first version reported 937 lines of a 2,500-line file and a
+    result too large to return.
+    """
+    scratch.commit("base", f="one\nkeep\n")
+    scratch.commit("second", f="two\nkeep\n")
+    scratch.commit("third", f="three\nkeep\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    # Take a side, which stages the path and drops its stages from the index
+    resolve("f", take="replaying", repo=str(scratch.path))
+    # Then edit that and stage it, the way a caller composes the two
+    scratch.write("f", "three\nkeep\nkeep\n")
+    report = resolve("f", repo=str(scratch.path))
+
+    assert report.repeated == ()
+    assert "More copies" not in report.guidance
