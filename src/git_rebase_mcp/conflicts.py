@@ -53,6 +53,12 @@ CONTEXT = 3
 # is big enough that include_full_sides is the better answer anyway.
 ADDED_LIMIT = 40
 
+# Repeated lines reported by `repeated_lines`. A resolution that took both sides of
+# a large file repeats every line the two of them share, legitimately, and the whole
+# list says nothing the first few do not: the question it answers is "did this
+# resolution reach past its region", which one example settles.
+REPEATED_LIMIT = 20
+
 # Index stages of a conflicted path, as git records them.
 BASE, BRANCH_SO_FAR, REPLAYING = "1", "2", "3"
 
@@ -878,7 +884,8 @@ def repeated_lines(git: Git, path: str, content: str) -> tuple[tuple[str, int, i
     counts as more copies than either side had, and a check that fires on all of
     them is worse than no check. This is how it was found.
 
-    Returns (line, in_resolution, in_branch, in_replaying), most repeated first.
+    Returns (line, in_resolution, in_branch, in_replaying), most repeated first, at
+    most `REPEATED_LIMIT` of them.
     """
     if not (_present(git, BRANCH_SO_FAR, path) or _present(git, REPLAYING, path)):
         return ()
@@ -890,4 +897,5 @@ def repeated_lines(git: Git, path: str, content: str) -> tuple[tuple[str, int, i
         for line, seen in counts.items()
         if seen > max(branch[line], replaying[line])
     ]
-    return tuple(sorted(over, key=lambda row: (row[1] - max(row[2], row[3]), row[1]), reverse=True))
+    ranked = sorted(over, key=lambda row: (row[1] - max(row[2], row[3]), row[1]), reverse=True)
+    return tuple(ranked[:REPEATED_LIMIT])

@@ -18,7 +18,7 @@ from git_rebase_mcp.server import (
     resolve,
     status,
 )
-from git_rebase_mcp.conflicts import take_side
+from git_rebase_mcp.conflicts import REPEATED_LIMIT, take_side
 from git_rebase_mcp.state import Commit, Conflicted, Step
 
 from scratch import Scratch
@@ -784,3 +784,20 @@ def test_a_path_with_no_stages_left_reports_no_repeats(scratch: Scratch) -> None
 
     assert report.repeated == ()
     assert "More copies" not in report.guidance
+
+
+def test_the_repeats_reported_are_bounded(scratch: Scratch) -> None:
+    """Taking both sides of a large file repeats every line they share, and the
+    whole list says nothing the first few do not."""
+    shared = "".join(f"line {n}\n" for n in range(50))
+    scratch.commit("base", f=shared)
+    scratch.commit("second", f="two\n" + shared)
+    scratch.commit("third", f="three\n" + shared)
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = resolve("f", "three\n" + shared + shared, str(scratch.path))
+
+    assert len(report.repeated) == REPEATED_LIMIT
+    # And the guidance names a few of them rather than all
+    assert report.guidance.count("x here") <= 3
