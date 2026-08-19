@@ -1553,16 +1553,18 @@ def proceed(
     # Stopping again on the next conflict is an ordinary outcome, not a failure,
     # so the exit status is read from the state rather than from git.
     result = git.run("-c", "core.editor=true", *RERERE, command, "--continue", check=False)
-    report = _advance(git, _git_said(result), auto_resolve, _replayed(result))
     if not restored:
+        report = _advance(git, _git_said(result), auto_resolve, _replayed(result))
         return _forget_restored_stop(git, report)
-    _remember_restored_stop(git, report)
-    return replace(
-        report, can_amend=True, guidance=_kept_stop_guidance(report)
-    )
+    # Recorded before the report is built, not after: the report asks whether this
+    # stop is a restored one, and a marker written afterwards leaves it answering
+    # no. That produced a report saying the commit was amendable and, in the next
+    # sentence, that HEAD was not the commit to amend.
+    _remember_restored_stop(git, git.out("rev-parse", "HEAD"))
+    return _advance(git, _git_said(result), auto_resolve, _replayed(result))
 
 
-def _remember_restored_stop(git: Git, report: StatusReport) -> None:
+def _remember_restored_stop(git: Git, head: str) -> None:
     """Record which commit the restored stop is holding.
 
     Nothing in the repository says it. Git writes `rebase-merge/amend` at an
@@ -1576,7 +1578,7 @@ def _remember_restored_stop(git: Git, report: StatusReport) -> None:
     goes away when `rebase-merge/` does, which is exactly when it stops being
     true.
     """
-    _restored_stop_file(git).write_text(report.head.sha + "\n")
+    _restored_stop_file(git).write_text(head + "\n")
 
 
 def _forget_restored_stop(git: Git, report: StatusReport) -> StatusReport:
@@ -1645,15 +1647,6 @@ def _restore_lost_stop(git: Git, state: RebaseState) -> bool:
         return False
     path.write_text("break\n" + path.read_text())
     return True
-
-
-def _kept_stop_guidance(report: StatusReport) -> str:
-    """Say the stop is the one the conflict spent, so it is not read as a new one."""
-    return (
-        "Stopped at a break queued in place of the stop this step's conflict "
-        "spent, so the commit it just created can still be changed: it is HEAD "
-        "now, and rebase_amend applies to it. Call proceed when it is right. "
-    ) + report.guidance
 
 
 def _set_pending_message(git: Git, state: RebaseState, message: str) -> None:
@@ -2240,9 +2233,10 @@ def _state_report(
                 head_is_replaying_commit=False,
                 can_amend=restored,
                 guidance=(
-                    "Stopped at a break queued in place of the stop the last "
-                    "step's conflict spent. HEAD is the commit that step "
-                    "created, so rebase_amend applies to it."
+                    "Stopped at a break queued in place of the stop this step's "
+                    "conflict spent, so the commit it just created can still be "
+                    "changed: HEAD is that commit, and rebase_amend applies to "
+                    "it. Call proceed when it is right."
                     if restored
                     else f"Stopped at `{state.action}`, which applied nothing. HEAD is "
                     "whatever the previous step left, not a commit this step "

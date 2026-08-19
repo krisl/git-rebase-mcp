@@ -180,3 +180,27 @@ def test_a_conflicted_reword_says_so_too(three_commits: Scratch) -> None:
     assert report.action == "reword"
     assert report.action_stop_lost is True
     assert "reword" in report.guidance
+
+
+def test_the_given_back_stop_does_not_contradict_itself(three_commits: Scratch) -> None:
+    """One account of the stop, not two.
+
+    The marker saying which commit the break is holding used to be written after
+    the report was built, so the report answered "is this a restored stop?" with
+    no, and its generic break text -- HEAD is not a commit this step created --
+    was left standing beside a sentence saying the opposite.
+    """
+    third = three_commits.git.out("rev-parse", "HEAD")
+    three_commits.start_rebase("HEAD~1", [f"edit {third}"], onto="HEAD~2")
+    three_commits.write("f", "resolved\n")
+    three_commits.git.run("add", "f")
+
+    after = proceed(str(three_commits.path))
+
+    assert after.can_amend is True
+    assert "rebase_amend applies to it" in after.guidance
+    assert "not the one to amend" not in after.guidance
+    # And a later reader of the same stop is told the same thing
+    later = status(str(three_commits.path))
+    assert later.can_amend is True
+    assert later.guidance == after.guidance
