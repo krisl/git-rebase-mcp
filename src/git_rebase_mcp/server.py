@@ -1899,8 +1899,7 @@ def _conflicted_guidance(state: Conflicted) -> str:
         "still the one before it and amending would rewrite the wrong commit. "
         "Read the conflicted paths with `conflicts`, which reports each region "
         "as what the two sides did rather than as markers, stage each answer "
-        "with `resolve`, then continue. `rebase_compare` says whether what has "
-        "been replayed so far still matches the originals."
+        "with `resolve`, then continue."
     )
     if not state.action_stop_lost:
         return said
@@ -2046,7 +2045,10 @@ def _after_apply_guidance(state: StoppedAfterApply) -> str:
         "changes and calling proceed folds them into it, with no separate amend "
         "step: that is what `git rebase --continue` does here. rebase_amend is "
         "for changing the message, for staging tracked files in the same call, "
-        "or for seeing the commit before and after."
+        "or for seeing the commit before and after. `rebase_compare` pairs what "
+        "has been replayed so far against the originals, which is the question "
+        "this stop is for: the suite says whether the branch works, and only "
+        "that says whether this commit still carries the patch it did."
     )
 
 

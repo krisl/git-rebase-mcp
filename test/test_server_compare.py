@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from git_rebase_mcp.server import proceed, rebase_amend, rebase_compare, rebase_start
+from git_rebase_mcp.server import proceed, rebase_amend, rebase_compare, rebase_start, status
 
 from scratch import Scratch
 
@@ -117,3 +117,33 @@ def test_it_works_at_a_conflicted_stop(scratch: Scratch) -> None:
 def test_it_refuses_without_a_rebase_of_its_own(series: Scratch) -> None:
     with pytest.raises(ValueError, match="nothing to compare against"):
         rebase_compare(str(series.path))
+
+
+def test_the_applied_stop_points_at_the_comparison(scratch: Scratch) -> None:
+    """Where the question arises.
+
+    Named at the conflicted stop first, and gone unused across a dozen real stops:
+    at a conflict the caller is resolving, and at the end rebase_finish already
+    answers. An `edit` stop with the commit applied is where "is this still the
+    commit I asked for?" is the thing being decided.
+    """
+    scratch.commit("base", f="one\n")
+    scratch.commit("second", g="two\n")
+    second = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"edit {second}"])
+
+    report = status(str(scratch.path))
+
+    assert report.state == "stopped_after_apply"
+    assert "rebase_compare" in report.guidance
+
+
+def test_the_conflicted_stop_does_not(scratch: Scratch) -> None:
+    """A caller there is resolving, and a pointer to something else is noise."""
+    scratch.commit("base", f="one\n")
+    scratch.commit("second", f="two\n")
+    scratch.commit("third", f="three\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    assert "rebase_compare" not in status(str(scratch.path)).guidance
