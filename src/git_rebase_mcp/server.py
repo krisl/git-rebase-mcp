@@ -16,7 +16,7 @@ import shlex
 import subprocess
 from collections.abc import Callable, Sequence
 from functools import wraps
-from dataclasses import dataclass, replace
+from dataclasses import MISSING, dataclass, fields, replace
 from pathlib import Path
 from typing import Any, Literal, Never, ParamSpec, TypeVar, assert_never, cast
 
@@ -2779,6 +2779,44 @@ def main() -> None:
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
 
+def _said(report: object, dumped: dict[str, Any]) -> dict[str, Any]:
+    """The fields that say something, for the wire.
+
+    A field with a default whose value is that default is the report declining to
+    say anything: no step, nothing conflicted, nothing auto-resolved. A quiet
+    `status` carries nine of those beside seven that mean something, and a caller
+    reads past all nine to find the two it acts on.
+
+    Only defaulted fields, and only at their default. A required field is one the
+    schema says is always present, so dropping it -- even empty -- makes the result
+    fail its own validation, which is how the first version of this broke five of
+    the seven tools at once. Where a field has a default, absent and default are
+    the same statement, and the schema already says which.
+    """
+    defaults = {
+        field.name: field.default
+        for field in fields(cast("Any", report))
+        if field.default is not MISSING
+    }
+    defaults |= {
+        field.name: field.default_factory()
+        for field in fields(cast("Any", report))
+        if field.default_factory is not MISSING
+    }
+    return {
+        key: value
+        for key, value in dumped.items()
+        if key not in defaults or value != _as_json(defaults[key])
+    }
+
+
+def _as_json(value: object) -> object:
+    """A default as it would look dumped, so the two can be compared.
+
+    Tuples arrive from the dump as lists, and `() != []`.
+    """
+    return list(cast("tuple[object, ...]", value)) if isinstance(value, tuple) else value
+
 
 def _rendered(fn: Callable[_P, _R]) -> Callable[_P, CallToolResult]:
     """Register a tool so its result carries a reading of itself as well as its fields.
@@ -2799,7 +2837,7 @@ def _rendered(fn: Callable[_P, _R]) -> Callable[_P, CallToolResult]:
         dumped = TypeAdapter(type(report)).dump_python(report, mode="json")
         return CallToolResult(
             content=[TextContent(type="text", text=render(report))],
-            structured_content=cast("dict[str, Any]", dumped),
+            structured_content=_said(report, cast("dict[str, Any]", dumped)),
         )
 
     return wrapper
