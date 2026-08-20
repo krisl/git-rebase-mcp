@@ -731,6 +731,75 @@ def test_an_ordinary_resolution_reports_no_repeats(scratch: Scratch) -> None:
     assert "More copies" not in report.guidance
 
 
+def test_a_resolution_that_drops_lines_both_sides_kept_is_reported(
+    scratch: Scratch,
+) -> None:
+    """The same failure from the other end, which counting upward cannot see.
+
+    A resolution written from memory rather than from the file in front of it
+    keeps the contested line and quietly loses the code around it. Nothing is
+    duplicated, so the repeat check is silent; the file parses and the commit
+    builds, with a feature deleted. Neither side dropped these, so nothing in the
+    conflict asked for them to go.
+    """
+    scratch.commit("base", f="one\nkeep\nalso\n")
+    scratch.commit("second", f="two\nkeep\nalso\n")
+    scratch.commit("third", f="three\nkeep\nalso\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    # Answers the contested line, and loses the two neither side touched
+    report = resolve("f", "three\n", str(scratch.path))
+
+    assert [row.line for row in report.dropped] == ["keep", "also"]
+    assert report.dropped[0].in_branch == 1
+    assert report.dropped[0].in_replaying == 1
+    assert "though both sides kept it" in report.guidance
+
+
+def test_dropping_what_only_one_side_had_is_not_reported(scratch: Scratch) -> None:
+    """Taking a side drops everything the other added, which is the point of it.
+
+    Only a line *both* sides kept going missing says the resolution lost its
+    shape; anything else is the ordinary business of choosing.
+    """
+    scratch.commit("base", f="one\nkeep\n")
+    scratch.commit("second", f="two\nkeep\nbranch only\n")
+    scratch.commit("third", f="three\nkeep\nreplaying only\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = resolve("f", "three\nkeep\nbranch only\n", str(scratch.path))
+
+    assert report.dropped == ()
+    assert "both sides kept it" not in report.guidance
+
+
+def test_an_ordinary_resolution_reports_nothing_dropped(scratch: Scratch) -> None:
+    scratch.commit("base", f="one\nkeep\n")
+    scratch.commit("second", f="two\nkeep\n")
+    scratch.commit("third", f="three\nkeep\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = resolve("f", "three\nkeep\n", str(scratch.path))
+
+    assert report.dropped == ()
+
+
+def test_taking_a_side_reports_nothing_dropped(scratch: Scratch) -> None:
+    """`take` cannot lose a shared line, so it must never be accused of it."""
+    scratch.commit("base", f="one\nkeep\n")
+    scratch.commit("second", f="two\nkeep\n")
+    scratch.commit("third", f="three\nkeep\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = resolve("f", repo=str(scratch.path), take="branch")
+
+    assert report.dropped == ()
+
+
 def test_blank_lines_are_not_counted(scratch: Scratch) -> None:
     """They repeat everywhere and their counts say nothing."""
     scratch.commit("base", f="one\n\nkeep\n")

@@ -137,6 +137,9 @@ def _resolve(report: Any) -> str:
         *[(f"repeated {index}", f"{row.line.strip()[:60]!r}  "
            f"{row.in_resolution}x here, {row.in_branch}x branch, {row.in_replaying}x replaying")
           for index, row in enumerate(report.repeated[:3], start=1)],
+        *[(f"dropped {index}", f"{row.line.strip()[:60]!r}  "
+           f"gone here, {row.in_branch}x branch, {row.in_replaying}x replaying")
+          for index, row in enumerate(report.dropped[:3], start=1)],
     )
     return "resolve" + ("\n" + rows if rows else "")
 

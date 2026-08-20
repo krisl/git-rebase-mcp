@@ -59,6 +59,11 @@ ADDED_LIMIT = 40
 # resolution reach past its region", which one example settles.
 REPEATED_LIMIT = 20
 
+# Dropped lines reported by `dropped_lines`, bounded for the same reason: a
+# resolution that rewrote a region drops every shared line in it, and the question
+# is whether it dropped anything, which the first few answer.
+DROPPED_LIMIT = 20
+
 # Index stages of a conflicted path, as git records them.
 BASE, BRANCH_SO_FAR, REPLAYING = "1", "2", "3"
 
@@ -899,3 +904,44 @@ def repeated_lines(git: Git, path: str, content: str) -> tuple[tuple[str, int, i
     ]
     ranked = sorted(over, key=lambda row: (row[1] - max(row[2], row[3]), row[1]), reverse=True)
     return tuple(ranked[:REPEATED_LIMIT])
+
+
+def dropped_lines(git: Git, path: str, content: str) -> tuple[tuple[str, int, int], ...]:
+    """Report lines both sides had that the resolution has none of.
+
+    The mirror of `repeated_lines`, and the half its reasoning leaves open. A
+    resolution legitimately drops lines -- taking one side drops everything the
+    other added, and that is the whole point of taking a side. What no composition
+    of two texts justifies is dropping a line *both* of them kept: neither side
+    touched it, git merged it without asking, and it is gone anyway.
+
+    That is what a resolution written from memory looks like rather than from the
+    file in front of it. It is the same failure `repeated_lines` catches from the
+    other end, and counting upward cannot see it: the lines are not duplicated, they
+    are absent, and absent lines make a file that parses and a commit that builds
+    with a feature quietly deleted.
+
+    Blank and whitespace-only lines are exempt, as they are there: they say nothing
+    about whether the resolution kept its shape.
+
+    Nothing is reported when neither side has a stage recorded, for the reason given
+    in `repeated_lines` -- a two-call resolution reaches the second call with the
+    stages already collapsed, and every line in the file then reads as dropped.
+
+    Returns (line, in_branch, in_replaying), most copies lost first, at most
+    `DROPPED_LIMIT` of them.
+    """
+    if not (_present(git, BRANCH_SO_FAR, path) or _present(git, REPLAYING, path)):
+        return ()
+    kept = Counter(line for line in content.splitlines() if line.strip())
+    branch = Counter(line for line in _stage(git, BRANCH_SO_FAR, path).splitlines() if line.strip())
+    replaying = Counter(
+        line for line in _stage(git, REPLAYING, path).splitlines() if line.strip()
+    )
+    gone = [
+        (line, branch[line], replaying[line])
+        for line in branch.keys() & replaying.keys()
+        if not kept[line]
+    ]
+    ranked = sorted(gone, key=lambda row: (min(row[1], row[2]), row[0]), reverse=True)
+    return tuple(ranked[:DROPPED_LIMIT])

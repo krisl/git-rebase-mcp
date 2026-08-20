@@ -25,6 +25,7 @@ from mcp.types import CallToolResult, TextContent
 from pydantic import TypeAdapter
 
 from .conflicts import (
+    dropped_lines,
     repeated_lines,
     FileConflict,
     auto_resolve_file,
@@ -318,6 +319,15 @@ class RepeatedLine:
 
 
 @dataclass(frozen=True)
+class DroppedLine:
+    """A line both sides kept that the resolution has none of."""
+
+    line: str
+    in_branch: int
+    in_replaying: int
+
+
+@dataclass(frozen=True)
 class ResolveReport:
     path: str
     still_conflicted: tuple[str, ...]
@@ -330,6 +340,12 @@ class ResolveReport:
     # objects -- the markers are gone, the file parses, and a route registered
     # twice or an import repeated is legal code that reaches a commit.
     repeated: tuple[RepeatedLine, ...] = ()
+    # Lines both sides kept that the staged text has none of. The same mistake as
+    # `repeated` seen from the other end: a resolution written from memory rather
+    # than from the file drops code neither side touched, and counting upward
+    # cannot see it. Reported rather than refused for the same reason -- rewriting
+    # a region is the caller's decision, and sometimes a shared line really does go.
+    dropped: tuple[DroppedLine, ...] = ()
     # True when what was staged is the path's removal rather than any text. Said
     # out loud because every other resolution leaves a file behind, and a caller
     # that asked for a side without knowing that side had deleted it should hear
@@ -650,8 +666,12 @@ def resolve(
         RepeatedLine(line, seen, in_branch, in_replaying)
         for line, seen, in_branch, in_replaying in repeated_lines(git, path, content)
     )
+    dropped = tuple(
+        DroppedLine(line, in_branch, in_replaying)
+        for line, in_branch, in_replaying in dropped_lines(git, path, content)
+    )
     git.run("add", "--", path)
-    return _resolved(git, path, repeated=repeated)
+    return _resolved(git, path, repeated=repeated, dropped=dropped)
 
 
 def _resolve_one_sided(
@@ -697,6 +717,7 @@ def _resolved(
     path: str,
     deleted: bool = False,
     repeated: tuple[RepeatedLine, ...] = (),
+    dropped: tuple[DroppedLine, ...] = (),
 ) -> ResolveReport:
     """What is left to do, once one path has been answered."""
     remaining = tuple(git.lines("diff", "--name-only", "--diff-filter=U"))
@@ -706,7 +727,8 @@ def _resolved(
         still_conflicted=remaining,
         deleted=deleted,
         repeated=repeated,
-        guidance=_repeat_note(repeated) + (
+        dropped=dropped,
+        guidance=_drop_note(dropped) + _repeat_note(repeated) + (
             f"{staged}{path}. Still conflicted: {', '.join(remaining)}."
             if remaining
             else f"{staged}{path}; all paths resolved. Call proceed."
@@ -716,6 +738,28 @@ def _resolved(
             else f"{staged}{path}; all paths resolved. Nothing is mid-operation, so "
             "there is nothing to continue: commit them as you would any other change."
         ),
+    )
+
+
+def _drop_note(dropped: tuple[DroppedLine, ...]) -> str:
+    """Say what the resolution lost that neither side let go of.
+
+    Ahead of the repeat note, which is ahead of what is left, because this is the
+    one of the three a caller cannot find any other way: a duplicated line usually
+    shows up eventually, and an unresolved path is refused at the next call, but a
+    line silently gone from a file that parses is found by running the program.
+    """
+    if not dropped:
+        return ""
+    shown = ", ".join(
+        f"{row.line.strip()[:60]!r} ({row.in_branch}x branch, {row.in_replaying}x replaying)"
+        for row in dropped[:3]
+    )
+    more = f" and {len(dropped) - 3} more" if len(dropped) > 3 else ""
+    return (
+        f"Gone from the resolution, though both sides kept it: {shown}{more}. Neither "
+        "side dropped these, so nothing in the conflict asked for them to go: check "
+        "the resolution was written from the file rather than from memory. "
     )
 
 
