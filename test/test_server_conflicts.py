@@ -870,3 +870,41 @@ def test_the_repeats_reported_are_bounded(scratch: Scratch) -> None:
     assert len(report.repeated) == REPEATED_LIMIT
     # And the guidance names a few of them rather than all
     assert report.guidance.count("x here") <= 3
+
+
+def test_hunks_merged_outside_the_contested_region_are_counted(scratch: Scratch) -> None:
+    """The contested region is not necessarily the whole of what a commit does.
+
+    git merges the rest silently and correctly. Correct for where the commit used
+    to sit is not the same as correct for where it sits now, and a reorder is
+    exactly when those come apart -- so the count says the region in front of you
+    is not the whole story, without paying for the diffs to prove it.
+    """
+    far = "c\nd\ne\nf\ng\nh\n"
+    scratch.commit("base", f=f"a\nORIGINAL\n{far}TAIL\nj\n")
+    scratch.commit("second", f=f"a\nSECOND\n{far}TAIL\nj\n")
+    scratch.commit("third", f=f"a\nTHIRD\n{far}CHANGED\nj\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = conflicts(repo=str(scratch.path))
+
+    # Line 2 is contested; the change to TAIL, eight lines away, was merged in silence
+    assert report.files[0].merged_elsewhere == 1
+    assert "not the whole of what this commit does" in report.guidance
+
+
+def test_a_commit_that_only_touched_the_contested_region_counts_none(
+    scratch: Scratch,
+) -> None:
+    far = "c\nd\ne\nf\ng\nh\n"
+    scratch.commit("base", f=f"a\nORIGINAL\n{far}TAIL\nj\n")
+    scratch.commit("second", f=f"a\nSECOND\n{far}TAIL\nj\n")
+    scratch.commit("third", f=f"a\nTHIRD\n{far}TAIL\nj\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    report = conflicts(repo=str(scratch.path))
+
+    assert report.files[0].merged_elsewhere == 0
+    assert "not the whole of what this commit does" not in report.guidance

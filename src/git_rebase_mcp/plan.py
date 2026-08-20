@@ -39,6 +39,11 @@ class PlanCheck:
     already_upstream: tuple[Commit, ...]
     stray_fixups: tuple[Commit, ...]
     problems: tuple[str, ...]
+    # Pairs the todo replays in the opposite order to the history: (moved, was_before).
+    # Not a problem -- reordering is what a todo is for -- but it is the moment a
+    # commit stops sitting on something it used to sit on, and neither git nor a
+    # conflict says so, because moving code that still merges cleanly is silent.
+    reordered: tuple[tuple[Commit, Commit], ...] = ()
 
     @property
     def safe(self) -> bool:
@@ -238,6 +243,15 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
         else:
             kept[commit.sha] = commit
 
+    order = {commit.sha: index for index, commit in enumerate(commits)}
+    replayed = [sha for sha in kept if sha in order]
+    reordered = tuple(
+        (by_sha[later], by_sha[earlier])
+        for position, later in enumerate(replayed)
+        for earlier in replayed[position + 1:]
+        if order[later] > order[earlier]
+    )
+
     accounted = set(kept) | set(dropped_on_purpose)
     missing = tuple(commit for sha, commit in by_sha.items() if sha not in accounted)
 
@@ -259,6 +273,7 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
         unknown=tuple(unknown),
         already_upstream=duplicated,
         stray_fixups=stray,
+        reordered=reordered,
         problems=tuple(problems),
     )
 

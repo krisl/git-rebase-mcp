@@ -133,3 +133,39 @@ def test_the_branch_s_own_tip_as_a_base_says_so(series: Scratch) -> None:
     report = rebase_preflight("HEAD", str(series.path))
     assert not report.safe_to_start
     assert "this branch's own tip" in report.guidance
+
+
+def test_a_todo_that_reorders_says_which_commit_moved(series: Scratch) -> None:
+    """The one thing a rebase changes that nothing later reports.
+
+    A commit written against the one before it, replayed ahead of it, still
+    merges: the reference is textually fine and git has nothing to say. It only
+    fails when something runs. So the reorder is named before it happens.
+    """
+    b, c, d = shas(series)
+
+    report = rebase_preflight("HEAD~3", str(series.path), [f"pick {d}", f"pick {b}", f"pick {c}"])
+
+    assert [(x.subject, y.subject) for x, y in report.reordered] == [
+        ("adds d", "adds b"),
+        ("adds d", "adds c"),
+    ]
+    assert "now replays before" in report.guidance
+
+
+def test_a_todo_in_history_order_reorders_nothing(series: Scratch) -> None:
+    b, c, d = shas(series)
+
+    report = rebase_preflight("HEAD~3", str(series.path), [f"pick {b}", f"pick {c}", f"pick {d}"])
+
+    assert report.reordered == ()
+    assert "now replays before" not in report.guidance
+
+
+def test_reordering_is_not_by_itself_unsafe(series: Scratch) -> None:
+    """Reordering is what a todo is for; naming it is not the same as refusing it."""
+    b, c, d = shas(series)
+
+    report = rebase_preflight("HEAD~3", str(series.path), [f"pick {d}", f"pick {b}", f"pick {c}"])
+
+    assert report.safe_to_start

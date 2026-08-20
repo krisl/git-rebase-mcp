@@ -191,6 +191,35 @@ class FileConflict:
     # "branch" or "replaying" for a path one side deleted and the other
     # modified. There are no units in that case: see deleted_side.
     deleted_by: str | None = None
+    # How many hunks the replayed commit applied to this file that git merged
+    # without asking. The contested regions are what a caller is shown, and they
+    # are not necessarily the whole of what the commit does here -- git merges
+    # the rest silently and correctly, and correct for the old position is not
+    # the same as correct for the new one when a commit has been reordered. A
+    # count rather than the diffs: it costs nothing to carry, and it is the
+    # thing that says whether include_file_diffs is worth asking for.
+    merged_elsewhere: int = 0
+
+
+def _merged_elsewhere(
+    git: Git, base: str, replaying: str, units: Sequence[CollisionUnit]
+) -> int:
+    """How many of the replayed commit's hunks landed outside the contested regions.
+
+    What the commit did to this file, against where the arguments are. A hunk
+    overlapping no region is one git merged without asking -- correct as a merge,
+    and still worth a caller's eye, because a hunk that was right where the commit
+    used to sit can be wrong where it sits now.
+    """
+    contested = [unit.base_range for unit in units if unit.base_range is not None]
+    outside = 0
+    for base_start, base_count, _, _ in _diff_hunks(git, base, replaying):
+        # A pure insertion reports count 0 at the line it follows; give it one
+        # line of extent so it can overlap the region it was inserted into.
+        last = base_start + max(base_count, 1) - 1
+        if not any(base_start <= end and start <= last for start, end in contested):
+            outside += 1
+    return outside
 
 
 def read_conflict(
@@ -273,6 +302,7 @@ def read_conflict(
         )
     return FileConflict(
         path=path,
+        merged_elsewhere=_merged_elsewhere(git, base, replaying, units),
         units=tuple(units),
         sides=sides,
         both_inserted=bool(blocks) and all(not block.base for block in blocks),

@@ -290,6 +290,12 @@ class FileReport:
     # modified it. There are no units: what is being decided is whether the path
     # lives, and `take` names the side whose answer to that to stage.
     deleted_by: str | None = None
+    # Hunks the replayed commit applied to this file that git merged without
+    # asking. The regions below are what is contested, which is not the same as
+    # everything the commit does here -- and a hunk that was right where the
+    # commit used to sit can be wrong where it sits now, which is what makes
+    # this worth saying on a rebase that reorders.
+    merged_elsewhere: int = 0
     base: str | None = None
     branch_so_far: str | None = None
     replaying: str | None = None
@@ -509,6 +515,16 @@ def _conflict_guidance(
             "incoming side did to the old path has to be reapplied to the new one: "
             "include_file_diffs shows it."
         )
+    quiet = [(f.path, f.merged_elsewhere) for f in files if f.merged_elsewhere]
+    if quiet:
+        where = ", ".join(f"{path} ({count})" for path, count in quiet)
+        advice += (
+            f" The contested regions are not the whole of what this commit does: {where}"
+            " hunks were merged without asking. That is git working correctly, and it is"
+            " still worth an eye when the commit has been reordered -- a hunk that was"
+            " right where it used to sit can call something that does not exist yet"
+            " where it sits now. include_file_diffs shows them."
+        )
     rootless = [f.path for f in files if f.no_common_base]
     if rootless:
         advice += (
@@ -563,6 +579,7 @@ def _file_report(
         no_common_base=conflict.no_common_base,
         both_inserted=conflict.both_inserted,
         deleted_by=conflict.deleted_by,
+        merged_elsewhere=conflict.merged_elsewhere,
         # With no common base there are no units, so withholding the texts would
         # leave the caller nothing at all.
         base=conflict.sides.base if include_full_sides else None,
@@ -873,6 +890,12 @@ class PreflightReport:
     untracked_collisions: tuple[str, ...]
     safe_to_start: bool
     guidance: str
+    # Pairs the todo replays in the opposite order to the history, as
+    # (moved, was_before). Not a problem: reordering is what a todo is for. It is
+    # said because it is the moment a commit stops sitting on what it was written
+    # against, and nothing downstream will mention it -- code that still merges
+    # cleanly in its new place merges silently.
+    reordered: tuple[tuple[CommitInfo, CommitInfo], ...] = ()
 
 
 def rebase_preflight(
@@ -902,6 +925,7 @@ def rebase_preflight(
         unknown=check.unknown,
         already_upstream=tuple(_info(c) for c in check.already_upstream),
         stray_fixups=tuple(_info(c) for c in check.stray_fixups),
+        reordered=tuple((_info(a), _info(b)) for a, b in check.reordered),
         blocking=blocking,
         untracked_collisions=collisions,
         safe_to_start=not problems,
@@ -914,7 +938,31 @@ def rebase_preflight(
             f" Untracked files would be moved aside first: {', '.join(collisions)}."
             if collisions
             else ""
-        ),
+        )
+        + _reorder_note(check.reordered),
+    )
+
+
+def _reorder_note(reordered: Sequence[tuple[Commit, Commit]]) -> str:
+    """Say which commits the todo moves ahead of ones they used to follow.
+
+    Not a problem and not part of `safe_to_start`. It is worth a sentence because
+    it names the one thing a rebase changes that nothing later will report: a
+    commit written against something now replays before it. If it referred to what
+    that other commit introduced, the reference is still there and still merges --
+    it just has nothing to point at yet.
+    """
+    if not reordered:
+        return ""
+    moves = "; ".join(
+        f"{later.sha[:9]} ({later.subject}) now replays before {earlier.sha[:9]} "
+        f"({earlier.subject}), which it used to follow"
+        for later, earlier in reordered[:3]
+    )
+    more = f" and {len(reordered) - 3} more" if len(reordered) > 3 else ""
+    return (
+        f" The todo reorders: {moves}{more}. Anything a moved commit took from the one it"
+        " used to follow goes with it, and git will merge it without complaint."
     )
 
 
