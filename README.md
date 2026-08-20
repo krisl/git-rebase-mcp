@@ -1,9 +1,16 @@
 # git-rebase-mcp
 
-An MCP server that makes driving a `git rebase` safe for an agent.
+### By agents, for agents.
 
-It exists because a rebase can corrupt history in ways git does not report.
-Three that happened, in one session, on one branch:
+Written by one that mangled its own branch three times in an afternoon and took
+it personally.
+
+An MCP server that lets an agent drive a `git rebase` — or a `cherry-pick`, a
+`revert`, a `merge`, or whatever else left three stages in the index — without
+quietly wrecking the history on the way through.
+
+Git is very good at rebasing and very bad at mentioning when it went wrong. Each
+of these exited zero and reported success:
 
 - **Amending at a conflicted `edit` stop.** `edit` normally stops with `HEAD` on
   the commit just applied, but when it stops *because of a conflict* `HEAD` is
@@ -14,7 +21,22 @@ Three that happened, in one session, on one branch:
 - **Staging a file that still contained conflict markers.** Two commits shipped
   `<<<<<<<` into the tree.
 
-Every one exited zero and reported success.
+No error, no warning, no non-zero exit. An agent has no reason to look, and by
+the time anybody does, the branch is three commits further on.
+
+## Try it
+
+```bash
+uv tool install --from git+https://github.com/aaron-riact/git-rebase-mcp git-rebase-mcp
+```
+
+Point your agent at `git-rebase-mcp` (see [Install it](#install-it) for the
+config snippets) and ask it to rebase something. Nothing is touched until you say
+so — `rebase_preflight` is read-only and will tell you what the rebase would do,
+including which commits a todo silently drops.
+
+If it does start, the tip is tagged first. `git reset --hard` to that tag undoes
+the whole thing.
 
 ## What it does about it
 
@@ -127,6 +149,30 @@ it, or one commit's work moved into others — so the report says which:
 `tree_identical` means the content is exactly what it started as, and nothing was
 lost but the branch's own share of it.
 
+## The quiet ones
+
+A refusal handles the failures git *could* have caught. The harder class is the
+one where git behaved perfectly and the result is still wrong — nothing to
+refuse, nothing to report, no exit code to read. Those get counted and named
+instead:
+
+| What went quiet | What is said |
+| --- | --- |
+| A resolution rewrote more than the contested region and re-added lines merged below it | Lines the staged text has **more copies of** than either side had |
+| A resolution was written from memory instead of from the file, and dropped code neither side touched | Lines **both sides kept** that the staged text has none of |
+| A conflicted file's other hunks were merged silently, and the commit has since moved | **How many hunks** landed outside the contested regions |
+| A todo replays a commit ahead of one it used to follow | **Which commits moved**, and past what |
+
+None of these refuse anything: composing two sides legitimately duplicates a
+shared line, rewriting a region legitimately drops one, and reordering is what a
+todo is for. They exist because a clean merge is silent by construction, and the
+one thing an agent will not do is go and look without a reason.
+
+Each was found by making the mistake. The last two came from resolving one
+region of a reordered commit and shipping the second hunk it had merged in the
+meantime — a call to a function that did not exist yet on that branch. The file
+parsed, the suite passed, the build was green.
+
 ## It is not only for rebases
 
 A rebase is not the only thing that leaves three stages in the index. A
@@ -161,11 +207,11 @@ a cherry-pick is not doing.
 
 | Tool | | Works on |
 | --- | --- | --- |
-| `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop. | rebase |
+| `rebase_preflight` | What a rebase would do. Changes nothing. Names commits a todo would drop, and — since reordering is when a commit stops sitting on what it was written against — which commits a todo moves ahead of ones they used to follow. | rebase |
 | `rebase_start` | Tags the tip, moves aside colliding untracked files, begins. `lost_locals` names any local file the checkout onto the new base deleted. `base` is the upstream and `onto=` is where the commits land, for a branch cut from history that has since been rewritten. `edit=[sha, ...]` builds the todo for you — those commits stop, the rest are picked — or `edit_every=` for all of them and `break_first=` for a stop before the first commit, where a baseline is measured. `autosquash` folds `fixup!` commits in; `update_refs` carries every other branch pointing into the range along, which a stack of branches on one another needs. | rebase |
 | `status` | Typed state, what operation is in progress, and whether `HEAD` is the commit being replayed. Reports a rebase that has ended and not been checked, rather than only that none is running. Every report also names the checkout it is about — `worktree` and `branch` — so an answer from here can be told apart from one a shell gave about a different worktree of the same repository, and `replayed_resolutions` names any conflict git answered from its recorded memory rather than fresh. | any |
-| `conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. `context=` for more surrounding lines, `include_file_diffs=` for everything the incoming side did to each file. | any |
-| `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers, unless `allow_markers=` says the file is meant to have them. Where one side deleted the path, `take` names a side rather than a text, so taking that side stages the deletion.| any |
+| `conflicts` | Each contested region as two diffs, headed by the definition it sits in, plus the incoming commit's message. Also `merged_elsewhere`: how many hunks the incoming commit landed in this file *outside* the contested regions, so you know whether the region in front of you is the whole of its intent. `context=` for more surrounding lines, `include_file_diffs=` for those other hunks. | any |
+| `resolve` | Stages a resolution: `take="both"`/`"branch"`/`"replaying"`, edited in place, or written inline. Refuses markers, unless `allow_markers=` says the file is meant to have them. Counts lines the result has more copies of than either side had, and lines both sides kept that it has none of — see [The quiet ones](#the-quiet-ones). Where one side deleted the path, `take` names a side rather than a text, so taking that side stages the deletion.| any |
 | `rebase_amend` | Amends — only where `HEAD` really is this step's commit. Not needed to fold a change in: staging it and calling `proceed` does that. | rebase |
 | `rebase_split` | Takes this step's commit back out, changes left in the tree, to commit as several. | rebase |
 | `proceed` | Carries on, by the operation's own `--continue`. Refuses while anything is unmerged, or while part of this step's commit is left outside a commit. `message=` names the commit a conflicted resolution is about to become — the only place it can be named, since the commit does not exist yet and a conflicted `edit` gets no later stop. | any |
@@ -303,10 +349,30 @@ run of 0 fixup or squash steps", no way to divide a commit without reaching past
 the tools, and a deliberately dropped commit called damage. Each was found by
 using the thing, and each is now a test.
 
-What they do not yet do is save much time: nine of eleven conflicts in the last
-run were mechanical shapes resolved by a hand-written script. [Phase 2](docs/phase-2.md)
+A fourth run drove a stack of three branches through six rebases — a squash, two
+reorders, and a branch replayed onto a rewritten version of the history it was
+cut from. The two-intents view earned itself there: it turned a conflict that
+looked like "pick one of these event listeners" into "these are two different
+events, keep both", which reading markers would not have.
+
+It also produced the last three entries in [The quiet ones](#the-quiet-ones),
+each by getting it wrong first — a resolution written from memory that deleted a
+component, a route lookup and a memo comparator, and a reordered commit shipping
+a call to a function that did not exist yet. Both were caught by diffing the staged result against `HEAD` by hand.
+That is still the check nothing here replaces; the counts only tell you when to
+bother running it.
+
+What they do not yet do is save much time: nine of eleven conflicts in one run
+were mechanical shapes resolved by a hand-written script. [Phase 2](docs/phase-2.md)
 is planned against that measurement rather than against a feature list, and says
 how to tell whether it worked.
+
+## Contributing
+
+Bug reports from agents are welcome and, so far, are where every feature came
+from. If the server let you do something destructive, that is the interesting
+kind of issue: say what you called, what git did, and what you expected — the
+gap between those two is the whole design brief.
 
 ## Development
 
