@@ -25,6 +25,9 @@ from mcp.types import CallToolResult, TextContent
 from pydantic import TypeAdapter
 
 from .conflicts import (
+    BRANCH_SO_FAR,
+    REPLAYING,
+    carried_from_the_other_side,
     dropped_lines,
     repeated_lines,
     FileConflict,
@@ -352,6 +355,8 @@ class ResolveReport:
     # cannot see it. Reported rather than refused for the same reason -- rewriting
     # a region is the caller's decision, and sometimes a shared line really does go.
     dropped: tuple[DroppedLine, ...] = ()
+    #: Lines a `take` kept that the side it took never had, merged in by git
+    carried: int = 0
     # True when what was staged is the path's removal rather than any text. Said
     # out loud because every other resolution leaves a file behind, and a caller
     # that asked for a side without knowing that side had deleted it should hear
@@ -612,6 +617,15 @@ def resolve(
       enough that sending it back costs more than editing it in place.
     - `content` writes the finished file and stages it.
 
+    `take` resolves the contested blocks and nothing else. It does not hand you
+    that side's version of the file: everything git merged without asking is
+    already in there and stays, including whatever the other side added
+    elsewhere. Where the incoming side rewrites the file rather than editing it
+    -- a component split into three, a function moved to another module -- the
+    answer is its whole file and not a `take`, and
+    `conflicts(include_file_diffs=True)` is what shows which of the two you are
+    looking at.
+
     `take` names a side, not a text: where that side deleted the path, taking it
     stages the deletion. "both" has no meaning on such a path -- there is no
     text of one side to keep the other's beside -- and is refused rather than
@@ -687,8 +701,13 @@ def resolve(
         DroppedLine(line, in_branch, in_replaying)
         for line, in_branch, in_replaying in dropped_lines(git, path, content)
     )
+    carried = (
+        carried_from_the_other_side(git, path, content, BRANCH_SO_FAR if take == "branch" else REPLAYING)
+        if take in ("branch", "replaying")
+        else 0
+    )
     git.run("add", "--", path)
-    return _resolved(git, path, repeated=repeated, dropped=dropped)
+    return _resolved(git, path, repeated=repeated, dropped=dropped, carried=carried)
 
 
 def _resolve_one_sided(
@@ -735,6 +754,7 @@ def _resolved(
     deleted: bool = False,
     repeated: tuple[RepeatedLine, ...] = (),
     dropped: tuple[DroppedLine, ...] = (),
+    carried: int = 0,
 ) -> ResolveReport:
     """What is left to do, once one path has been answered."""
     remaining = tuple(git.lines("diff", "--name-only", "--diff-filter=U"))
@@ -745,7 +765,8 @@ def _resolved(
         deleted=deleted,
         repeated=repeated,
         dropped=dropped,
-        guidance=_drop_note(dropped) + _repeat_note(repeated) + (
+        carried=carried,
+        guidance=_drop_note(dropped) + _repeat_note(repeated) + _carried_note(carried) + (
             f"{staged}{path}. Still conflicted: {', '.join(remaining)}."
             if remaining
             else f"{staged}{path}; all paths resolved. Call proceed."
@@ -755,6 +776,25 @@ def _resolved(
             else f"{staged}{path}; all paths resolved. Nothing is mid-operation, so "
             "there is nothing to continue: commit them as you would any other change."
         ),
+    )
+
+
+def _carried_note(carried: int) -> str:
+    """Say that taking a side did not hand back that side's file.
+
+    After the other two notes, because it reports something ordinary rather than
+    something wrong: git merged those lines and they belong there. It is here at
+    all because `take` reads as "give me that version" until the day it does not,
+    and the day it does not is the one where the file goes on referring to
+    something the taken side removed.
+    """
+    if not carried:
+        return ""
+    return (
+        f"{carried} line(s) here come from the other side, merged by git without a "
+        "conflict and so untouched by the take. That is ordinary; it is worth a look "
+        "only where the side taken rewrites this file rather than editing it, in "
+        "which case its whole text was the answer rather than a take. "
     )
 
 

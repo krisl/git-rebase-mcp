@@ -908,3 +908,45 @@ def test_a_commit_that_only_touched_the_contested_region_counts_none(
 
     assert report.files[0].merged_elsewhere == 0
     assert "not the whole of what this commit does" not in report.guidance
+
+
+def test_taking_a_side_says_what_git_merged_in_from_the_other(scratch: Scratch) -> None:
+    """`take` reads as "give me that version of the file" until the day it does not.
+
+    It resolves the contested blocks; everything git merged without asking stays,
+    including what the other side added elsewhere. Reported, not refused -- those
+    lines belong there -- because the day it matters is the one where the file goes
+    on referring to something the taken side removed.
+    """
+    scratch.commit("base", f="top\nshared\nbottom\n")
+    scratch.git.run("branch", "-q", "start")
+    # The branch being replayed onto adds a line the replayed commit never sees
+    scratch.commit("onto adds a line of its own", f="branch only\ntop\nshared\nbottom\n")
+    onto = scratch.git.out("rev-parse", "HEAD")
+    scratch.git.run("checkout", "-q", "start")
+    scratch.commit("second", f="top\nshared\nsecond\n")
+    upstream = scratch.git.out("rev-parse", "HEAD")
+    scratch.commit("third", f="top\nshared\nthird\n")
+    third = scratch.git.out("rev-parse", "HEAD")
+    scratch.start_rebase(upstream, [f"pick {third}"], onto=onto)
+
+    report = resolve("f", repo=str(scratch.path), take="replaying")
+
+    # "branch only" belongs to neither the base nor the replayed commit: git merged
+    # it in without asking, and taking a side left it exactly where it was
+    assert report.carried == 1
+    assert "come from the other side" in report.guidance
+    assert "branch only" in scratch.read("f")
+
+
+def test_taking_a_side_says_nothing_where_nothing_was_carried(conflicted: Scratch) -> None:
+    """The ordinary take, where the two sides differ only in the contested region."""
+    report = resolve("f", repo=str(conflicted.path), take="replaying")
+
+    assert report.carried == 0
+    assert "come from the other side" not in report.guidance
+
+
+def test_taking_both_reports_nothing_carried(conflicted: Scratch) -> None:
+    """A composition by definition, so the count would say nothing."""
+    assert resolve("f", repo=str(conflicted.path), take="both").carried == 0

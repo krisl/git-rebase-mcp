@@ -936,6 +936,31 @@ def repeated_lines(git: Git, path: str, content: str) -> tuple[tuple[str, int, i
     return tuple(ranked[:REPEATED_LIMIT])
 
 
+def carried_from_the_other_side(git: Git, path: str, content: str, taken: str) -> int:
+    """How many lines a `take` kept that the side it took never had.
+
+    Not a fault, and usually not a surprise -- but it is the one thing about `take`
+    that reads wrong until it is seen. Taking a side resolves the contested blocks
+    and nothing else; everything git merged without asking is already in the file
+    and stays, including what the other side added elsewhere. A caller expecting
+    that side's *version of the file* gets a composition instead, and finds out
+    when the result references something that is no longer defined.
+
+    So the count is reported and nothing is refused. Where the incoming side
+    rewrites a file rather than editing it, this is large, and the answer was its
+    whole file rather than a `take`.
+
+    Blank lines are exempt, as everywhere else here. Nothing is reported for
+    `take="both"`, which is a composition by definition, or where the side taken
+    has no stage recorded.
+    """
+    if taken not in (BRANCH_SO_FAR, REPLAYING) or not _present(git, taken, path):
+        return 0
+    side = Counter(_stage(git, taken, path).splitlines())
+    kept = Counter(line for line in content.splitlines() if line.strip())
+    return sum(max(0, seen - side[line]) for line, seen in kept.items())
+
+
 def dropped_lines(git: Git, path: str, content: str) -> tuple[tuple[str, int, int], ...]:
     """Report lines both sides had that the resolution has none of.
 
