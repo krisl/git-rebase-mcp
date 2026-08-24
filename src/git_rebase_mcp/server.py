@@ -2803,6 +2803,8 @@ def rebase_compare(repo: str = ".", include_diff: bool = False) -> CompareReport
 class AbortReport:
     head: CommitInfo
     restored: tuple[str, ...]
+    #: Conflicted paths whose resolution was finished and never staged, discarded
+    discarded: tuple[str, ...]
     guidance: str
 
 
@@ -2839,15 +2841,35 @@ def skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     return _advance(git, _git_said(result), auto_resolve, _replayed(result))
 
 
-def abort(repo: str = ".") -> AbortReport:
+def abort(repo: str = ".", force: bool = False) -> AbortReport:
     """Abandon whatever is in progress and put back anything that was moved aside.
 
     Refused for a conflict nothing recorded -- a stash popped into one, say --
     because there is no operation to abort, and guessing at `reset` or
     `checkout` would throw away work this tool never put there.
+
+    Refused, too, while an unmerged path holds a resolution that was finished and
+    never staged: no markers left in it, and nothing in the index. That file is
+    somebody's answer to a conflict, git keeps no copy of it, and rerere records
+    nothing until it is staged -- so aborting loses work that a restarted rebase
+    would otherwise have replayed for free. Staging it costs one call and keeps
+    it. `force=True` abandons it anyway, which is the right answer when the
+    resolution is what went wrong.
+
+    A path still holding markers is not counted: that is an untouched conflict,
+    and refusing on it would refuse every ordinary abort.
     """
     git = _git(repo)
     state = read_state(git)
+    unstaged = _finished_but_unstaged(git, state)
+    if unstaged and not force:
+        raise ValueError(
+            "Refusing to abort: "
+            + ", ".join(unstaged)
+            + " holds a finished resolution that was never staged, and aborting "
+            "discards it -- git keeps no copy, and rerere records nothing until it "
+            "is staged. Stage it with resolve(path), or pass force=True to abandon it."
+        )
     command = _carry_on_command(state)
     if isinstance(state, Applying) and command is None:
         raise ValueError(
@@ -2865,9 +2887,31 @@ def abort(repo: str = ".") -> AbortReport:
     return AbortReport(
         head=_commit_info(git, "HEAD"),
         restored=restored,
+        discarded=unstaged,
         guidance=f"{(command or 'rebase').capitalize()} abandoned."
-        + (f" Restored: {', '.join(restored)}." if restored else ""),
+        + (f" Restored: {', '.join(restored)}." if restored else "")
+        + (f" Discarded unstaged resolutions: {', '.join(unstaged)}." if unstaged else ""),
     )
+
+
+def _finished_but_unstaged(git: Git, state: Any) -> tuple[str, ...]:
+    """Unmerged paths whose working-tree text has no conflict markers left.
+
+    Somebody resolved those and stopped short of staging. The index still calls
+    them unmerged, so nothing downstream knows the work exists, and an abort takes
+    it with no record anywhere -- rerere included, which learns a resolution only
+    when it is staged.
+    """
+    paths = getattr(state, "unmerged", ())
+    finished = []
+    for path in paths:
+        try:
+            text = (git.repo / path).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if not has_markers(text):
+            finished.append(path)
+    return tuple(finished)
 
 
 def _unstash(

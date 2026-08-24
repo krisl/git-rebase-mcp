@@ -210,3 +210,39 @@ def test_the_amend_refusal_names_the_operation_that_is_actually_running(
 
     with pytest.raises(ValueError, match="the cherry-pick is conflicted"):
         rebase_amend(str(diverged.path))
+
+
+def test_aborting_over_a_finished_but_unstaged_resolution_is_refused(diverged: Scratch) -> None:
+    """The work git keeps no copy of. Somebody resolved the file and stopped short
+    of staging, so the index still calls it unmerged, rerere has learned nothing,
+    and an abort takes the answer with it leaving no trace it ever existed."""
+    diverged.git.run("cherry-pick", "side", check=False)
+    diverged.write("f", "the resolution, written and not staged\n")
+
+    with pytest.raises(ValueError, match="never staged"):
+        abort(str(diverged.path))
+
+    # Still in progress, and the resolution still on disk
+    assert diverged.read("f") == "the resolution, written and not staged\n"
+
+
+def test_a_finished_resolution_can_be_abandoned_on_purpose(diverged: Scratch) -> None:
+    """Forced, because the resolution being wrong is the ordinary reason to abort."""
+    diverged.git.run("cherry-pick", "side", check=False)
+    diverged.write("f", "a resolution worth abandoning\n")
+
+    report = abort(str(diverged.path), force=True)
+
+    assert report.discarded == ("f",)
+    assert "f" in report.guidance
+    assert diverged.git.lines("diff", "--name-only", "--diff-filter=U") == []
+
+
+def test_an_untouched_conflict_does_not_block_an_abort(diverged: Scratch) -> None:
+    """Markers left in the file mean nobody has answered it yet, and refusing on
+    that would refuse every ordinary abort."""
+    diverged.git.run("cherry-pick", "side", check=False)
+
+    report = abort(str(diverged.path))
+
+    assert report.discarded == ()

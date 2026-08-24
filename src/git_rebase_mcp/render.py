@@ -201,6 +201,7 @@ def _abort(report: Any) -> str:
     return "aborted\n" + _rows(
         ("HEAD", _commit(report.head)),
         ("restored", _listed(report.restored)),
+        ("discarded", _listed(report.discarded)),
     )
 
 
