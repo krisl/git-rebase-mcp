@@ -155,7 +155,11 @@ def _todo(report: Any) -> str:
 
 
 def _amend(report: Any) -> str:
-    return "amend\n" + _rows(("before", _commit(report.before)), ("after", _commit(report.after)))
+    return "amend\n" + _rows(
+        ("before", _commit(report.before)),
+        ("after", _commit(report.after)),
+        ("untracked beside", _listed(report.beside)),
+    )
 
 
 def _split(report: Any) -> str:

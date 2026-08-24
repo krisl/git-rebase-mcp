@@ -17,7 +17,7 @@ import subprocess
 from collections.abc import Callable, Sequence
 from functools import wraps
 from dataclasses import MISSING, dataclass, fields, replace
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Literal, Never, ParamSpec, TypeVar, assert_never, cast
 
 from mcp.server.mcpserver import MCPServer
@@ -1362,6 +1362,8 @@ def _stash(git: Git, paths: tuple[str, ...]) -> tuple[tuple[str, ...], str | Non
 class AmendReport:
     before: CommitInfo
     after: CommitInfo
+    #: Untracked files beside the ones this amend staged, which it did not stage
+    beside: tuple[str, ...]
     guidance: str
 
 
@@ -1379,6 +1381,13 @@ def rebase_amend(
     not add untracked files: those are never part of what a rebase is
     rewriting, and sweeping them in is how a stray binary or somebody's local
     notes end up in history.
+
+    `beside` names the untracked files sitting in the directories this amend
+    staged something in. Not staged -- that is the whole point of the rule above
+    -- but named, because the one case the rule reads as a trap is a file the
+    amended commit needs and does not contain, and the amend reports success
+    either way. A repository full of scratch files elsewhere says nothing here;
+    one beside the code just staged is worth a second look.
     """
     git = _git(repo)
     state = read_state(git)
@@ -1390,6 +1399,7 @@ def rebase_amend(
         raise ValueError(_why_not_amendable(_report(state, git=git)))
 
     before = _info(state.head)
+    beside: tuple[str, ...] = ()
     if stage_tracked:
         # `git add -u`, never `-A`. The difference is untracked files, and
         # sweeping those into a commit is how a scratch file, a stray binary or
@@ -1397,6 +1407,7 @@ def rebase_amend(
         # reports success either way. Untracked files are never part of what a
         # rebase is rewriting, so this tool has no business staging them.
         git.run("add", "-u")
+        beside = _untracked_beside(git)
     args = ["commit", "--amend", "--no-verify"]
     args += ["-m", message] if message is not None else ["--no-edit"]
     git.run("-c", "core.editor=true", *args)
@@ -1409,11 +1420,36 @@ def rebase_amend(
     if session is not None and applied and applied not in session.amended:
         save_session(git, replace(session, amended=(*session.amended, applied)))
     after = _commit_info(git, "HEAD")
+    guidance = f"Amended {before.sha[:9]} into {after.sha[:9]}."
+    if beside:
+        guidance += (
+            f" Untracked beside what was staged, and so not in the commit:"
+            f" {', '.join(beside)}. `git add` any that belong in it and amend again."
+        )
     return AmendReport(
         before=before,
         after=after,
-        guidance=f"Amended {before.sha[:9]} into {after.sha[:9]}. Call proceed.",
+        beside=beside,
+        guidance=guidance + " Call proceed.",
     )
+
+
+def _untracked_beside(git: Git, limit: int = 10) -> tuple[str, ...]:
+    """Untracked files in the directories the index has staged something in.
+
+    The directory is the whole of the heuristic, and it is the cheap half of the
+    question worth asking: a new module lands beside the code that imports it,
+    while the scratch files a working tree accumulates sit wherever they were
+    dropped. Wrong in both directions -- a new file two directories away is
+    missed, a stray one alongside is named -- so this reports and never acts.
+    """
+    untracked = git.lines("ls-files", "--others", "--exclude-standard")
+    if not untracked:
+        return ()
+    staged = {str(PurePosixPath(path).parent) for path in git.lines("diff", "--cached", "--name-only")}
+    if not staged:
+        return ()
+    return tuple(sorted(path for path in untracked if str(PurePosixPath(path).parent) in staged)[:limit])
 
 
 @dataclass(frozen=True)

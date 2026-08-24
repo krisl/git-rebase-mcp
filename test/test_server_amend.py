@@ -172,3 +172,55 @@ def test_staging_then_proceeding_folds_the_change_in_without_an_amend(
     # Folded into "adds b" itself, not left as a commit of its own.
     assert scratch.git.out("show", "HEAD~1:b") == "b, corrected"
     assert scratch.git.lines("log", "--format=%s", "HEAD~2..HEAD") == ["adds c", "adds b"]
+
+
+def test_an_untracked_file_beside_what_was_staged_is_named(three_commits: Scratch) -> None:
+    """The rule above is right and reads as a trap exactly once: when the file the
+    amended commit needs is the new one, and the amend reports success without it.
+
+    Naming it costs nothing and changes nothing -- the file is still not staged.
+    """
+    second = three_commits.git.out("rev-parse", "HEAD~1")
+    three_commits.start_rebase("HEAD~2", [f"edit {second}"])
+    three_commits.write("pkg/tracked.txt", "edited\n")
+    three_commits.git.run("add", "pkg/tracked.txt")
+    three_commits.git.run("commit", "-q", "--amend", "--no-edit")  # now tracked
+    three_commits.write("pkg/tracked.txt", "imports the new module\n")
+    three_commits.write("pkg/new_module.txt", "the module it imports\n")
+
+    report = rebase_amend(str(three_commits.path), stage_tracked=True)
+
+    assert report.beside == ("pkg/new_module.txt",)
+    assert "pkg/new_module.txt" in report.guidance
+    # Named, not staged: the rule is unchanged
+    committed = three_commits.git.lines("show", "--name-only", "--format=", "HEAD")
+    assert "pkg/new_module.txt" not in committed
+
+
+def test_untracked_files_elsewhere_are_not_named(three_commits: Scratch) -> None:
+    """A working tree accumulates scratch wherever it was dropped. Reporting all of
+    it would bury the one file that matters, so only the staged directories count."""
+    second = three_commits.git.out("rev-parse", "HEAD~1")
+    three_commits.start_rebase("HEAD~2", [f"edit {second}"])
+    three_commits.write("pkg/tracked.txt", "edited\n")
+    three_commits.git.run("add", "pkg/tracked.txt")
+    three_commits.git.run("commit", "-q", "--amend", "--no-edit")
+    three_commits.write("pkg/tracked.txt", "edited again\n")
+    three_commits.write("notes.txt", "dropped at the root\n")
+    three_commits.write("other/stray.bin", "elsewhere entirely\n")
+
+    report = rebase_amend(str(three_commits.path), stage_tracked=True)
+
+    assert report.beside == ()
+    assert "notes.txt" not in report.guidance
+
+
+def test_nothing_is_named_when_nothing_was_staged(three_commits: Scratch) -> None:
+    """Without stage_tracked the caller staged by hand, and has already decided."""
+    second = three_commits.git.out("rev-parse", "HEAD~1")
+    three_commits.start_rebase("HEAD~2", [f"edit {second}"])
+    three_commits.write("beside.txt", "untracked\n")
+
+    report = rebase_amend(str(three_commits.path), message="reworded")
+
+    assert report.beside == ()
