@@ -16,7 +16,8 @@ from git_rebase_mcp.invariants import (
     has_markers,
     record_backup,
     branch_change,
-    _changed_lines,
+    _diff_text,
+    _parse_changed_lines,
 )
 
 from scratch import Scratch
@@ -130,7 +131,7 @@ def test_a_deleted_file_is_named_by_its_own_path(scratch: Scratch) -> None:
     (scratch.path / "also_gone").unlink()
     scratch.commit("deletes two files")
 
-    lines = _changed_lines(scratch.git, base, "HEAD")
+    lines = _parse_changed_lines(_diff_text(scratch.git, base, "HEAD"))
 
     assert sorted(lines) == ["also_gone", "gone"]
     assert lines["gone"] == ["-one"]
@@ -252,7 +253,9 @@ def test_a_removed_line_that_looks_like_a_diff_header_is_counted(
     base = scratch.git.out("rev-parse", "HEAD")
     scratch.commit("tip", f="x\n")
 
-    changed = _changed_lines(scratch.git, base, scratch.git.out("rev-parse", "HEAD"))
+    changed = _parse_changed_lines(
+        _diff_text(scratch.git, base, scratch.git.out("rev-parse", "HEAD"))
+    )
     assert changed == {"f": ["--- removed"]}
 
 
@@ -265,7 +268,9 @@ def test_an_added_line_that_looks_like_a_diff_header_is_counted(
     base = scratch.git.out("rev-parse", "HEAD")
     scratch.commit("tip", f="x\n++ b/added\n")
 
-    changed = _changed_lines(scratch.git, base, scratch.git.out("rev-parse", "HEAD"))
+    changed = _parse_changed_lines(
+        _diff_text(scratch.git, base, scratch.git.out("rev-parse", "HEAD"))
+    )
     assert changed == {"f": ["+++ b/added"]}
 
 

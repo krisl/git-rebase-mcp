@@ -105,10 +105,12 @@ def branch_change(
     between them part of the branch's own change.
     """
     fork = fork or _fork_point(git, backup.sha, base)
-    if _contribution(git, fork, backup.sha) == _contribution(git, base, revision):
+    before_diff = _diff_text(git, fork, backup.sha)
+    after_diff = _diff_text(git, base, revision)
+    if _patch_id(git, before_diff) == _patch_id(git, after_diff):
         return None
-    before = _changed_lines(git, fork, backup.sha)
-    after = _changed_lines(git, base, revision)
+    before = _parse_changed_lines(before_diff)
+    after = _parse_changed_lines(after_diff)
     return Change(
         reordered_only=before == after,
         summary=_moved_contribution(before, after),
@@ -279,7 +281,12 @@ def _full(git: Git, abbreviated: str) -> str | None:
     return found.stdout.strip() or abbreviated
 
 
-def _changed_lines(git: Git, base: str, tip: str) -> dict[str, list[str]]:
+def _diff_text(git: Git, base: str, tip: str) -> str:
+    """The raw diff `base..tip`, fetched once and parsed or hashed by callers."""
+    return git.run("diff", base, tip).stdout
+
+
+def _parse_changed_lines(diff_text: str) -> dict[str, list[str]]:
     """Every line the branch adds or removes, per file, order discarded.
 
     Two rebases that produce the same lines in a different order agree on this
@@ -300,7 +307,7 @@ def _changed_lines(git: Git, base: str, tip: str) -> dict[str, list[str]]:
     path = ""
     removed = ""
     in_hunk = False
-    for line in git.run("diff", base, tip).stdout.splitlines():
+    for line in diff_text.splitlines():
         if line.startswith("diff --git ") or line.startswith("@@"):
             in_hunk = line.startswith("@@")
             continue
@@ -316,9 +323,8 @@ def _changed_lines(git: Git, base: str, tip: str) -> dict[str, list[str]]:
     return {path: sorted(lines) for path, lines in per_file.items()}
 
 
-def _contribution(git: Git, base: str, tip: str) -> str:
-    """A stable identity for the diff `base..tip`, independent of context lines."""
-    patch = git.run("diff", base, tip).stdout
+def _patch_id(git: Git, patch: str) -> str:
+    """A stable identity for one diff text, independent of context lines."""
     return git.run("patch-id", "--stable", stdin=patch).stdout.split(" ")[0].strip()
 
 
