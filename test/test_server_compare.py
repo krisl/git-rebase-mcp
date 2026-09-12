@@ -24,6 +24,7 @@ def series(scratch: Scratch) -> Scratch:
     return scratch
 
 
+@pytest.mark.live_repo
 def test_a_faithful_replay_reports_nothing_changed(series: Scratch) -> None:
     rebase_start("HEAD~3", str(series.path), edit_every=True)
 
@@ -34,6 +35,7 @@ def test_a_faithful_replay_reports_nothing_changed(series: Scratch) -> None:
     assert "carry the patch they came from" in report.guidance
 
 
+@pytest.mark.live_repo
 def test_the_tail_not_yet_reached_is_pending_not_lost(series: Scratch) -> None:
     """It pairs as "dropped" because it is genuinely not there. Calling that a
     difference would make the report unreadable at every stop but the last."""
@@ -45,6 +47,7 @@ def test_the_tail_not_yet_reached_is_pending_not_lost(series: Scratch) -> None:
     assert "2 still to come" in report.guidance
 
 
+@pytest.mark.live_repo
 def test_a_commit_changed_on_purpose_is_named(series: Scratch) -> None:
     """A whole new file is more than range-diff's creation threshold, so it
     cannot pair the two and reports a drop and an add of the same subject rather
@@ -80,6 +83,7 @@ def test_a_small_change_pairs_as_changed(scratch: Scratch) -> None:
     assert "1 differ" in report.guidance
 
 
+@pytest.mark.live_repo
 def test_it_keeps_up_as_the_rebase_goes_on(series: Scratch) -> None:
     rebase_start("HEAD~3", str(series.path), edit_every=True)
     seen = []
@@ -90,6 +94,7 @@ def test_it_keeps_up_as_the_rebase_goes_on(series: Scratch) -> None:
     assert seen == [(1, 2, 0), (2, 1, 0), (3, 0, 0)]
 
 
+@pytest.mark.live_repo
 def test_the_detail_is_only_sent_when_asked_for(series: Scratch) -> None:
     rebase_start("HEAD~3", str(series.path), edit_every=True)
 
