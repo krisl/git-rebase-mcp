@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "730bb4b153ce794e10aef6283d180c6af3f0db68\n",
+   "stdout": "b3719f993ad22eebf1084c17ac5f1a3959e15c39\n",
    "stderr": ""
   },
   {
@@ -78,7 +78,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\n",
+   "stdout": "2e046abd465f28842b01be9c616e105094f50fd9\n",
    "stderr": ""
   },
   {
@@ -125,7 +125,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   },
   {
@@ -150,7 +150,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "1bda13c3f00b19f31f1b43922ab4fa23c697fe4b mine\n",
+   "stdout": "2e046abd465f28842b01be9c616e105094f50fd9 mine\n",
    "stderr": ""
   },
   {
@@ -163,7 +163,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "+1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\n",
+   "stdout": "+2e046abd465f28842b01be9c616e105094f50fd9\n",
    "stderr": ""
   },
   {
@@ -265,7 +265,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\nmine\n",
+   "stdout": "2e046abd465f28842b01be9c616e105094f50fd9\nmine\n",
    "stderr": ""
   },
   {
@@ -300,7 +300,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\n",
+   "stdout": "2e046abd465f28842b01be9c616e105094f50fd9\n",
    "stderr": ""
   },
   {
@@ -309,7 +309,7 @@
     "tag",
     "-f",
     "rebase-backup/{STAMP}",
-    "1bda13c3f00b19f31f1b43922ab4fa23c697fe4b"
+    "2e046abd465f28842b01be9c616e105094f50fd9"
    ],
    "stdin": null,
    "returncode": 0,
@@ -320,7 +320,7 @@
    "type": "git",
    "args": [
     "rev-parse",
-    "1bda13c3f00b19f31f1b43922ab4fa23c697fe4b^{tree}"
+    "2e046abd465f28842b01be9c616e105094f50fd9^{tree}"
    ],
    "stdin": null,
    "returncode": 0,
@@ -335,7 +335,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   },
   {
@@ -371,7 +371,7 @@
    "stdin": null,
    "returncode": 1,
    "stdout": "Auto-merging f\nCONFLICT (content): Merge conflict in f\n",
-   "stderr": "Rebasing (1/1)\nerror: could not apply 1bda13c... mine\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 1bda13c... # mine\n"
+   "stderr": "Rebasing (1/1)\nerror: could not apply 2e046ab... mine\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 2e046ab... # mine\n"
   },
   {
    "type": "git",
@@ -411,7 +411,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "pick 1bda13c3f00b19f31f1b43922ab4fa23c697fe4b # mine\n"
+   "result": "pick 2e046abd465f28842b01be9c616e105094f50fd9 # mine\n"
   },
   {
    "type": "git",
@@ -423,7 +423,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\ntheirs\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\ntheirs\n",
    "stderr": ""
   },
   {
@@ -448,7 +448,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\nmine\n",
+   "stdout": "2e046abd465f28842b01be9c616e105094f50fd9\nmine\n",
    "stderr": ""
   },
   {
@@ -489,7 +489,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "pick 1bda13c3f00b19f31f1b43922ab4fa23c697fe4b # mine\n"
+   "result": "pick 2e046abd465f28842b01be9c616e105094f50fd9 # mine\n"
   },
   {
    "type": "git",
@@ -501,7 +501,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\ntheirs\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\ntheirs\n",
    "stderr": ""
   },
   {
@@ -526,7 +526,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\nmine\n",
+   "stdout": "2e046abd465f28842b01be9c616e105094f50fd9\nmine\n",
    "stderr": ""
   },
   {
@@ -546,7 +546,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144318\",\n \"backup_sha\": \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"e4c794c5c58788e3277567a2aa6c03c123539abc\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151121\",\n \"backup_sha\": \"2e046abd465f28842b01be9c616e105094f50fd9\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"11e50055716c1ccb1002d5c0a5c70599966d93a4\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -584,7 +584,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144318\",\n \"backup_sha\": \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"e4c794c5c58788e3277567a2aa6c03c123539abc\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\"\n ],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151121\",\n \"backup_sha\": \"2e046abd465f28842b01be9c616e105094f50fd9\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"11e50055716c1ccb1002d5c0a5c70599966d93a4\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"2e046abd465f28842b01be9c616e105094f50fd9\"\n ],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -634,7 +634,7 @@
     "ls-tree",
     "-r",
     "--name-only",
-    "1bda13c3f00b19f31f1b43922ab4fa23c697fe4b"
+    "2e046abd465f28842b01be9c616e105094f50fd9"
    ],
    "stdin": null,
    "returncode": 0,
@@ -703,7 +703,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "pick 1bda13c3f00b19f31f1b43922ab4fa23c697fe4b # mine\n"
+   "result": "pick 2e046abd465f28842b01be9c616e105094f50fd9 # mine\n"
   },
   {
    "type": "git",
@@ -715,7 +715,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\ntheirs\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\ntheirs\n",
    "stderr": ""
   },
   {
@@ -754,7 +754,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144318\",\n \"backup_sha\": \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"e4c794c5c58788e3277567a2aa6c03c123539abc\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\"\n ],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151121\",\n \"backup_sha\": \"2e046abd465f28842b01be9c616e105094f50fd9\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"11e50055716c1ccb1002d5c0a5c70599966d93a4\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"2e046abd465f28842b01be9c616e105094f50fd9\"\n ],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -787,7 +787,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "[detached HEAD 9309c69] mine\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+   "stdout": "[detached HEAD 78317bf] mine\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
    "stderr": "Recorded resolution for 'f'.\nSuccessfully rebased and updated refs/heads/main.\n"
   },
   {
@@ -889,7 +889,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\nmine\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\nmine\n",
    "stderr": ""
   },
   {
@@ -909,7 +909,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144318\",\n \"backup_sha\": \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"e4c794c5c58788e3277567a2aa6c03c123539abc\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\"\n ],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151121\",\n \"backup_sha\": \"2e046abd465f28842b01be9c616e105094f50fd9\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"11e50055716c1ccb1002d5c0a5c70599966d93a4\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"2e046abd465f28842b01be9c616e105094f50fd9\"\n ],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -928,7 +928,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144318\",\n \"backup_sha\": \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"e4c794c5c58788e3277567a2aa6c03c123539abc\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\"\n ],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151121\",\n \"backup_sha\": \"2e046abd465f28842b01be9c616e105094f50fd9\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"11e50055716c1ccb1002d5c0a5c70599966d93a4\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"2e046abd465f28842b01be9c616e105094f50fd9\"\n ],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -947,28 +947,28 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144318\",\n \"backup_sha\": \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"e4c794c5c58788e3277567a2aa6c03c123539abc\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"1bda13c3f00b19f31f1b43922ab4fa23c697fe4b\"\n ],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151121\",\n \"backup_sha\": \"2e046abd465f28842b01be9c616e105094f50fd9\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"11e50055716c1ccb1002d5c0a5c70599966d93a4\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"2e046abd465f28842b01be9c616e105094f50fd9\"\n ],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
    "args": [
     "rev-parse",
-    "e4c794c5c58788e3277567a2aa6c03c123539abc..HEAD"
+    "11e50055716c1ccb1002d5c0a5c70599966d93a4..HEAD"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\n^e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\n^11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   },
   {
    "type": "git",
    "args": [
     "rev-list",
-    "e4c794c5c58788e3277567a2aa6c03c123539abc..HEAD"
+    "11e50055716c1ccb1002d5c0a5c70599966d93a4..HEAD"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\n",
    "stderr": ""
   },
   {
@@ -979,7 +979,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\n",
    "stderr": ""
   },
   {
@@ -1034,7 +1034,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d mine\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5 mine\n",
    "stderr": ""
   },
   {
@@ -1047,7 +1047,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d mine\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5 mine\n",
    "stderr": ""
   },
   {
@@ -1060,7 +1060,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "+9309c69aa21155c87e41feb40b986188248d6c6d\n",
+   "stdout": "+78317bfe576bf3195fb20788d46210e2de7b13d5\n",
    "stderr": ""
   },
   {
@@ -1069,11 +1069,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "9309c69aa21155c87e41feb40b986188248d6c6d^{commit}"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\n",
    "stderr": ""
   },
   {
@@ -1175,7 +1175,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\nmine\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\nmine\n",
    "stderr": ""
   },
   {
@@ -1210,7 +1210,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\n",
    "stderr": ""
   },
   {
@@ -1219,7 +1219,7 @@
     "tag",
     "-f",
     "rebase-backup/{STAMP}",
-    "9309c69aa21155c87e41feb40b986188248d6c6d"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5"
    ],
    "stdin": null,
    "returncode": 0,
@@ -1230,7 +1230,7 @@
    "type": "git",
    "args": [
     "rev-parse",
-    "9309c69aa21155c87e41feb40b986188248d6c6d^{tree}"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5^{tree}"
    ],
    "stdin": null,
    "returncode": 0,
@@ -1245,7 +1245,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   },
   {
@@ -1302,7 +1302,7 @@
    "stdin": null,
    "returncode": 0,
    "stdout": "",
-   "stderr": "Rebasing (1/1)\nStopped at 9309c69...  mine\nYou can amend the commit now, with\n\n  git commit --amend \n\nOnce you are satisfied with your changes, run\n\n  git rebase --continue\n"
+   "stderr": "Rebasing (1/1)\nStopped at 78317bf...  mine\nYou can amend the commit now, with\n\n  git commit --amend \n\nOnce you are satisfied with your changes, run\n\n  git rebase --continue\n"
   },
   {
    "type": "git",
@@ -1342,7 +1342,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "edit 9309c69aa21155c87e41feb40b986188248d6c6d mine\n"
+   "result": "edit 78317bfe576bf3195fb20788d46210e2de7b13d5 mine\n"
   },
   {
    "type": "git",
@@ -1354,7 +1354,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\nmine\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\nmine\n",
    "stderr": ""
   },
   {
@@ -1381,7 +1381,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "9309c69aa21155c87e41feb40b986188248d6c6d\n"
+   "result": "78317bfe576bf3195fb20788d46210e2de7b13d5\n"
   },
   {
    "type": "git",
@@ -1393,7 +1393,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\nmine\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\nmine\n",
    "stderr": ""
   },
   {
@@ -1409,11 +1409,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "9309c69aa21155c87e41feb40b986188248d6c6d^"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   },
   {
@@ -1422,11 +1422,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "9309c69aa21155c87e41feb40b986188248d6c6d^"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   },
   {
@@ -1435,11 +1435,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "9309c69aa21155c87e41feb40b986188248d6c6d^"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   },
   {
@@ -1459,7 +1459,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144319\",\n \"backup_sha\": \"9309c69aa21155c87e41feb40b986188248d6c6d\",\n \"backup_tree\": \"ece5db2fb2d392921ebc2da33072927e5942f945\",\n \"base\": \"HEAD~1\",\n \"base_sha\": \"e4c794c5c58788e3277567a2aa6c03c123539abc\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151122\",\n \"backup_sha\": \"78317bfe576bf3195fb20788d46210e2de7b13d5\",\n \"backup_tree\": \"ece5db2fb2d392921ebc2da33072927e5942f945\",\n \"base\": \"HEAD~1\",\n \"base_sha\": \"11e50055716c1ccb1002d5c0a5c70599966d93a4\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -1490,7 +1490,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144319\",\n \"backup_sha\": \"9309c69aa21155c87e41feb40b986188248d6c6d\",\n \"backup_tree\": \"ece5db2fb2d392921ebc2da33072927e5942f945\",\n \"base\": \"HEAD~1\",\n \"base_sha\": \"e4c794c5c58788e3277567a2aa6c03c123539abc\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151122\",\n \"backup_sha\": \"78317bfe576bf3195fb20788d46210e2de7b13d5\",\n \"backup_tree\": \"ece5db2fb2d392921ebc2da33072927e5942f945\",\n \"base\": \"HEAD~1\",\n \"base_sha\": \"11e50055716c1ccb1002d5c0a5c70599966d93a4\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -1540,7 +1540,7 @@
     "ls-tree",
     "-r",
     "--name-only",
-    "9309c69aa21155c87e41feb40b986188248d6c6d"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5"
    ],
    "stdin": null,
    "returncode": 0,
@@ -1598,7 +1598,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "edit 9309c69aa21155c87e41feb40b986188248d6c6d mine\n"
+   "result": "edit 78317bfe576bf3195fb20788d46210e2de7b13d5 mine\n"
   },
   {
    "type": "git",
@@ -1610,7 +1610,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\nmine\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\nmine\n",
    "stderr": ""
   },
   {
@@ -1637,7 +1637,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "9309c69aa21155c87e41feb40b986188248d6c6d\n"
+   "result": "78317bfe576bf3195fb20788d46210e2de7b13d5\n"
   },
   {
    "type": "git",
@@ -1649,7 +1649,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9309c69aa21155c87e41feb40b986188248d6c6d\nmine\n",
+   "stdout": "78317bfe576bf3195fb20788d46210e2de7b13d5\nmine\n",
    "stderr": ""
   },
   {
@@ -1665,11 +1665,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "9309c69aa21155c87e41feb40b986188248d6c6d^"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   },
   {
@@ -1678,11 +1678,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "9309c69aa21155c87e41feb40b986188248d6c6d^"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   },
   {
@@ -1691,11 +1691,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "9309c69aa21155c87e41feb40b986188248d6c6d^"
+    "78317bfe576bf3195fb20788d46210e2de7b13d5^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e4c794c5c58788e3277567a2aa6c03c123539abc\n",
+   "stdout": "11e50055716c1ccb1002d5c0a5c70599966d93a4\n",
    "stderr": ""
   }
  ]

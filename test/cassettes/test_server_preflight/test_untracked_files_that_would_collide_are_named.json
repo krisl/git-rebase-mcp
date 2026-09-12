@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e66ad64562bc995c39aa320a41b93006dd58521e\n",
+   "stdout": "f45ada03f3087ee6eeb4cc999c28b8957f7125e2\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "10c2d46204e7d0a001db63b5d3f94a17bdc20a57\n",
+   "stdout": "946d09d0ce55ba64086db61257247a8e454fde0e\n",
    "stderr": ""
   },
   {
@@ -105,7 +105,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "10c2d46204e7d0a001db63b5d3f94a17bdc20a57 adds b\n9e2faf95d672dc087c51eabce0fdaf95374283e2 removes b\n",
+   "stdout": "946d09d0ce55ba64086db61257247a8e454fde0e adds b\n95fe3a48bf1c99b4ccb7d2acc6784e4b82e9e98c removes b\n",
    "stderr": ""
   },
   {
@@ -118,7 +118,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "+9e2faf95d672dc087c51eabce0fdaf95374283e2\n+10c2d46204e7d0a001db63b5d3f94a17bdc20a57\n",
+   "stdout": "+95fe3a48bf1c99b4ccb7d2acc6784e4b82e9e98c\n+946d09d0ce55ba64086db61257247a8e454fde0e\n",
    "stderr": ""
   },
   {
@@ -220,7 +220,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9e2faf95d672dc087c51eabce0fdaf95374283e2\nremoves b\n",
+   "stdout": "95fe3a48bf1c99b4ccb7d2acc6784e4b82e9e98c\nremoves b\n",
    "stderr": ""
   },
   {

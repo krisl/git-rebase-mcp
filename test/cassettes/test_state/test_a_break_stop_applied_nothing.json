@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "cae42c22a6759b9d548f08d95c7716e335adfa8a\n",
+   "stdout": "7a38288ab2926e867c2bbc46f7d2d348b3bed2f9\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3b5044d3624a3f8c51721c6c59d6f0432ff2fe45\n",
+   "stdout": "50ee6e425809530308e7501ebcc5d060f93e160d\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "ae77599a335eba5474a6aed182b4bf1ff584bd91\n",
+   "stdout": "206a454ccf001bd182d4eae51e9521f955fef98d\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3b5044d3624a3f8c51721c6c59d6f0432ff2fe45\n",
+   "stdout": "50ee6e425809530308e7501ebcc5d060f93e160d\n",
    "stderr": ""
   },
   {
@@ -130,7 +130,7 @@
    "stdin": null,
    "returncode": 0,
    "stdout": "",
-   "stderr": "Rebasing (2/2)\nStopped at 3b5044d (second)\n"
+   "stderr": "Rebasing (2/2)\nStopped at 50ee6e4 (second)\n"
   },
   {
    "type": "git",
@@ -170,7 +170,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "pick 3b5044d3624a3f8c51721c6c59d6f0432ff2fe45\nbreak\n"
+   "result": "pick 50ee6e425809530308e7501ebcc5d060f93e160d\nbreak\n"
   },
   {
    "type": "git",
@@ -182,7 +182,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3b5044d3624a3f8c51721c6c59d6f0432ff2fe45\nsecond\n",
+   "stdout": "50ee6e425809530308e7501ebcc5d060f93e160d\nsecond\n",
    "stderr": ""
   },
   {

@@ -1,0 +1,132 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "74615db0522d66b5fdf47ad2f373a7ba989fc4d9\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "74615db0522d66b5fdf47ad2f373a7ba989fc4d9\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "tag",
+    "-f",
+    "rebase-backup/{STAMP}",
+    "74615db0522d66b5fdf47ad2f373a7ba989fc4d9"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "74615db0522d66b5fdf47ad2f373a7ba989fc4d9^{tree}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "3cca1f1872430554601e224a62c6e502718615a9\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rm",
+    "-q",
+    "doomed"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "removes doomed"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "74615db0522d66b5fdf47ad2f373a7ba989fc4d9"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "a\ndoomed\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "a\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_file",
+   "path": "doomed",
+   "ok": true,
+   "result": false
+  }
+ ]
+}

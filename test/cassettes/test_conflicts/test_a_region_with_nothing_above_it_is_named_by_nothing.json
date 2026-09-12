@@ -26,7 +26,7 @@
    ],
    "stdin": null,
    "returncode": 1,
-   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpedp870ke/before/m.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpedp870ke/after/m.py\nindex 223ca50..448d4a7 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpedp870ke/before/m.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpedp870ke/after/m.py\n@@ -1,0 +2 @@\n+\ue000region 0\n",
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp5lnbv00p/before/m.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp5lnbv00p/after/m.py\nindex 223ca50..448d4a7 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp5lnbv00p/before/m.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp5lnbv00p/after/m.py\n@@ -1,0 +2 @@\n+\ue000region 0\n",
    "stderr": ""
   }
  ]

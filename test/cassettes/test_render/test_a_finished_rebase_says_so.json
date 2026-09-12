@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8e84a00223e9af6198ed02755ecea81f765a15c2\n",
+   "stdout": "933beb1993a089b25e8d366b0280aa501d1c1d1c\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8fbe9845ad234b73f510a046543cc3836c5d6b67\n",
+   "stdout": "307d446928446e2c10f08b0f721e7c96702c32cd\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "5645a2e504774c39f09399b79017c0db7d2e26ff\n",
+   "stdout": "07524a973a74a34a8d687194c54f1ab18e7c6af0\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "5645a2e504774c39f09399b79017c0db7d2e26ff\n",
+   "stdout": "07524a973a74a34a8d687194c54f1ab18e7c6af0\n",
    "stderr": ""
   },
   {
@@ -132,7 +132,7 @@
    "stdin": null,
    "returncode": 1,
    "stdout": "Auto-merging f\nCONFLICT (content): Merge conflict in f\n",
-   "stderr": "Rebasing (1/1)\nerror: could not apply 5645a2e... third\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 5645a2e... \n"
+   "stderr": "Rebasing (1/1)\nerror: could not apply 07524a9... third\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 07524a9... \n"
   },
   {
    "type": "git",
@@ -183,7 +183,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "pick 5645a2e504774c39f09399b79017c0db7d2e26ff\n"
+   "result": "pick 07524a973a74a34a8d687194c54f1ab18e7c6af0\n"
   },
   {
    "type": "git",
@@ -195,7 +195,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8e84a00223e9af6198ed02755ecea81f765a15c2\nbase\n",
+   "stdout": "933beb1993a089b25e8d366b0280aa501d1c1d1c\nbase\n",
    "stderr": ""
   },
   {
@@ -267,7 +267,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "[detached HEAD af033ba] third\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
+   "stdout": "[detached HEAD 2821c18] third\n 1 file changed, 1 insertion(+), 1 deletion(-)\n",
    "stderr": "Recorded resolution for 'f'.\nSuccessfully rebased and updated refs/heads/main.\n"
   },
   {
@@ -369,7 +369,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "af033baabc137e36fef8e5dac14a75612065442e\nthird\n",
+   "stdout": "2821c18bf1f2472f563c0ce76afc49d2456f8dda\nthird\n",
    "stderr": ""
   },
   {

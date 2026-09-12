@@ -1,0 +1,156 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "42ccec78095808594c37b16788f0fce7215a6aed\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "42ccec78095808594c37b16788f0fce7215a6aed\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "tag",
+    "-f",
+    "rebase-backup/{STAMP}",
+    "42ccec78095808594c37b16788f0fce7215a6aed"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "42ccec78095808594c37b16788f0fce7215a6aed^{tree}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "6704c1a8a7b785347bc6f220bd2c2c14b9c43d19\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rm",
+    "--cached",
+    "-q",
+    "plain"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "untracked, not ignored"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "42ccec78095808594c37b16788f0fce7215a6aed"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "a\nplain\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "a\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_file",
+   "path": "plain",
+   "ok": true,
+   "result": true
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-files"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "a\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "check-ignore",
+    "--no-index",
+    "--",
+    "plain"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  }
+ ]
+}

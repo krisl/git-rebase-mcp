@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "796ef3c41f6be3afe71ee0ba3d45bb2f35b79948\n",
+   "stdout": "d4630c89a7ba5e1454b252cecaaa24b66be848df\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "ca990928a7536e2abe1d7ce7b84d91edc820530c\n",
+   "stdout": "36004af3cff376b2c62ce8df8ee7e13c11120cea\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3ff91847cd2b52a48387f4538f9921b20ff6f02d\n",
+   "stdout": "65c0da8da927960c24242ef7bf2cb130260e8f1c\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3ff91847cd2b52a48387f4538f9921b20ff6f02d\n",
+   "stdout": "65c0da8da927960c24242ef7bf2cb130260e8f1c\n",
    "stderr": ""
   },
   {
@@ -132,7 +132,7 @@
    "stdin": null,
    "returncode": 1,
    "stdout": "Auto-merging f.py\nCONFLICT (content): Merge conflict in f.py\n",
-   "stderr": "Rebasing (1/1)\nerror: could not apply 3ff9184... appends one more\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f.py'\nCould not apply 3ff9184... \n"
+   "stderr": "Rebasing (1/1)\nerror: could not apply 65c0da8... appends one more\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f.py'\nCould not apply 65c0da8... \n"
   },
   {
    "type": "git",
@@ -251,7 +251,7 @@
    ],
    "stdin": null,
    "returncode": 1,
-   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpt80bo0sx/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpt80bo0sx/merged\nindex f6e48e4..dfb68d0 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpt80bo0sx/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpt80bo0sx/merged\n@@ -300,0 +301,2 @@ def test_299(): pass\n+<<<<<<< \ue000branch-so-far\n+||||||| \ue000base\n@@ -400,0 +403,103 @@ def later_99(): pass\n+=======\n+def later_0(): pass\n+def later_1(): pass\n+def later_2(): pass\n+def later_3(): pass\n+def later_4(): pass\n+def later_5(): pass\n+def later_6(): pass\n+def later_7(): pass\n+def later_8(): pass\n+def later_9(): pass\n+def later_10(): pass\n+def later_11(): pass\n+def later_12(): pass\n+def later_13(): pass\n+def later_14(): pass\n+def later_15(): pass\n+def later_16(): pass\n+def later_17(): pass\n+def later_18(): pass\n+def later_19(): pass\n+def later_20(): pass\n+def later_21(): pass\n+def later_22(): pass\n+def later_23(): pass\n+def later_24(): pass\n+def later_25(): pass\n+def later_26(): pass\n+def later_27(): pass\n+def later_28(): pass\n+def later_29(): pass\n+def later_30(): pass\n+def later_31(): pass\n+def later_32(): pass\n+def later_33(): pass\n+def later_34(): pass\n+def later_35(): pass\n+def later_36(): pass\n+def later_37(): pass\n+def later_38(): pass\n+def later_39(): pass\n+def later_40(): pass\n+def later_41(): pass\n+def later_42(): pass\n+def later_43(): pass\n+def later_44(): pass\n+def later_45(): pass\n+def later_46(): pass\n+def later_47(): pass\n+def later_48(): pass\n+def later_49(): pass\n+def later_50(): pass\n+def later_51(): pass\n+def later_52(): pass\n+def later_53(): pass\n+def later_54(): pass\n+def later_55(): pass\n+def later_56(): pass\n+def later_57(): pass\n+def later_58(): pass\n+def later_59(): pass\n+def later_60(): pass\n+def later_61(): pass\n+def later_62(): pass\n+def later_63(): pass\n+def later_64(): pass\n+def later_65(): pass\n+def later_66(): pass\n+def later_67(): pass\n+def later_68(): pass\n+def later_69(): pass\n+def later_70(): pass\n+def later_71(): pass\n+def later_72(): pass\n+def later_73(): pass\n+def later_74(): pass\n+def later_75(): pass\n+def later_76(): pass\n+def later_77(): pass\n+def later_78(): pass\n+def later_79(): pass\n+def later_80(): pass\n+def later_81(): pass\n+def later_82(): pass\n+def later_83(): pass\n+def later_84(): pass\n+def later_85(): pass\n+def later_86(): pass\n+def later_87(): pass\n+def later_88(): pass\n+def later_89(): pass\n+def later_90(): pass\n+def later_91(): pass\n+def later_92(): pass\n+def later_93(): pass\n+def later_94(): pass\n+def later_95(): pass\n+def later_96(): pass\n+def later_97(): pass\n+def later_98(): pass\n+def later_99(): pass\n+def appended(): pass\n+>>>>>>> \ue000replaying\n",
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp2xa68z3w/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp2xa68z3w/merged\nindex f6e48e4..dfb68d0 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp2xa68z3w/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp2xa68z3w/merged\n@@ -300,0 +301,2 @@ def test_299(): pass\n+<<<<<<< \ue000branch-so-far\n+||||||| \ue000base\n@@ -400,0 +403,103 @@ def later_99(): pass\n+=======\n+def later_0(): pass\n+def later_1(): pass\n+def later_2(): pass\n+def later_3(): pass\n+def later_4(): pass\n+def later_5(): pass\n+def later_6(): pass\n+def later_7(): pass\n+def later_8(): pass\n+def later_9(): pass\n+def later_10(): pass\n+def later_11(): pass\n+def later_12(): pass\n+def later_13(): pass\n+def later_14(): pass\n+def later_15(): pass\n+def later_16(): pass\n+def later_17(): pass\n+def later_18(): pass\n+def later_19(): pass\n+def later_20(): pass\n+def later_21(): pass\n+def later_22(): pass\n+def later_23(): pass\n+def later_24(): pass\n+def later_25(): pass\n+def later_26(): pass\n+def later_27(): pass\n+def later_28(): pass\n+def later_29(): pass\n+def later_30(): pass\n+def later_31(): pass\n+def later_32(): pass\n+def later_33(): pass\n+def later_34(): pass\n+def later_35(): pass\n+def later_36(): pass\n+def later_37(): pass\n+def later_38(): pass\n+def later_39(): pass\n+def later_40(): pass\n+def later_41(): pass\n+def later_42(): pass\n+def later_43(): pass\n+def later_44(): pass\n+def later_45(): pass\n+def later_46(): pass\n+def later_47(): pass\n+def later_48(): pass\n+def later_49(): pass\n+def later_50(): pass\n+def later_51(): pass\n+def later_52(): pass\n+def later_53(): pass\n+def later_54(): pass\n+def later_55(): pass\n+def later_56(): pass\n+def later_57(): pass\n+def later_58(): pass\n+def later_59(): pass\n+def later_60(): pass\n+def later_61(): pass\n+def later_62(): pass\n+def later_63(): pass\n+def later_64(): pass\n+def later_65(): pass\n+def later_66(): pass\n+def later_67(): pass\n+def later_68(): pass\n+def later_69(): pass\n+def later_70(): pass\n+def later_71(): pass\n+def later_72(): pass\n+def later_73(): pass\n+def later_74(): pass\n+def later_75(): pass\n+def later_76(): pass\n+def later_77(): pass\n+def later_78(): pass\n+def later_79(): pass\n+def later_80(): pass\n+def later_81(): pass\n+def later_82(): pass\n+def later_83(): pass\n+def later_84(): pass\n+def later_85(): pass\n+def later_86(): pass\n+def later_87(): pass\n+def later_88(): pass\n+def later_89(): pass\n+def later_90(): pass\n+def later_91(): pass\n+def later_92(): pass\n+def later_93(): pass\n+def later_94(): pass\n+def later_95(): pass\n+def later_96(): pass\n+def later_97(): pass\n+def later_98(): pass\n+def later_99(): pass\n+def appended(): pass\n+>>>>>>> \ue000replaying\n",
    "stderr": ""
   },
   {
@@ -280,7 +280,7 @@
    ],
    "stdin": null,
    "returncode": 1,
-   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpne0tvq5i/before/f.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpne0tvq5i/after/f.py\nindex f6e48e4..14b4d38 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpne0tvq5i/before/f.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpne0tvq5i/after/f.py\n@@ -300,0 +301 @@ def test_299(): pass\n+\ue000region 0\n",
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpgjmpjn9i/before/f.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpgjmpjn9i/after/f.py\nindex f6e48e4..14b4d38 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpgjmpjn9i/before/f.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpgjmpjn9i/after/f.py\n@@ -300,0 +301 @@ def test_299(): pass\n+\ue000region 0\n",
    "stderr": ""
   },
   {
@@ -294,7 +294,7 @@
    ],
    "stdin": null,
    "returncode": 1,
-   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpj4dk_phn/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpj4dk_phn/merged\nindex f6e48e4..880ff45 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpj4dk_phn/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpj4dk_phn/merged\n@@ -400,0 +401 @@ def later_99(): pass\n+def appended(): pass\n",
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpskqhfvkk/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpskqhfvkk/merged\nindex f6e48e4..880ff45 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpskqhfvkk/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpskqhfvkk/merged\n@@ -400,0 +401 @@ def later_99(): pass\n+def appended(): pass\n",
    "stderr": ""
   }
  ]

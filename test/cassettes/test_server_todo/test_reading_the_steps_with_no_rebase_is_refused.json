@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3d0a8cbd55d8ce1d870d230a9977f13fcab94349\n",
+   "stdout": "9b057997aae494bc24d9b630170cd3a51c356c80\n",
    "stderr": ""
   },
   {
@@ -134,7 +134,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3d0a8cbd55d8ce1d870d230a9977f13fcab94349\nbase\n",
+   "stdout": "9b057997aae494bc24d9b630170cd3a51c356c80\nbase\n",
    "stderr": ""
   }
  ]

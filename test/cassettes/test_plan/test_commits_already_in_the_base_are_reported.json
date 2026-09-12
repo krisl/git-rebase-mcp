@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a1994cc876bc73d98da67da6739ed94c50d87221\n",
+   "stdout": "e82a646910f0f4c656db0cb0537f569a83cf511c\n",
    "stderr": ""
   },
   {
@@ -80,7 +80,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "49702757af0df2d2efe3ee7f2e32158766d211d7\n",
+   "stdout": "bb1cf0e2df28e6c185d6699d4f09da5384148d3e\n",
    "stderr": ""
   },
   {
@@ -127,7 +127,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "05f360cbcb6b2443b6cb9fa125c0a1a6b95539c0\n",
+   "stdout": "42fbaa817a3c61e46974fa958fb602ac766aa898\n",
    "stderr": ""
   },
   {
@@ -140,7 +140,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "05f360cbcb6b2443b6cb9fa125c0a1a6b95539c0 the work, as originally written\n",
+   "stdout": "42fbaa817a3c61e46974fa958fb602ac766aa898 the work, as originally written\n",
    "stderr": ""
   },
   {
@@ -153,7 +153,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "=05f360cbcb6b2443b6cb9fa125c0a1a6b95539c0\n",
+   "stdout": "=42fbaa817a3c61e46974fa958fb602ac766aa898\n",
    "stderr": ""
   },
   {
@@ -164,7 +164,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "05f360cbcb6b2443b6cb9fa125c0a1a6b95539c0\n",
+   "stdout": "42fbaa817a3c61e46974fa958fb602ac766aa898\n",
    "stderr": ""
   },
   {
@@ -175,7 +175,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "49702757af0df2d2efe3ee7f2e32158766d211d7\n",
+   "stdout": "bb1cf0e2df28e6c185d6699d4f09da5384148d3e\n",
    "stderr": ""
   },
   {
@@ -183,8 +183,8 @@
    "args": [
     "merge-base",
     "--is-ancestor",
-    "49702757af0df2d2efe3ee7f2e32158766d211d7",
-    "05f360cbcb6b2443b6cb9fa125c0a1a6b95539c0"
+    "bb1cf0e2df28e6c185d6699d4f09da5384148d3e",
+    "42fbaa817a3c61e46974fa958fb602ac766aa898"
    ],
    "stdin": null,
    "returncode": 1,
@@ -196,8 +196,8 @@
    "args": [
     "merge-base",
     "--is-ancestor",
-    "05f360cbcb6b2443b6cb9fa125c0a1a6b95539c0",
-    "49702757af0df2d2efe3ee7f2e32158766d211d7"
+    "42fbaa817a3c61e46974fa958fb602ac766aa898",
+    "bb1cf0e2df28e6c185d6699d4f09da5384148d3e"
    ],
    "stdin": null,
    "returncode": 1,

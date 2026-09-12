@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "c16574b15879086fc145fc11fc2cda783e4ae903\n",
+   "stdout": "e275b2cc9b67c1a5af467d9768145273f67e0a26\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "c1ba08a0a38072e094ce47da7fd9b3defb8b3120\n",
+   "stdout": "f907462863560107b47d4e2970f8231287e0a36c\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "0ae31c6ab5b9ce160be684ff8f0708f418824733\n",
+   "stdout": "d4b37ae8075fded27ae752fe4ecba86825c63332\n",
    "stderr": ""
   },
   {
@@ -137,7 +137,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "5cf7df9846b90ebd574d78d9850dd857e476d1f0\n",
+   "stdout": "89213a8a3200d95543422dd3a7a0cd49bc0469af\n",
    "stderr": ""
   },
   {
@@ -148,7 +148,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "c1ba08a0a38072e094ce47da7fd9b3defb8b3120\n",
+   "stdout": "f907462863560107b47d4e2970f8231287e0a36c\n",
    "stderr": ""
   },
   {
@@ -159,7 +159,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "5cf7df9846b90ebd574d78d9850dd857e476d1f0\n",
+   "stdout": "89213a8a3200d95543422dd3a7a0cd49bc0469af\n",
    "stderr": ""
   },
   {
@@ -176,7 +176,7 @@
    "stdin": null,
    "returncode": 1,
    "stdout": "Auto-merging f\nCONFLICT (content): Merge conflict in f\n",
-   "stderr": "Rebasing (2/2)\nerror: could not apply 5cf7df9... f=four\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 5cf7df9... \n"
+   "stderr": "Rebasing (2/2)\nerror: could not apply 89213a8... f=four\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 89213a8... \n"
   },
   {
    "type": "git",
@@ -227,7 +227,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "pick c1ba08a0a38072e094ce47da7fd9b3defb8b3120\nfixup 5cf7df9846b90ebd574d78d9850dd857e476d1f0\n"
+   "result": "pick f907462863560107b47d4e2970f8231287e0a36c\nfixup 89213a8a3200d95543422dd3a7a0cd49bc0469af\n"
   },
   {
    "type": "git",
@@ -239,7 +239,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "c1ba08a0a38072e094ce47da7fd9b3defb8b3120\nf=two\n",
+   "stdout": "f907462863560107b47d4e2970f8231287e0a36c\nf=two\n",
    "stderr": ""
   },
   {
@@ -266,7 +266,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "c1ba08a0a38072e094ce47da7fd9b3defb8b3120\n"
+   "result": "f907462863560107b47d4e2970f8231287e0a36c\n"
   },
   {
    "type": "git",
@@ -278,7 +278,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "5cf7df9846b90ebd574d78d9850dd857e476d1f0\nf=four\n",
+   "stdout": "89213a8a3200d95543422dd3a7a0cd49bc0469af\nf=four\n",
    "stderr": ""
   },
   {
@@ -286,7 +286,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "fixup 5cf7df9846b90ebd574d78d9850dd857e476d1f0"
+   "result": "fixup 89213a8a3200d95543422dd3a7a0cd49bc0469af"
   },
   {
    "type": "git",
@@ -294,11 +294,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "c1ba08a0a38072e094ce47da7fd9b3defb8b3120^"
+    "f907462863560107b47d4e2970f8231287e0a36c^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "c16574b15879086fc145fc11fc2cda783e4ae903\n",
+   "stdout": "e275b2cc9b67c1a5af467d9768145273f67e0a26\n",
    "stderr": ""
   },
   {
@@ -307,11 +307,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "c1ba08a0a38072e094ce47da7fd9b3defb8b3120^"
+    "f907462863560107b47d4e2970f8231287e0a36c^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "c16574b15879086fc145fc11fc2cda783e4ae903\n",
+   "stdout": "e275b2cc9b67c1a5af467d9768145273f67e0a26\n",
    "stderr": ""
   },
   {
@@ -320,11 +320,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "c1ba08a0a38072e094ce47da7fd9b3defb8b3120^"
+    "f907462863560107b47d4e2970f8231287e0a36c^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "c16574b15879086fc145fc11fc2cda783e4ae903\n",
+   "stdout": "e275b2cc9b67c1a5af467d9768145273f67e0a26\n",
    "stderr": ""
   }
  ]

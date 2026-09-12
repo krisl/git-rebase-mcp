@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9c04047c232ee5e628eba2608f16114f8279e500\n",
+   "stdout": "2d9885ebadbd9275d23fd168960d8a43bc1fc760\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9ceebbc28b5229cabae2c734c80f112dcbdd82f1\n",
+   "stdout": "436b0f9827de2ab3b708736580d629c97cf85331\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "f5c516b44c9451d4685fa43cee52000d58c4d273\n",
+   "stdout": "4b9fa0ee4bc74031d8b42ee8809b86e44e27643a\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "f5c516b44c9451d4685fa43cee52000d58c4d273\n",
+   "stdout": "4b9fa0ee4bc74031d8b42ee8809b86e44e27643a\n",
    "stderr": ""
   },
   {
@@ -132,7 +132,7 @@
    "stdin": null,
    "returncode": 1,
    "stdout": "Auto-merging f\nCONFLICT (content): Merge conflict in f\n",
-   "stderr": "Rebasing (1/1)\nerror: could not apply f5c516b... third\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply f5c516b... \n"
+   "stderr": "Rebasing (1/1)\nerror: could not apply 4b9fa0e... third\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 4b9fa0e... \n"
   },
   {
    "type": "git",
@@ -290,7 +290,7 @@
    ],
    "stdin": null,
    "returncode": 1,
-   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpmf4dan60/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpmf4dan60/merged\nindex f719efd..b319395 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpmf4dan60/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpmf4dan60/merged\n@@ -0,0 +1,3 @@\n+<<<<<<< \ue000branch-so-far\n+one\n+||||||| \ue000base\n@@ -1,0 +5,3 @@ two\n+=======\n+three\n+>>>>>>> \ue000replaying\n",
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpwueso8iv/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpwueso8iv/merged\nindex f719efd..b319395 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpwueso8iv/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpwueso8iv/merged\n@@ -0,0 +1,3 @@\n+<<<<<<< \ue000branch-so-far\n+one\n+||||||| \ue000base\n@@ -1,0 +5,3 @@ two\n+=======\n+three\n+>>>>>>> \ue000replaying\n",
    "stderr": ""
   },
   {
@@ -319,7 +319,7 @@
    ],
    "stdin": null,
    "returncode": 1,
-   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpe9f9qh5o/before/f b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpe9f9qh5o/after/f\nindex f719efd..568cf88 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpe9f9qh5o/before/f\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpe9f9qh5o/after/f\n@@ -0,0 +1 @@\n+\ue000region 0\n",
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpeqlw44pf/before/f b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpeqlw44pf/after/f\nindex f719efd..568cf88 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpeqlw44pf/before/f\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpeqlw44pf/after/f\n@@ -0,0 +1 @@\n+\ue000region 0\n",
    "stderr": ""
   },
   {
@@ -335,7 +335,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9c04047c232ee5e628eba2608f16114f8279e500 1 1 1\nauthor Test\nauthor-mail <test@example.com>\nauthor-time 1789223550\nauthor-tz +0200\ncommitter Test\ncommitter-mail <test@example.com>\ncommitter-time 1789223550\ncommitter-tz +0200\nsummary base\nboundary\nfilename f\n\tone\n",
+   "stdout": "2d9885ebadbd9275d23fd168960d8a43bc1fc760 1 1 1\nauthor Test\nauthor-mail <test@example.com>\nauthor-time 1789225858\nauthor-tz +0200\ncommitter Test\ncommitter-mail <test@example.com>\ncommitter-time 1789225858\ncommitter-tz +0200\nsummary base\nboundary\nfilename f\n\tone\n",
    "stderr": ""
   },
   {
@@ -349,7 +349,7 @@
    ],
    "stdin": null,
    "returncode": 1,
-   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpkaxtge_u/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpkaxtge_u/merged\nindex f719efd..2bdf67a 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpkaxtge_u/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpkaxtge_u/merged\n@@ -1 +1 @@\n-two\n+three\n",
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpebv0rwcq/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpebv0rwcq/merged\nindex f719efd..2bdf67a 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpebv0rwcq/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpebv0rwcq/merged\n@@ -1 +1 @@\n-two\n+three\n",
    "stderr": ""
   }
  ]

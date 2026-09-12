@@ -26,7 +26,7 @@
    ],
    "stdin": null,
    "returncode": 1,
-   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpr3lecm2m/before/m.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpr3lecm2m/after/m.py\nindex 0e9fd01..489613f 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpr3lecm2m/before/m.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpr3lecm2m/after/m.py\n@@ -5,0 +6 @@ def b(self):\n+\ue000region 1\n",
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpu83delbe/before/m.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpu83delbe/after/m.py\nindex 0e9fd01..489613f 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpu83delbe/before/m.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpu83delbe/after/m.py\n@@ -5,0 +6 @@ def b(self):\n+\ue000region 1\n",
    "stderr": ""
   }
  ]

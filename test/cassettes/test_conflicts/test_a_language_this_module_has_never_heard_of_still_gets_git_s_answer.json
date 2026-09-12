@@ -26,7 +26,7 @@
    ],
    "stdin": null,
    "returncode": 1,
-   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpoz3e7aqc/before/Report.kt b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpoz3e7aqc/after/Report.kt\nindex e81c287..20c21ac 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpoz3e7aqc/before/Report.kt\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpoz3e7aqc/after/Report.kt\n@@ -4,0 +5 @@ fun render(): List<Row> {\n+\ue000region 0\n",
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp3t1346cs/before/Report.kt b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp3t1346cs/after/Report.kt\nindex e81c287..20c21ac 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp3t1346cs/before/Report.kt\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp3t1346cs/after/Report.kt\n@@ -4,0 +5 @@ fun render(): List<Row> {\n+\ue000region 0\n",
    "stderr": ""
   }
  ]

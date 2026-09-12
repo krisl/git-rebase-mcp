@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "b39e5ab53547c6ae9d0d4b08766061246c1022b3\n",
+   "stdout": "16b6f3caf878e1afa5c8eb4643d620867ff0ad8a\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "033ae4c257c353181de158c5b5b7a1b19ba353a6\n",
+   "stdout": "7d985137ab0db0d6baa425f8903e46ef45bae3b3\n",
    "stderr": ""
   },
   {
@@ -93,7 +93,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "b10e977e6540aa37c9dd2ea8b6a70b42e9b4981a\n",
+   "stdout": "1c672a9fda59efe117a7e6caf237c5dfe453c3f6\n",
    "stderr": ""
   },
   {
@@ -104,7 +104,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "033ae4c257c353181de158c5b5b7a1b19ba353a6\n",
+   "stdout": "7d985137ab0db0d6baa425f8903e46ef45bae3b3\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
     "tag",
     "-f",
     "rebase-backup/test",
-    "033ae4c257c353181de158c5b5b7a1b19ba353a6"
+    "7d985137ab0db0d6baa425f8903e46ef45bae3b3"
    ],
    "stdin": null,
    "returncode": 0,
@@ -124,7 +124,7 @@
    "type": "git",
    "args": [
     "rev-parse",
-    "033ae4c257c353181de158c5b5b7a1b19ba353a6^{tree}"
+    "7d985137ab0db0d6baa425f8903e46ef45bae3b3^{tree}"
    ],
    "stdin": null,
    "returncode": 0,
@@ -182,7 +182,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "07fea54da6f0cbdb6965fbf9f0ceff9f1e7667e2\n",
+   "stdout": "69d56127b13477f5a141baa1ecd0e8d60d5a8849\n",
    "stderr": ""
   },
   {
@@ -193,7 +193,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "07fea54da6f0cbdb6965fbf9f0ceff9f1e7667e2\n",
+   "stdout": "69d56127b13477f5a141baa1ecd0e8d60d5a8849\n",
    "stderr": ""
   },
   {
@@ -205,7 +205,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "033ae4c257c353181de158c5b5b7a1b19ba353a6\n",
+   "stdout": "7d985137ab0db0d6baa425f8903e46ef45bae3b3\n",
    "stderr": ""
   },
   {
@@ -225,7 +225,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/test\",\n \"backup_sha\": \"033ae4c257c353181de158c5b5b7a1b19ba353a6\",\n \"backup_tree\": \"280bd343acd3b99e6f369110283329b8c3c5be24\",\n \"base\": \"HEAD~1\",\n \"base_sha\": \"033ae4c257c353181de158c5b5b7a1b19ba353a6\",\n \"upstream_sha\": \"\",\n \"stashed\": [\n  \"pytest.ini\"\n ],\n \"stash_ref\": \"b10e977e6540aa37c9dd2ea8b6a70b42e9b4981a\",\n \"check_command\": \"pytest -q\",\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/test\",\n \"backup_sha\": \"7d985137ab0db0d6baa425f8903e46ef45bae3b3\",\n \"backup_tree\": \"280bd343acd3b99e6f369110283329b8c3c5be24\",\n \"base\": \"HEAD~1\",\n \"base_sha\": \"7d985137ab0db0d6baa425f8903e46ef45bae3b3\",\n \"upstream_sha\": \"\",\n \"stashed\": [\n  \"pytest.ini\"\n ],\n \"stash_ref\": \"1c672a9fda59efe117a7e6caf237c5dfe453c3f6\",\n \"check_command\": \"pytest -q\",\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -235,7 +235,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "stash@{0}: WIP on main: 033ae4c second\n",
+   "stdout": "stash@{0}: WIP on main: 7d98513 second\n",
    "stderr": ""
   },
   {
@@ -246,7 +246,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "b10e977e6540aa37c9dd2ea8b6a70b42e9b4981a\n",
+   "stdout": "1c672a9fda59efe117a7e6caf237c5dfe453c3f6\n",
    "stderr": ""
   }
  ]

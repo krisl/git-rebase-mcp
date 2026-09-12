@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "410d2f013ba7ecf9d53c81de840e2664283b2f66\n",
+   "stdout": "56b9f4819da77b16ce38019f5d8f81b84b5fcefc\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e91fdb6317d214df16b7d7a0c524dd677877386a\n",
+   "stdout": "48e8b14fd6d9778fa3b1187994bbe37edd59dd4f\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3960c5d2f64630b5e08fa3814671663498ce7824\n",
+   "stdout": "32a69f8161f5f0982ce7ad53cc621edfdfc154bd\n",
    "stderr": ""
   },
   {
@@ -137,7 +137,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "f950b9a1ab4a8aacace9c41cc56c8d27c2b91656\n",
+   "stdout": "ec5a66ce3c85932c1bc852619ece770faa7c9e7e\n",
    "stderr": ""
   },
   {
@@ -148,7 +148,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "f950b9a1ab4a8aacace9c41cc56c8d27c2b91656\n",
+   "stdout": "ec5a66ce3c85932c1bc852619ece770faa7c9e7e\n",
    "stderr": ""
   },
   {
@@ -165,7 +165,7 @@
    "stdin": null,
    "returncode": 0,
    "stdout": "",
-   "stderr": "Rebasing (1/1)\nStopped at f950b9a...  \nYou can amend the commit now, with\n\n  git commit --amend \n\nOnce you are satisfied with your changes, run\n\n  git rebase --continue\n"
+   "stderr": "Rebasing (1/1)\nStopped at ec5a66c...  \nYou can amend the commit now, with\n\n  git commit --amend \n\nOnce you are satisfied with your changes, run\n\n  git rebase --continue\n"
   },
   {
    "type": "git",
@@ -177,7 +177,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "e91fdb6317d214df16b7d7a0c524dd677877386a adds b\n3960c5d2f64630b5e08fa3814671663498ce7824 adds c\nf950b9a1ab4a8aacace9c41cc56c8d27c2b91656 adds d\n",
+   "stdout": "48e8b14fd6d9778fa3b1187994bbe37edd59dd4f adds b\n32a69f8161f5f0982ce7ad53cc621edfdfc154bd adds c\nec5a66ce3c85932c1bc852619ece770faa7c9e7e adds d\n",
    "stderr": ""
   },
   {
@@ -190,7 +190,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "+f950b9a1ab4a8aacace9c41cc56c8d27c2b91656\n+3960c5d2f64630b5e08fa3814671663498ce7824\n+e91fdb6317d214df16b7d7a0c524dd677877386a\n",
+   "stdout": "+ec5a66ce3c85932c1bc852619ece770faa7c9e7e\n+32a69f8161f5f0982ce7ad53cc621edfdfc154bd\n+48e8b14fd6d9778fa3b1187994bbe37edd59dd4f\n",
    "stderr": ""
   },
   {
@@ -231,7 +231,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "edit f950b9a1ab4a8aacace9c41cc56c8d27c2b91656\n"
+   "result": "edit ec5a66ce3c85932c1bc852619ece770faa7c9e7e\n"
   },
   {
    "type": "git",
@@ -243,7 +243,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "f950b9a1ab4a8aacace9c41cc56c8d27c2b91656\nadds d\n",
+   "stdout": "ec5a66ce3c85932c1bc852619ece770faa7c9e7e\nadds d\n",
    "stderr": ""
   },
   {
@@ -270,7 +270,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "f950b9a1ab4a8aacace9c41cc56c8d27c2b91656\n"
+   "result": "ec5a66ce3c85932c1bc852619ece770faa7c9e7e\n"
   },
   {
    "type": "git",
@@ -282,7 +282,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "f950b9a1ab4a8aacace9c41cc56c8d27c2b91656\nadds d\n",
+   "stdout": "ec5a66ce3c85932c1bc852619ece770faa7c9e7e\nadds d\n",
    "stderr": ""
   },
   {
@@ -298,11 +298,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "f950b9a1ab4a8aacace9c41cc56c8d27c2b91656^"
+    "ec5a66ce3c85932c1bc852619ece770faa7c9e7e^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3960c5d2f64630b5e08fa3814671663498ce7824\n",
+   "stdout": "32a69f8161f5f0982ce7ad53cc621edfdfc154bd\n",
    "stderr": ""
   },
   {
@@ -311,11 +311,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "f950b9a1ab4a8aacace9c41cc56c8d27c2b91656^"
+    "ec5a66ce3c85932c1bc852619ece770faa7c9e7e^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3960c5d2f64630b5e08fa3814671663498ce7824\n",
+   "stdout": "32a69f8161f5f0982ce7ad53cc621edfdfc154bd\n",
    "stderr": ""
   },
   {
@@ -324,11 +324,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "f950b9a1ab4a8aacace9c41cc56c8d27c2b91656^"
+    "ec5a66ce3c85932c1bc852619ece770faa7c9e7e^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3960c5d2f64630b5e08fa3814671663498ce7824\n",
+   "stdout": "32a69f8161f5f0982ce7ad53cc621edfdfc154bd\n",
    "stderr": ""
   },
   {

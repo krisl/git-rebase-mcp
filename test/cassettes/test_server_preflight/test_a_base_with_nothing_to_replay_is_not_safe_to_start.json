@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "420262e5245ba0d3cf4b741f83a3e7f8105ace2e\n",
+   "stdout": "4a79420977a2f8cb37691ff5f95255dd5d9662a2\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "fc29fe0361896a3fad3646dc3c120dfcb94469ce\n",
+   "stdout": "77c5ff233b6a9c0a81009420f94fd7babbcfabc2\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "d49f66a7a16932a887b0a7ce4b126166e624c722\n",
+   "stdout": "af80c9b4002be151f4ae4f7e084389351346da3f\n",
    "stderr": ""
   },
   {
@@ -137,7 +137,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "73bb2b40a4dcf575111862c093f16cd5401cee90\n",
+   "stdout": "cfe1dda8be28b04719e66c5775d77455f3bab1f2\n",
    "stderr": ""
   },
   {
@@ -188,7 +188,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "fc29fe0361896a3fad3646dc3c120dfcb94469ce\n",
+   "stdout": "77c5ff233b6a9c0a81009420f94fd7babbcfabc2\n",
    "stderr": ""
   },
   {
@@ -199,7 +199,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "73bb2b40a4dcf575111862c093f16cd5401cee90\n",
+   "stdout": "cfe1dda8be28b04719e66c5775d77455f3bab1f2\n",
    "stderr": ""
   },
   {
@@ -207,8 +207,8 @@
    "args": [
     "merge-base",
     "--is-ancestor",
-    "73bb2b40a4dcf575111862c093f16cd5401cee90",
-    "fc29fe0361896a3fad3646dc3c120dfcb94469ce"
+    "cfe1dda8be28b04719e66c5775d77455f3bab1f2",
+    "77c5ff233b6a9c0a81009420f94fd7babbcfabc2"
    ],
    "stdin": null,
    "returncode": 1,
@@ -220,8 +220,8 @@
    "args": [
     "merge-base",
     "--is-ancestor",
-    "fc29fe0361896a3fad3646dc3c120dfcb94469ce",
-    "73bb2b40a4dcf575111862c093f16cd5401cee90"
+    "77c5ff233b6a9c0a81009420f94fd7babbcfabc2",
+    "cfe1dda8be28b04719e66c5775d77455f3bab1f2"
    ],
    "stdin": null,
    "returncode": 0,
@@ -327,7 +327,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "fc29fe0361896a3fad3646dc3c120dfcb94469ce\nadds b\n",
+   "stdout": "77c5ff233b6a9c0a81009420f94fd7babbcfabc2\nadds b\n",
    "stderr": ""
   },
   {

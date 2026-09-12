@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "511e68dfb7cfff3948326dd1d411ccd1d6322cab\n",
+   "stdout": "72edd792f947e8493af80bc7ed42aa95b9c75f77\n",
    "stderr": ""
   },
   {
@@ -43,7 +43,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "511e68dfb7cfff3948326dd1d411ccd1d6322cab\n",
+   "stdout": "72edd792f947e8493af80bc7ed42aa95b9c75f77\n",
    "stderr": ""
   },
   {
@@ -52,7 +52,7 @@
     "tag",
     "-f",
     "rebase-backup/test",
-    "511e68dfb7cfff3948326dd1d411ccd1d6322cab"
+    "72edd792f947e8493af80bc7ed42aa95b9c75f77"
    ],
    "stdin": null,
    "returncode": 0,
@@ -63,7 +63,7 @@
    "type": "git",
    "args": [
     "rev-parse",
-    "511e68dfb7cfff3948326dd1d411ccd1d6322cab^{tree}"
+    "72edd792f947e8493af80bc7ed42aa95b9c75f77^{tree}"
    ],
    "stdin": null,
    "returncode": 0,
@@ -78,7 +78,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "511e68dfb7cfff3948326dd1d411ccd1d6322cab\n",
+   "stdout": "72edd792f947e8493af80bc7ed42aa95b9c75f77\n",
    "stderr": ""
   },
   {
@@ -109,7 +109,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "Deleted tag 'rebase-backup/test' (was 511e68d)\n",
+   "stdout": "Deleted tag 'rebase-backup/test' (was 72edd79)\n",
    "stderr": ""
   },
   {

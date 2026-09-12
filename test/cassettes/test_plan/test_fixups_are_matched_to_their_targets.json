@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a1994cc876bc73d98da67da6739ed94c50d87221\n",
+   "stdout": "c8d0e4af38fa75e41157fa47e3acb750c187fc00\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a271aaed51ed57d46661cb893f47b987fff970e2\n",
+   "stdout": "d828c886b8e96fb2dd182ebac6bfde0ee9b8587d\n",
    "stderr": ""
   },
   {
@@ -78,7 +78,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a271aaed51ed57d46661cb893f47b987fff970e2\n",
+   "stdout": "d828c886b8e96fb2dd182ebac6bfde0ee9b8587d\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "4c54aabef44cf5eb86709839fc4e65a28e96a799\n",
+   "stdout": "2d8ad9b59655b889928259a3faf5e8ac9433f488\n",
    "stderr": ""
   },
   {
@@ -124,7 +124,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "4c54aabef44cf5eb86709839fc4e65a28e96a799\n",
+   "stdout": "2d8ad9b59655b889928259a3faf5e8ac9433f488\n",
    "stderr": ""
   },
   {
@@ -137,7 +137,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a271aaed51ed57d46661cb893f47b987fff970e2 Add the thing\n4c54aabef44cf5eb86709839fc4e65a28e96a799 fixup! Add the thing\n",
+   "stdout": "d828c886b8e96fb2dd182ebac6bfde0ee9b8587d Add the thing\n2d8ad9b59655b889928259a3faf5e8ac9433f488 fixup! Add the thing\n",
    "stderr": ""
   }
  ]

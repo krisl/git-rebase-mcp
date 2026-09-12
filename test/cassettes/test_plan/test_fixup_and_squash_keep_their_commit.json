@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "5691944ee8fcd4f1a2e04242d36cbcb300f8cffc\n",
+   "stdout": "74d32496890a494485666e9bc1a1d894cea8821d\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8d6972ee17cbb780cbdf51f0fdfb4f31ff8f7d5d\n",
+   "stdout": "5ec8df9e8c9acc3228c35abbcef95688c5800b6e\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a7a8d3391c5130e9f8f3dc6b15147c3b1f3df59f\n",
+   "stdout": "3b0a8831a7a6b6a129b04dc2aced9912ee6d7bfb\n",
    "stderr": ""
   },
   {
@@ -137,7 +137,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "ec1ed5833bbeab93a2f8c08043e2751b45b0f86e\n",
+   "stdout": "ff7bedcb46623ff850e314cc47246aadecadcb3e\n",
    "stderr": ""
   },
   {
@@ -150,7 +150,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8d6972ee17cbb780cbdf51f0fdfb4f31ff8f7d5d adds b\na7a8d3391c5130e9f8f3dc6b15147c3b1f3df59f adds c\nec1ed5833bbeab93a2f8c08043e2751b45b0f86e adds d\n",
+   "stdout": "5ec8df9e8c9acc3228c35abbcef95688c5800b6e adds b\n3b0a8831a7a6b6a129b04dc2aced9912ee6d7bfb adds c\nff7bedcb46623ff850e314cc47246aadecadcb3e adds d\n",
    "stderr": ""
   },
   {
@@ -163,7 +163,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8d6972ee17cbb780cbdf51f0fdfb4f31ff8f7d5d adds b\na7a8d3391c5130e9f8f3dc6b15147c3b1f3df59f adds c\nec1ed5833bbeab93a2f8c08043e2751b45b0f86e adds d\n",
+   "stdout": "5ec8df9e8c9acc3228c35abbcef95688c5800b6e adds b\n3b0a8831a7a6b6a129b04dc2aced9912ee6d7bfb adds c\nff7bedcb46623ff850e314cc47246aadecadcb3e adds d\n",
    "stderr": ""
   },
   {
@@ -176,7 +176,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "+ec1ed5833bbeab93a2f8c08043e2751b45b0f86e\n+a7a8d3391c5130e9f8f3dc6b15147c3b1f3df59f\n+8d6972ee17cbb780cbdf51f0fdfb4f31ff8f7d5d\n",
+   "stdout": "+ff7bedcb46623ff850e314cc47246aadecadcb3e\n+3b0a8831a7a6b6a129b04dc2aced9912ee6d7bfb\n+5ec8df9e8c9acc3228c35abbcef95688c5800b6e\n",
    "stderr": ""
   },
   {
@@ -185,9 +185,9 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "8d6972ee17cbb780cbdf51f0fdfb4f31ff8f7d5d^{commit}",
-    "a7a8d3391c5130e9f8f3dc6b15147c3b1f3df59f^{commit}",
-    "ec1ed5833bbeab93a2f8c08043e2751b45b0f86e^{commit}"
+    "5ec8df9e8c9acc3228c35abbcef95688c5800b6e^{commit}",
+    "3b0a8831a7a6b6a129b04dc2aced9912ee6d7bfb^{commit}",
+    "ff7bedcb46623ff850e314cc47246aadecadcb3e^{commit}"
    ],
    "stdin": null,
    "returncode": 1,
@@ -200,11 +200,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "8d6972ee17cbb780cbdf51f0fdfb4f31ff8f7d5d^{commit}"
+    "5ec8df9e8c9acc3228c35abbcef95688c5800b6e^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8d6972ee17cbb780cbdf51f0fdfb4f31ff8f7d5d\n",
+   "stdout": "5ec8df9e8c9acc3228c35abbcef95688c5800b6e\n",
    "stderr": ""
   },
   {
@@ -213,11 +213,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "a7a8d3391c5130e9f8f3dc6b15147c3b1f3df59f^{commit}"
+    "3b0a8831a7a6b6a129b04dc2aced9912ee6d7bfb^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a7a8d3391c5130e9f8f3dc6b15147c3b1f3df59f\n",
+   "stdout": "3b0a8831a7a6b6a129b04dc2aced9912ee6d7bfb\n",
    "stderr": ""
   },
   {
@@ -226,11 +226,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "ec1ed5833bbeab93a2f8c08043e2751b45b0f86e^{commit}"
+    "ff7bedcb46623ff850e314cc47246aadecadcb3e^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "ec1ed5833bbeab93a2f8c08043e2751b45b0f86e\n",
+   "stdout": "ff7bedcb46623ff850e314cc47246aadecadcb3e\n",
    "stderr": ""
   }
  ]

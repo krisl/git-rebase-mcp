@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "be64503035febe328ff8f20b4fdd94ac5e3f77a1\n",
+   "stdout": "fc8fb87146920b26a0914dd84da30a1a22aa4ce1\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "d395ea2644ba8b33ad85daf6481f9bfef00ce6a3\n",
+   "stdout": "a5d225b7123e31b1f28d44c75ad47b3cfbb83c27\n",
    "stderr": ""
   },
   {
@@ -78,7 +78,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "d395ea2644ba8b33ad85daf6481f9bfef00ce6a3\n",
+   "stdout": "a5d225b7123e31b1f28d44c75ad47b3cfbb83c27\n",
    "stderr": ""
   },
   {
@@ -93,11 +93,11 @@
     "^\\|\\|\\|\\|\\|\\|\\|",
     "-e",
     "^>>>>>>>",
-    "d395ea2644ba8b33ad85daf6481f9bfef00ce6a3"
+    "a5d225b7123e31b1f28d44c75ad47b3cfbb83c27"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "d395ea2644ba8b33ad85daf6481f9bfef00ce6a3:a\n",
+   "stdout": "a5d225b7123e31b1f28d44c75ad47b3cfbb83c27:a\n",
    "stderr": ""
   },
   {
@@ -112,7 +112,7 @@
     "^\\|\\|\\|\\|\\|\\|\\|",
     "-e",
     "^>>>>>>>",
-    "d395ea2644ba8b33ad85daf6481f9bfef00ce6a3^",
+    "a5d225b7123e31b1f28d44c75ad47b3cfbb83c27^",
     "--",
     "a"
    ],
@@ -127,7 +127,7 @@
     "log",
     "-1",
     "--format=%s",
-    "d395ea2644ba8b33ad85daf6481f9bfef00ce6a3"
+    "a5d225b7123e31b1f28d44c75ad47b3cfbb83c27"
    ],
    "stdin": null,
    "returncode": 0,

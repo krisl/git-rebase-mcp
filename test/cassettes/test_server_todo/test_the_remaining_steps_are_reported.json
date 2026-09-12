@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3c6580cd2be5646cf97920fdb2f1ff6d31c6271e\n",
+   "stdout": "3069b38a8f3babf3572e7c45c8b54bf8c6ffaf8c\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "6cd19e30bfc85b327e23ae3a2bf031f40410f16d\n",
+   "stdout": "0971b1bbb3d1656945262e70c4c194f00f582fd3\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "80d94ec8b3926a9937f738e4c834843902f0657e\n",
+   "stdout": "8f09e3f44f361786b73ef6bc3c8388b74bf550a1\n",
    "stderr": ""
   },
   {
@@ -137,7 +137,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a0ec7ee3d35940440e2b2b2ca489d3a916ee7414\n",
+   "stdout": "e2b4e586d4e1bed5136e2eeb12acaa91720059e3\n",
    "stderr": ""
   },
   {
@@ -148,7 +148,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "6cd19e30bfc85b327e23ae3a2bf031f40410f16d\n",
+   "stdout": "0971b1bbb3d1656945262e70c4c194f00f582fd3\n",
    "stderr": ""
   },
   {
@@ -159,7 +159,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "80d94ec8b3926a9937f738e4c834843902f0657e\n",
+   "stdout": "8f09e3f44f361786b73ef6bc3c8388b74bf550a1\n",
    "stderr": ""
   },
   {
@@ -170,7 +170,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a0ec7ee3d35940440e2b2b2ca489d3a916ee7414\n",
+   "stdout": "e2b4e586d4e1bed5136e2eeb12acaa91720059e3\n",
    "stderr": ""
   },
   {
@@ -187,7 +187,7 @@
    "stdin": null,
    "returncode": 0,
    "stdout": "",
-   "stderr": "Rebasing (1/3)\nStopped at 6cd19e3...  \nYou can amend the commit now, with\n\n  git commit --amend \n\nOnce you are satisfied with your changes, run\n\n  git rebase --continue\n"
+   "stderr": "Rebasing (1/3)\nStopped at 0971b1b...  \nYou can amend the commit now, with\n\n  git commit --amend \n\nOnce you are satisfied with your changes, run\n\n  git rebase --continue\n"
   },
   {
    "type": "git",
@@ -227,7 +227,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "edit 6cd19e30bfc85b327e23ae3a2bf031f40410f16d\n"
+   "result": "edit 0971b1bbb3d1656945262e70c4c194f00f582fd3\n"
   },
   {
    "type": "git",
@@ -239,7 +239,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "6cd19e30bfc85b327e23ae3a2bf031f40410f16d\nadds b\n",
+   "stdout": "0971b1bbb3d1656945262e70c4c194f00f582fd3\nadds b\n",
    "stderr": ""
   },
   {
@@ -266,7 +266,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "6cd19e30bfc85b327e23ae3a2bf031f40410f16d\n"
+   "result": "0971b1bbb3d1656945262e70c4c194f00f582fd3\n"
   },
   {
    "type": "git",
@@ -278,7 +278,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "6cd19e30bfc85b327e23ae3a2bf031f40410f16d\nadds b\n",
+   "stdout": "0971b1bbb3d1656945262e70c4c194f00f582fd3\nadds b\n",
    "stderr": ""
   },
   {
@@ -294,11 +294,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "6cd19e30bfc85b327e23ae3a2bf031f40410f16d^"
+    "0971b1bbb3d1656945262e70c4c194f00f582fd3^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3c6580cd2be5646cf97920fdb2f1ff6d31c6271e\n",
+   "stdout": "3069b38a8f3babf3572e7c45c8b54bf8c6ffaf8c\n",
    "stderr": ""
   },
   {
@@ -307,11 +307,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "6cd19e30bfc85b327e23ae3a2bf031f40410f16d^"
+    "0971b1bbb3d1656945262e70c4c194f00f582fd3^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3c6580cd2be5646cf97920fdb2f1ff6d31c6271e\n",
+   "stdout": "3069b38a8f3babf3572e7c45c8b54bf8c6ffaf8c\n",
    "stderr": ""
   },
   {
@@ -320,11 +320,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "6cd19e30bfc85b327e23ae3a2bf031f40410f16d^"
+    "0971b1bbb3d1656945262e70c4c194f00f582fd3^"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "3c6580cd2be5646cf97920fdb2f1ff6d31c6271e\n",
+   "stdout": "3069b38a8f3babf3572e7c45c8b54bf8c6ffaf8c\n",
    "stderr": ""
   },
   {
@@ -344,7 +344,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "pick 80d94ec8b3926a9937f738e4c834843902f0657e\npick a0ec7ee3d35940440e2b2b2ca489d3a916ee7414\n"
+   "result": "pick 8f09e3f44f361786b73ef6bc3c8388b74bf550a1\npick e2b4e586d4e1bed5136e2eeb12acaa91720059e3\n"
   }
  ]
 }

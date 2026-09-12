@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "cc8b466298a3f47a19ed8450b4ec9d7cdd9e4c78\n",
+   "stdout": "b6e34d8cd715f89a5026a788b66ff8d93eaed366\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "2cab3c1f3323883e23707362cf2dff82e88ce5fd\n",
+   "stdout": "3ab066160cd6360fd77726fce3b44c55b63f9c35\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "85997106e03001ce9a213b8a5ab312265f5aafbb\n",
+   "stdout": "2fe79abe63e0d462c937e5dd300b3d4a89093f26\n",
    "stderr": ""
   },
   {
@@ -115,7 +115,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "2cab3c1f3323883e23707362cf2dff82e88ce5fd Add the thing\n85997106e03001ce9a213b8a5ab312265f5aafbb fixup! Add something that is not here\n",
+   "stdout": "3ab066160cd6360fd77726fce3b44c55b63f9c35 Add the thing\n2fe79abe63e0d462c937e5dd300b3d4a89093f26 fixup! Add something that is not here\n",
    "stderr": ""
   },
   {
@@ -128,7 +128,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "+85997106e03001ce9a213b8a5ab312265f5aafbb\n+2cab3c1f3323883e23707362cf2dff82e88ce5fd\n",
+   "stdout": "+2fe79abe63e0d462c937e5dd300b3d4a89093f26\n+3ab066160cd6360fd77726fce3b44c55b63f9c35\n",
    "stderr": ""
   }
  ]

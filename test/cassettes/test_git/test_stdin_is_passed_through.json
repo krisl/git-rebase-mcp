@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "412a6fbef070656e2007da3b2f3ae87b0a1394db\n",
+   "stdout": "cddab55ec75a503e04f267983fb473190b702777\n",
    "stderr": ""
   },
   {
@@ -43,7 +43,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "412a6fbef070656e2007da3b2f3ae87b0a1394db\n",
+   "stdout": "cddab55ec75a503e04f267983fb473190b702777\n",
    "stderr": ""
   },
   {
@@ -52,9 +52,9 @@
     "cat-file",
     "--batch-check"
    ],
-   "stdin": "412a6fbef070656e2007da3b2f3ae87b0a1394db",
+   "stdin": "cddab55ec75a503e04f267983fb473190b702777",
    "returncode": 0,
-   "stdout": "412a6fbef070656e2007da3b2f3ae87b0a1394db commit 152\n",
+   "stdout": "cddab55ec75a503e04f267983fb473190b702777 commit 152\n",
    "stderr": ""
   }
  ]

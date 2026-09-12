@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "5f3751e8f8f223a544e99f762decd3452540c25f\n",
+   "stdout": "ccd68d155a3c50927534fb4b37f101e26a9baf9c\n",
    "stderr": ""
   },
   {
@@ -43,7 +43,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "5f3751e8f8f223a544e99f762decd3452540c25f\n",
+   "stdout": "ccd68d155a3c50927534fb4b37f101e26a9baf9c\n",
    "stderr": ""
   },
   {
@@ -52,7 +52,7 @@
     "tag",
     "-f",
     "rebase-backup/test",
-    "5f3751e8f8f223a544e99f762decd3452540c25f"
+    "ccd68d155a3c50927534fb4b37f101e26a9baf9c"
    ],
    "stdin": null,
    "returncode": 0,
@@ -63,7 +63,7 @@
    "type": "git",
    "args": [
     "rev-parse",
-    "5f3751e8f8f223a544e99f762decd3452540c25f^{tree}"
+    "ccd68d155a3c50927534fb4b37f101e26a9baf9c^{tree}"
    ],
    "stdin": null,
    "returncode": 0,

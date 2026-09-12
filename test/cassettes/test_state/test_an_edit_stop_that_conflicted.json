@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a4cee429796e707d0f041d1c7e26fce76cb4a4cd\n",
+   "stdout": "eb53b59d2a9b88577f43adffc1a8fa12f661acbb\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8bf330152be09711e9379cd06494f3faf057f06a\n",
+   "stdout": "3b70e5bea4120aaf73aae813e8838e0fcdbe6e56\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "41242a057f80996e36f7361af76a67c4b032367a\n",
+   "stdout": "ff955202d2d87761ed2537543b817a92feaba71c\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "41242a057f80996e36f7361af76a67c4b032367a\n",
+   "stdout": "ff955202d2d87761ed2537543b817a92feaba71c\n",
    "stderr": ""
   },
   {
@@ -132,7 +132,7 @@
    "stdin": null,
    "returncode": 1,
    "stdout": "Auto-merging f\nCONFLICT (content): Merge conflict in f\n",
-   "stderr": "Rebasing (1/1)\nerror: could not apply 41242a0... third\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 41242a0... \n"
+   "stderr": "Rebasing (1/1)\nerror: could not apply ff95520... third\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply ff95520... \n"
   },
   {
    "type": "git",
@@ -172,7 +172,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "edit 41242a057f80996e36f7361af76a67c4b032367a\n"
+   "result": "edit ff955202d2d87761ed2537543b817a92feaba71c\n"
   },
   {
    "type": "git",
@@ -184,7 +184,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a4cee429796e707d0f041d1c7e26fce76cb4a4cd\nbase\n",
+   "stdout": "eb53b59d2a9b88577f43adffc1a8fa12f661acbb\nbase\n",
    "stderr": ""
   },
   {
@@ -209,7 +209,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "41242a057f80996e36f7361af76a67c4b032367a\nthird\n",
+   "stdout": "ff955202d2d87761ed2537543b817a92feaba71c\nthird\n",
    "stderr": ""
   }
  ]

@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "48e808bc0e2df4bf2a41250052cbb0a47b21ef35\n",
+   "stdout": "4d127f7ea834e07fba1b327ca566293951105a6f\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "040a50ffcae56722731a00868c57c08e329d2d9c\n",
+   "stdout": "844b28dec06f2a509a36b63ac37e958393371fcc\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "416698b28b323e2a6ef7d36c9b422ecdf8aa2f0f\n",
+   "stdout": "616142d26ef21aa510afb114056412cf7f711f38\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "040a50ffcae56722731a00868c57c08e329d2d9c\n",
+   "stdout": "844b28dec06f2a509a36b63ac37e958393371fcc\n",
    "stderr": ""
   },
   {
@@ -170,7 +170,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "pick 040a50ffcae56722731a00868c57c08e329d2d9c\nexec false\n"
+   "result": "pick 844b28dec06f2a509a36b63ac37e958393371fcc\nexec false\n"
   },
   {
    "type": "git",
@@ -182,7 +182,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "040a50ffcae56722731a00868c57c08e329d2d9c\nsecond\n",
+   "stdout": "844b28dec06f2a509a36b63ac37e958393371fcc\nsecond\n",
    "stderr": ""
   },
   {

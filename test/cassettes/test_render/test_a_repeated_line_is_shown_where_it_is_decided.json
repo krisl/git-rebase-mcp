@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8ceca54f0b85a7a3ff7f9b871f350e5ca683bd0f\n",
+   "stdout": "933beb1993a089b25e8d366b0280aa501d1c1d1c\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "d1bae68c80daebbf067831fa6f41e2d360812468\n",
+   "stdout": "307d446928446e2c10f08b0f721e7c96702c32cd\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "2c73e766d271651e249b738245bb1404a7d6a70d\n",
+   "stdout": "07524a973a74a34a8d687194c54f1ab18e7c6af0\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "2c73e766d271651e249b738245bb1404a7d6a70d\n",
+   "stdout": "07524a973a74a34a8d687194c54f1ab18e7c6af0\n",
    "stderr": ""
   },
   {
@@ -132,7 +132,7 @@
    "stdin": null,
    "returncode": 1,
    "stdout": "Auto-merging f\nCONFLICT (content): Merge conflict in f\n",
-   "stderr": "Rebasing (1/1)\nerror: could not apply 2c73e76... third\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 2c73e76... \n"
+   "stderr": "Rebasing (1/1)\nerror: could not apply 07524a9... third\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 07524a9... \n"
   },
   {
    "type": "git",
@@ -305,7 +305,7 @@
    "op": "read_text",
    "path": "{REPO}/.git{ABS}",
    "ok": true,
-   "result": "pick 2c73e766d271651e249b738245bb1404a7d6a70d\n"
+   "result": "pick 07524a973a74a34a8d687194c54f1ab18e7c6af0\n"
   },
   {
    "type": "git",
@@ -317,7 +317,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8ceca54f0b85a7a3ff7f9b871f350e5ca683bd0f\nbase\n",
+   "stdout": "933beb1993a089b25e8d366b0280aa501d1c1d1c\nbase\n",
    "stderr": ""
   },
   {

@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "07ad6d459ceefe5232f0bb910c355a9d86289835\n",
+   "stdout": "33ad4f7754df8d7ba680888120aa321dae00148f\n",
    "stderr": ""
   },
   {
@@ -43,7 +43,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "07ad6d459ceefe5232f0bb910c355a9d86289835\n",
+   "stdout": "33ad4f7754df8d7ba680888120aa321dae00148f\n",
    "stderr": ""
   },
   {
@@ -78,7 +78,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "714cca1aa551979881e5ac362a02e24f4042f5d2\n",
+   "stdout": "ae26936a34cff0c0f09031a962a67fdf54e3fff1\n",
    "stderr": ""
   },
   {
@@ -89,7 +89,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "714cca1aa551979881e5ac362a02e24f4042f5d2\n",
+   "stdout": "ae26936a34cff0c0f09031a962a67fdf54e3fff1\n",
    "stderr": ""
   },
   {
@@ -124,7 +124,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "27944d3e251688cfdf81fe6f4ec1000bdb408667\n",
+   "stdout": "050cafd777b59e28db409e26739f4aa0cd362cbc\n",
    "stderr": ""
   },
   {
@@ -135,7 +135,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "27944d3e251688cfdf81fe6f4ec1000bdb408667\n",
+   "stdout": "050cafd777b59e28db409e26739f4aa0cd362cbc\n",
    "stderr": ""
   },
   {
@@ -144,7 +144,7 @@
     "tag",
     "-f",
     "rebase-backup/{STAMP}",
-    "27944d3e251688cfdf81fe6f4ec1000bdb408667"
+    "050cafd777b59e28db409e26739f4aa0cd362cbc"
    ],
    "stdin": null,
    "returncode": 0,
@@ -155,7 +155,7 @@
    "type": "git",
    "args": [
     "rev-parse",
-    "27944d3e251688cfdf81fe6f4ec1000bdb408667^{tree}"
+    "050cafd777b59e28db409e26739f4aa0cd362cbc^{tree}"
    ],
    "stdin": null,
    "returncode": 0,
@@ -169,7 +169,7 @@
     "-q",
     "-b",
     "landing",
-    "07ad6d459ceefe5232f0bb910c355a9d86289835"
+    "33ad4f7754df8d7ba680888120aa321dae00148f"
    ],
    "stdin": null,
    "returncode": 0,
@@ -208,7 +208,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a04aaead513a15bad13ff5211db37b74d3a9729a\n",
+   "stdout": "f555363d7a347bb6ccf4651eda1c352fba7910dd\n",
    "stderr": ""
   },
   {
@@ -219,7 +219,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "a04aaead513a15bad13ff5211db37b74d3a9729a\n",
+   "stdout": "f555363d7a347bb6ccf4651eda1c352fba7910dd\n",
    "stderr": ""
   },
   {
@@ -254,43 +254,43 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "88b8406d7c34fb7893b34d261067e8df07ae19bc\n",
+   "stdout": "cc45da6f8cb4b7a43b2e2da54c909b662288b22e\n",
    "stderr": ""
   },
   {
    "type": "git",
    "args": [
     "range-diff",
-    "714cca1aa551979881e5ac362a02e24f4042f5d2..27944d3e251688cfdf81fe6f4ec1000bdb408667",
-    "a04aaead513a15bad13ff5211db37b74d3a9729a..HEAD"
+    "ae26936a34cff0c0f09031a962a67fdf54e3fff1..050cafd777b59e28db409e26739f4aa0cd362cbc",
+    "f555363d7a347bb6ccf4651eda1c352fba7910dd..HEAD"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "1:  27944d3 = 1:  88b8406 the branch's own\n",
+   "stdout": "1:  050cafd = 1:  cc45da6 the branch's own\n",
    "stderr": ""
   },
   {
    "type": "git",
    "args": [
     "merge-base",
-    "27944d3e251688cfdf81fe6f4ec1000bdb408667",
-    "a04aaead513a15bad13ff5211db37b74d3a9729a"
+    "050cafd777b59e28db409e26739f4aa0cd362cbc",
+    "f555363d7a347bb6ccf4651eda1c352fba7910dd"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "07ad6d459ceefe5232f0bb910c355a9d86289835\n",
+   "stdout": "33ad4f7754df8d7ba680888120aa321dae00148f\n",
    "stderr": ""
   },
   {
    "type": "git",
    "args": [
     "range-diff",
-    "07ad6d459ceefe5232f0bb910c355a9d86289835..27944d3e251688cfdf81fe6f4ec1000bdb408667",
-    "a04aaead513a15bad13ff5211db37b74d3a9729a..HEAD"
+    "33ad4f7754df8d7ba680888120aa321dae00148f..050cafd777b59e28db409e26739f4aa0cd362cbc",
+    "f555363d7a347bb6ccf4651eda1c352fba7910dd..HEAD"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "1:  714cca1 < -:  ------- upstream work\n2:  27944d3 = 1:  88b8406 the branch's own\n",
+   "stdout": "1:  ae26936 < -:  ------- upstream work\n2:  050cafd = 1:  cc45da6 the branch's own\n",
    "stderr": ""
   },
   {
@@ -299,11 +299,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "714cca1^{commit}"
+    "ae26936^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "714cca1aa551979881e5ac362a02e24f4042f5d2\n",
+   "stdout": "ae26936a34cff0c0f09031a962a67fdf54e3fff1\n",
    "stderr": ""
   }
  ]

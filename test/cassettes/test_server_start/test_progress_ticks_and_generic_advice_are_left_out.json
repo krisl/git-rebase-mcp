@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "06e9825d0ef7d22417ddfb6e831c992f0de22161\n",
+   "stdout": "098af1d62b90988e3b631e4cc5d6f64de993f525\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "86375cb715801cff82bc6542df40c65e82e0ae50\n",
+   "stdout": "0f8132c40e1dd548d6ab05b866a86161d4a3d582\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6\n",
+   "stdout": "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2\n",
    "stderr": ""
   },
   {
@@ -113,7 +113,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "86375cb715801cff82bc6542df40c65e82e0ae50\n",
+   "stdout": "0f8132c40e1dd548d6ab05b866a86161d4a3d582\n",
    "stderr": ""
   },
   {
@@ -124,7 +124,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6\n",
+   "stdout": "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2\n",
    "stderr": ""
   },
   {
@@ -137,7 +137,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "86375cb715801cff82bc6542df40c65e82e0ae50 adds b\n9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6 adds c\n",
+   "stdout": "0f8132c40e1dd548d6ab05b866a86161d4a3d582 adds b\n705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2 adds c\n",
    "stderr": ""
   },
   {
@@ -150,7 +150,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "+9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6\n+86375cb715801cff82bc6542df40c65e82e0ae50\n",
+   "stdout": "+705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2\n+0f8132c40e1dd548d6ab05b866a86161d4a3d582\n",
    "stderr": ""
   },
   {
@@ -159,8 +159,8 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6^{commit}",
-    "86375cb715801cff82bc6542df40c65e82e0ae50^{commit}"
+    "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2^{commit}",
+    "0f8132c40e1dd548d6ab05b866a86161d4a3d582^{commit}"
    ],
    "stdin": null,
    "returncode": 1,
@@ -173,11 +173,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6^{commit}"
+    "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6\n",
+   "stdout": "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2\n",
    "stderr": ""
   },
   {
@@ -186,11 +186,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "86375cb715801cff82bc6542df40c65e82e0ae50^{commit}"
+    "0f8132c40e1dd548d6ab05b866a86161d4a3d582^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "86375cb715801cff82bc6542df40c65e82e0ae50\n",
+   "stdout": "0f8132c40e1dd548d6ab05b866a86161d4a3d582\n",
    "stderr": ""
   },
   {
@@ -292,7 +292,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6\nadds c\n",
+   "stdout": "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2\nadds c\n",
    "stderr": ""
   },
   {
@@ -327,7 +327,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6\n",
+   "stdout": "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2\n",
    "stderr": ""
   },
   {
@@ -336,7 +336,7 @@
     "tag",
     "-f",
     "rebase-backup/{STAMP}",
-    "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6"
+    "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2"
    ],
    "stdin": null,
    "returncode": 0,
@@ -347,7 +347,7 @@
    "type": "git",
    "args": [
     "rev-parse",
-    "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6^{tree}"
+    "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2^{tree}"
    ],
    "stdin": null,
    "returncode": 0,
@@ -362,7 +362,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "06e9825d0ef7d22417ddfb6e831c992f0de22161\n",
+   "stdout": "098af1d62b90988e3b631e4cc5d6f64de993f525\n",
    "stderr": ""
   },
   {
@@ -520,7 +520,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "7e968a03dd521dfd7444416ddd9f10ab76d6e359\nadds b\n",
+   "stdout": "09c2c96b07080f59ff6674df0d61d28b75e77926\nadds b\n",
    "stderr": ""
   },
   {
@@ -540,7 +540,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T143320\",\n \"backup_sha\": \"9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6\",\n \"backup_tree\": \"4d10eab7af281b5dbad1f0c996f375f0317f1202\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"06e9825d0ef7d22417ddfb6e831c992f0de22161\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151159\",\n \"backup_sha\": \"705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2\",\n \"backup_tree\": \"4d10eab7af281b5dbad1f0c996f375f0317f1202\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"098af1d62b90988e3b631e4cc5d6f64de993f525\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -559,7 +559,7 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T143320\",\n \"backup_sha\": \"9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6\",\n \"backup_tree\": \"4d10eab7af281b5dbad1f0c996f375f0317f1202\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"06e9825d0ef7d22417ddfb6e831c992f0de22161\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151159\",\n \"backup_sha\": \"705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2\",\n \"backup_tree\": \"4d10eab7af281b5dbad1f0c996f375f0317f1202\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"098af1d62b90988e3b631e4cc5d6f64de993f525\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
@@ -578,28 +578,28 @@
    "op": "read_text",
    "path": "{REPO}/.git/rebase-mcp.json",
    "ok": true,
-   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T143320\",\n \"backup_sha\": \"9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6\",\n \"backup_tree\": \"4d10eab7af281b5dbad1f0c996f375f0317f1202\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"06e9825d0ef7d22417ddfb6e831c992f0de22161\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T151159\",\n \"backup_sha\": \"705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2\",\n \"backup_tree\": \"4d10eab7af281b5dbad1f0c996f375f0317f1202\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"098af1d62b90988e3b631e4cc5d6f64de993f525\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
   },
   {
    "type": "git",
    "args": [
     "rev-parse",
-    "06e9825d0ef7d22417ddfb6e831c992f0de22161..HEAD"
+    "098af1d62b90988e3b631e4cc5d6f64de993f525..HEAD"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "7e968a03dd521dfd7444416ddd9f10ab76d6e359\n^06e9825d0ef7d22417ddfb6e831c992f0de22161\n",
+   "stdout": "09c2c96b07080f59ff6674df0d61d28b75e77926\n^098af1d62b90988e3b631e4cc5d6f64de993f525\n",
    "stderr": ""
   },
   {
    "type": "git",
    "args": [
     "rev-list",
-    "06e9825d0ef7d22417ddfb6e831c992f0de22161..HEAD"
+    "098af1d62b90988e3b631e4cc5d6f64de993f525..HEAD"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "7e968a03dd521dfd7444416ddd9f10ab76d6e359\n679be6fa0ccbb8588305ca60c79093a629ee9e32\n",
+   "stdout": "09c2c96b07080f59ff6674df0d61d28b75e77926\n0e7bb148bed5c03dda7376b18cfb1cf2b89e2efb\n",
    "stderr": ""
   },
   {
@@ -610,7 +610,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "7e968a03dd521dfd7444416ddd9f10ab76d6e359\n",
+   "stdout": "09c2c96b07080f59ff6674df0d61d28b75e77926\n",
    "stderr": ""
   },
   {
@@ -642,7 +642,7 @@
     "ls-tree",
     "-r",
     "--name-only",
-    "9b4e5ee97fa0d501a94b37e62b96a2c2cf31a4a6"
+    "705a8a2f4da2b54d1be3b409ca3dcfca00db8fc2"
    ],
    "stdin": null,
    "returncode": 0,

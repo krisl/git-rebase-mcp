@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "134974dd007e9424788f124afda78eb349adddd5\n",
+   "stdout": "8394dc2ae2d61e7d94eb1ada2bc5f11be2289525\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "7428ddf08c0531c141a6ec2abb12b938ba15b6d8\n",
+   "stdout": "bd3f77da4649c77aac9b8650fa028e21e59a72e6\n",
    "stderr": ""
   },
   {
@@ -78,7 +78,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "7428ddf08c0531c141a6ec2abb12b938ba15b6d8\n",
+   "stdout": "bd3f77da4649c77aac9b8650fa028e21e59a72e6\n",
    "stderr": ""
   },
   {
@@ -93,11 +93,11 @@
     "^\\|\\|\\|\\|\\|\\|\\|",
     "-e",
     "^>>>>>>>",
-    "7428ddf08c0531c141a6ec2abb12b938ba15b6d8"
+    "bd3f77da4649c77aac9b8650fa028e21e59a72e6"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "7428ddf08c0531c141a6ec2abb12b938ba15b6d8:test_fixture\n",
+   "stdout": "bd3f77da4649c77aac9b8650fa028e21e59a72e6:test_fixture\n",
    "stderr": ""
   },
   {
@@ -112,13 +112,13 @@
     "^\\|\\|\\|\\|\\|\\|\\|",
     "-e",
     "^>>>>>>>",
-    "7428ddf08c0531c141a6ec2abb12b938ba15b6d8^",
+    "bd3f77da4649c77aac9b8650fa028e21e59a72e6^",
     "--",
     "test_fixture"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "7428ddf08c0531c141a6ec2abb12b938ba15b6d8^:test_fixture\n",
+   "stdout": "bd3f77da4649c77aac9b8650fa028e21e59a72e6^:test_fixture\n",
    "stderr": ""
   }
  ]

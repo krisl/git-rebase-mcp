@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "9135d04db1fa647694d3b465702f8c48162ac851\n",
+   "stdout": "8b2e8985bb4c5b73e02927b704a5e88989be86ee\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "49bc50044646d2034b449a7c3ed503a919bc8677\n",
+   "stdout": "d9d520ca0507af094923cb0571309fc8c314e818\n",
    "stderr": ""
   },
   {
@@ -102,7 +102,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "53be855269f7b0698b2de501ca8a20484b153d04\n",
+   "stdout": "55a92792bb702ae975dda06ba285909c76fedd22\n",
    "stderr": ""
   },
   {
@@ -137,7 +137,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "69579048da2e8539e6817a644564a3d7db3a896c\n",
+   "stdout": "3c4c665d34625235d49590b0347e4559c380a5ce\n",
    "stderr": ""
   },
   {
@@ -150,7 +150,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "49bc50044646d2034b449a7c3ed503a919bc8677 adds b\n53be855269f7b0698b2de501ca8a20484b153d04 adds c\n69579048da2e8539e6817a644564a3d7db3a896c adds d\n",
+   "stdout": "d9d520ca0507af094923cb0571309fc8c314e818 adds b\n55a92792bb702ae975dda06ba285909c76fedd22 adds c\n3c4c665d34625235d49590b0347e4559c380a5ce adds d\n",
    "stderr": ""
   },
   {
@@ -163,7 +163,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "49bc50044646d2034b449a7c3ed503a919bc8677 adds b\n53be855269f7b0698b2de501ca8a20484b153d04 adds c\n69579048da2e8539e6817a644564a3d7db3a896c adds d\n",
+   "stdout": "d9d520ca0507af094923cb0571309fc8c314e818 adds b\n55a92792bb702ae975dda06ba285909c76fedd22 adds c\n3c4c665d34625235d49590b0347e4559c380a5ce adds d\n",
    "stderr": ""
   },
   {
@@ -176,7 +176,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "+69579048da2e8539e6817a644564a3d7db3a896c\n+53be855269f7b0698b2de501ca8a20484b153d04\n+49bc50044646d2034b449a7c3ed503a919bc8677\n",
+   "stdout": "+3c4c665d34625235d49590b0347e4559c380a5ce\n+55a92792bb702ae975dda06ba285909c76fedd22\n+d9d520ca0507af094923cb0571309fc8c314e818\n",
    "stderr": ""
   },
   {
@@ -185,9 +185,9 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "49bc50044646d2034b449a7c3ed503a919bc8677^{commit}",
-    "69579048da2e8539e6817a644564a3d7db3a896c^{commit}",
-    "53be855269f7b0698b2de501ca8a20484b153d04^{commit}"
+    "d9d520ca0507af094923cb0571309fc8c314e818^{commit}",
+    "3c4c665d34625235d49590b0347e4559c380a5ce^{commit}",
+    "55a92792bb702ae975dda06ba285909c76fedd22^{commit}"
    ],
    "stdin": null,
    "returncode": 1,
@@ -200,11 +200,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "49bc50044646d2034b449a7c3ed503a919bc8677^{commit}"
+    "d9d520ca0507af094923cb0571309fc8c314e818^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "49bc50044646d2034b449a7c3ed503a919bc8677\n",
+   "stdout": "d9d520ca0507af094923cb0571309fc8c314e818\n",
    "stderr": ""
   },
   {
@@ -213,11 +213,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "69579048da2e8539e6817a644564a3d7db3a896c^{commit}"
+    "3c4c665d34625235d49590b0347e4559c380a5ce^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "69579048da2e8539e6817a644564a3d7db3a896c\n",
+   "stdout": "3c4c665d34625235d49590b0347e4559c380a5ce\n",
    "stderr": ""
   },
   {
@@ -226,11 +226,11 @@
     "rev-parse",
     "--verify",
     "--quiet",
-    "53be855269f7b0698b2de501ca8a20484b153d04^{commit}"
+    "55a92792bb702ae975dda06ba285909c76fedd22^{commit}"
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "53be855269f7b0698b2de501ca8a20484b153d04\n",
+   "stdout": "55a92792bb702ae975dda06ba285909c76fedd22\n",
    "stderr": ""
   }
  ]

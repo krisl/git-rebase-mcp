@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "50441702f551f3c419467b66aa2aaaf08fc4bbee\n",
+   "stdout": "1c8b76a39a83c52a60e867bef0ff7db196220b67\n",
    "stderr": ""
   },
   {
@@ -80,7 +80,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8038e6f0b2fc250d1408ae75b80a84d496d77e57\n",
+   "stdout": "b3fe809db3137b32fbdadd06a5ec694785531430\n",
    "stderr": ""
   },
   {
@@ -127,7 +127,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "ff2c22ff1ee7b59608d334ae636a3f151ee51a40\n",
+   "stdout": "a9ad446fba368a02329c3951bc856706d215f8cb\n",
    "stderr": ""
   },
   {
@@ -140,7 +140,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "ff2c22ff1ee7b59608d334ae636a3f151ee51a40 the work, as originally written\n",
+   "stdout": "a9ad446fba368a02329c3951bc856706d215f8cb the work, as originally written\n",
    "stderr": ""
   },
   {
@@ -153,7 +153,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "=ff2c22ff1ee7b59608d334ae636a3f151ee51a40\n",
+   "stdout": "=a9ad446fba368a02329c3951bc856706d215f8cb\n",
    "stderr": ""
   },
   {
@@ -164,7 +164,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "ff2c22ff1ee7b59608d334ae636a3f151ee51a40\n",
+   "stdout": "a9ad446fba368a02329c3951bc856706d215f8cb\n",
    "stderr": ""
   },
   {
@@ -175,7 +175,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "8038e6f0b2fc250d1408ae75b80a84d496d77e57\n",
+   "stdout": "b3fe809db3137b32fbdadd06a5ec694785531430\n",
    "stderr": ""
   },
   {
@@ -183,8 +183,8 @@
    "args": [
     "merge-base",
     "--is-ancestor",
-    "8038e6f0b2fc250d1408ae75b80a84d496d77e57",
-    "ff2c22ff1ee7b59608d334ae636a3f151ee51a40"
+    "b3fe809db3137b32fbdadd06a5ec694785531430",
+    "a9ad446fba368a02329c3951bc856706d215f8cb"
    ],
    "stdin": null,
    "returncode": 1,
@@ -196,8 +196,8 @@
    "args": [
     "merge-base",
     "--is-ancestor",
-    "ff2c22ff1ee7b59608d334ae636a3f151ee51a40",
-    "8038e6f0b2fc250d1408ae75b80a84d496d77e57"
+    "a9ad446fba368a02329c3951bc856706d215f8cb",
+    "b3fe809db3137b32fbdadd06a5ec694785531430"
    ],
    "stdin": null,
    "returncode": 1,
@@ -303,7 +303,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "ff2c22ff1ee7b59608d334ae636a3f151ee51a40\nthe work, as originally written\n",
+   "stdout": "a9ad446fba368a02329c3951bc856706d215f8cb\nthe work, as originally written\n",
    "stderr": ""
   },
   {

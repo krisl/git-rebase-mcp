@@ -32,7 +32,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "aadf1c90cf619b37f5cb7cca8d636d4da7f18c8b\n",
+   "stdout": "c71884cbcc990047ca3bff3418b0eb612e3cc4da\n",
    "stderr": ""
   },
   {
@@ -67,7 +67,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "dc601adff66b7f7cd7078ece9dc2e08d4b8f59f0\n",
+   "stdout": "969d1323edcd210dba576de112c2e1a8a0d514b0\n",
    "stderr": ""
   },
   {
@@ -78,7 +78,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "dc601adff66b7f7cd7078ece9dc2e08d4b8f59f0\n",
+   "stdout": "969d1323edcd210dba576de112c2e1a8a0d514b0\n",
    "stderr": ""
   },
   {
@@ -127,7 +127,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "4907f543d8bf2414bba1059bb6845afd571260e5\n",
+   "stdout": "ed83c665f8e2cb787d552ffb9aeed6905a641df3\n",
    "stderr": ""
   },
   {
@@ -138,7 +138,7 @@
    ],
    "stdin": null,
    "returncode": 0,
-   "stdout": "4907f543d8bf2414bba1059bb6845afd571260e5\n",
+   "stdout": "ed83c665f8e2cb787d552ffb9aeed6905a641df3\n",
    "stderr": ""
   },
   {
@@ -162,12 +162,12 @@
     "core.editor=true",
     "rebase",
     "-i",
-    "dc601adff66b7f7cd7078ece9dc2e08d4b8f59f0"
+    "969d1323edcd210dba576de112c2e1a8a0d514b0"
    ],
    "stdin": null,
    "returncode": 1,
    "stdout": "Auto-merging f\nCONFLICT (add/add): Merge conflict in f\n",
-   "stderr": "Rebasing (1/1)\nerror: could not apply 4907f54... side adds\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 4907f54... \n"
+   "stderr": "Rebasing (1/1)\nerror: could not apply ed83c66... side adds\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply ed83c66... \n"
   },
   {
    "type": "git",
