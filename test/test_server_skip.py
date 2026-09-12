@@ -51,3 +51,16 @@ def test_skipping_where_no_commit_is_being_replayed_is_refused(scratch: Scratch)
 
     with pytest.raises(ValueError, match="nothing to skip"):
         skip(str(scratch.path))
+
+
+def test_skipping_an_empty_pick_drops_it_and_carries_on(scratch: Scratch) -> None:
+    """A pick whose change already landed stops with nothing applied but a
+    commit still in question; git answers that stop with --skip, and so here."""
+    scratch.commit("base", f="one\n")
+    scratch.commit("change", f="two\n")
+    change = scratch.git.out("rev-parse", "HEAD")
+    rebase_start("HEAD~1", str(scratch.path), [f"pick {change}"], onto="HEAD")
+
+    report = skip(str(scratch.path))
+    assert report.state == "not_rebasing"
+    assert scratch.subjects() == ["change", "base"]

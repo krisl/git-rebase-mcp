@@ -2861,10 +2861,14 @@ def skip(repo: str = ".", auto_resolve: bool = False) -> StatusReport:
     commit, and at a `break` or a failing `exec` there is no commit in question.
     A merge applies a branch rather than a commit, so git offers it nothing to
     skip with.
+
+    An empty pick is the exception: a pick whose change already landed stops
+    with nothing applied but a commit still in question -- the one to drop.
+    Git answers that stop with --skip itself, and so does this.
     """
     git = _git(repo)
     state = read_state(git)
-    if isinstance(state, StoppedWithoutApply):
+    if isinstance(state, StoppedWithoutApply) and state.action != "pick":
         raise ValueError(
             f"Refusing to skip: stopped at `{state.action}`, which is not replaying a "
             "commit, so there is nothing to skip. Continue instead."
