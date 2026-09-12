@@ -1,0 +1,253 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "b39e5ab53547c6ae9d0d4b08766061246c1022b3\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "second"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "033ae4c257c353181de158c5b5b7a1b19ba353a6\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "stash",
+    "push",
+    "--include-untracked",
+    "--quiet",
+    "--",
+    "pytest.ini"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "stash@{0}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "b10e977e6540aa37c9dd2ea8b6a70b42e9b4981a\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "033ae4c257c353181de158c5b5b7a1b19ba353a6\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "tag",
+    "-f",
+    "rebase-backup/test",
+    "033ae4c257c353181de158c5b5b7a1b19ba353a6"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "033ae4c257c353181de158c5b5b7a1b19ba353a6^{tree}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "280bd343acd3b99e6f369110283329b8c3c5be24\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "write_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": 449
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "rewritten by git before it gave up"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "07fea54da6f0cbdb6965fbf9f0ceff9f1e7667e2\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "07fea54da6f0cbdb6965fbf9f0ceff9f1e7667e2\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "rebase-backup/test"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "033ae4c257c353181de158c5b5b7a1b19ba353a6\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": "{\n \"backup_ref\": \"rebase-backup/test\",\n \"backup_sha\": \"033ae4c257c353181de158c5b5b7a1b19ba353a6\",\n \"backup_tree\": \"280bd343acd3b99e6f369110283329b8c3c5be24\",\n \"base\": \"HEAD~1\",\n \"base_sha\": \"033ae4c257c353181de158c5b5b7a1b19ba353a6\",\n \"upstream_sha\": \"\",\n \"stashed\": [\n  \"pytest.ini\"\n ],\n \"stash_ref\": \"b10e977e6540aa37c9dd2ea8b6a70b42e9b4981a\",\n \"check_command\": \"pytest -q\",\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "stash",
+    "list"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "stash@{0}: WIP on main: 033ae4c second\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "stash@{0}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "b10e977e6540aa37c9dd2ea8b6a70b42e9b4981a\n",
+   "stderr": ""
+  }
+ ]
+}
