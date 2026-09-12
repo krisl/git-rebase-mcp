@@ -1,0 +1,62 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "check-attr",
+    "diff",
+    "--",
+    "report.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "report.py: diff: unspecified\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "core.attributesFile={ABS}",
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpah8rrx1q/before/report.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpah8rrx1q/after/report.py\nindex f68ca3a..187d487 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpah8rrx1q/before/report.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpah8rrx1q/after/report.py\n@@ -5,0 +6 @@ def render(self):\n+\ue000region 0\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "check-attr",
+    "diff",
+    "--",
+    "report.txt"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "report.txt: diff: unspecified\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "core.attributesFile={ABS}",
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpkkheki_m/before/report.txt b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpkkheki_m/after/report.txt\nindex f68ca3a..187d487 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpkkheki_m/before/report.txt\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpkkheki_m/after/report.txt\n@@ -5,0 +6 @@ class Report:\n+\ue000region 0\n",
+   "stderr": ""
+  }
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "check-attr",
+    "diff",
+    "--",
+    "report.inc"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "report.inc: diff: python\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "core.attributesFile={ABS}",
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpk5pez3vd/before/report.inc b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpk5pez3vd/after/report.inc\nindex 46628a4..172037a 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpk5pez3vd/before/report.inc\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpk5pez3vd/after/report.inc\n@@ -2,0 +3 @@ def render(self):\n+\ue000region 0\n",
+   "stderr": ""
+  }
+ ]
+}

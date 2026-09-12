@@ -1,0 +1,219 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "b57b340355ebbdd284bad44a2cb5eb6c5e4eff98\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "branch adds"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "48a68879a581126c8ab43ee24fbc14be111b5422\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "48a68879a581126c8ab43ee24fbc14be111b5422\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "-b",
+    "side",
+    "HEAD~1"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "side adds"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "02b8693557cd9540dc3b35749e3a82596ff13e8f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "02b8693557cd9540dc3b35749e3a82596ff13e8f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "main"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "sequence.editor=cp {REPO}/.todo",
+    "-c",
+    "core.editor=true",
+    "rebase",
+    "-i",
+    "48a68879a581126c8ab43ee24fbc14be111b5422"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "Auto-merging f\nCONFLICT (add/add): Merge conflict in f\n",
+   "stderr": "Rebasing (1/1)\nerror: could not apply 02b8693... side adds\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 02b8693... \n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":1:f"
+   ],
+   "stdin": null,
+   "returncode": 128,
+   "stdout": "",
+   "stderr": "fatal: path 'f' is in the index, but not at stage 1\nhint: Did you mean ':2:f'?\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":2:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "from branch\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":3:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "from side\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":1:f"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  }
+ ]
+}

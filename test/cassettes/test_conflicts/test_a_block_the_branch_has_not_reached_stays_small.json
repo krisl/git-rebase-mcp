@@ -1,0 +1,301 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "796ef3c41f6be3afe71ee0ba3d45bb2f35b79948\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "adds a hundred later tests"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "ca990928a7536e2abe1d7ce7b84d91edc820530c\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "appends one more"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "3ff91847cd2b52a48387f4538f9921b20ff6f02d\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "3ff91847cd2b52a48387f4538f9921b20ff6f02d\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "sequence.editor=cp {REPO}/.todo",
+    "-c",
+    "core.editor=true",
+    "rebase",
+    "-i",
+    "--onto",
+    "HEAD~2",
+    "HEAD~1"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "Auto-merging f.py\nCONFLICT (content): Merge conflict in f.py\n",
+   "stderr": "Rebasing (1/1)\nerror: could not apply 3ff9184... appends one more\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f.py'\nCould not apply 3ff9184... \n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":1:f.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "def test_0(): pass\ndef test_1(): pass\ndef test_2(): pass\ndef test_3(): pass\ndef test_4(): pass\ndef test_5(): pass\ndef test_6(): pass\ndef test_7(): pass\ndef test_8(): pass\ndef test_9(): pass\ndef test_10(): pass\ndef test_11(): pass\ndef test_12(): pass\ndef test_13(): pass\ndef test_14(): pass\ndef test_15(): pass\ndef test_16(): pass\ndef test_17(): pass\ndef test_18(): pass\ndef test_19(): pass\ndef test_20(): pass\ndef test_21(): pass\ndef test_22(): pass\ndef test_23(): pass\ndef test_24(): pass\ndef test_25(): pass\ndef test_26(): pass\ndef test_27(): pass\ndef test_28(): pass\ndef test_29(): pass\ndef test_30(): pass\ndef test_31(): pass\ndef test_32(): pass\ndef test_33(): pass\ndef test_34(): pass\ndef test_35(): pass\ndef test_36(): pass\ndef test_37(): pass\ndef test_38(): pass\ndef test_39(): pass\ndef test_40(): pass\ndef test_41(): pass\ndef test_42(): pass\ndef test_43(): pass\ndef test_44(): pass\ndef test_45(): pass\ndef test_46(): pass\ndef test_47(): pass\ndef test_48(): pass\ndef test_49(): pass\ndef test_50(): pass\ndef test_51(): pass\ndef test_52(): pass\ndef test_53(): pass\ndef test_54(): pass\ndef test_55(): pass\ndef test_56(): pass\ndef test_57(): pass\ndef test_58(): pass\ndef test_59(): pass\ndef test_60(): pass\ndef test_61(): pass\ndef test_62(): pass\ndef test_63(): pass\ndef test_64(): pass\ndef test_65(): pass\ndef test_66(): pass\ndef test_67(): pass\ndef test_68(): pass\ndef test_69(): pass\ndef test_70(): pass\ndef test_71(): pass\ndef test_72(): pass\ndef test_73(): pass\ndef test_74(): pass\ndef test_75(): pass\ndef test_76(): pass\ndef test_77(): pass\ndef test_78(): pass\ndef test_79(): pass\ndef test_80(): pass\ndef test_81(): pass\ndef test_82(): pass\ndef test_83(): pass\ndef test_84(): pass\ndef test_85(): pass\ndef test_86(): pass\ndef test_87(): pass\ndef test_88(): pass\ndef test_89(): pass\ndef test_90(): pass\ndef test_91(): pass\ndef test_92(): pass\ndef test_93(): pass\ndef test_94(): pass\ndef test_95(): pass\ndef test_96(): pass\ndef test_97(): pass\ndef test_98(): pass\ndef test_99(): pass\ndef test_100(): pass\ndef test_101(): pass\ndef test_102(): pass\ndef test_103(): pass\ndef test_104(): pass\ndef test_105(): pass\ndef test_106(): pass\ndef test_107(): pass\ndef test_108(): pass\ndef test_109(): pass\ndef test_110(): pass\ndef test_111(): pass\ndef test_112(): pass\ndef test_113(): pass\ndef test_114(): pass\ndef test_115(): pass\ndef test_116(): pass\ndef test_117(): pass\ndef test_118(): pass\ndef test_119(): pass\ndef test_120(): pass\ndef test_121(): pass\ndef test_122(): pass\ndef test_123(): pass\ndef test_124(): pass\ndef test_125(): pass\ndef test_126(): pass\ndef test_127(): pass\ndef test_128(): pass\ndef test_129(): pass\ndef test_130(): pass\ndef test_131(): pass\ndef test_132(): pass\ndef test_133(): pass\ndef test_134(): pass\ndef test_135(): pass\ndef test_136(): pass\ndef test_137(): pass\ndef test_138(): pass\ndef test_139(): pass\ndef test_140(): pass\ndef test_141(): pass\ndef test_142(): pass\ndef test_143(): pass\ndef test_144(): pass\ndef test_145(): pass\ndef test_146(): pass\ndef test_147(): pass\ndef test_148(): pass\ndef test_149(): pass\ndef test_150(): pass\ndef test_151(): pass\ndef test_152(): pass\ndef test_153(): pass\ndef test_154(): pass\ndef test_155(): pass\ndef test_156(): pass\ndef test_157(): pass\ndef test_158(): pass\ndef test_159(): pass\ndef test_160(): pass\ndef test_161(): pass\ndef test_162(): pass\ndef test_163(): pass\ndef test_164(): pass\ndef test_165(): pass\ndef test_166(): pass\ndef test_167(): pass\ndef test_168(): pass\ndef test_169(): pass\ndef test_170(): pass\ndef test_171(): pass\ndef test_172(): pass\ndef test_173(): pass\ndef test_174(): pass\ndef test_175(): pass\ndef test_176(): pass\ndef test_177(): pass\ndef test_178(): pass\ndef test_179(): pass\ndef test_180(): pass\ndef test_181(): pass\ndef test_182(): pass\ndef test_183(): pass\ndef test_184(): pass\ndef test_185(): pass\ndef test_186(): pass\ndef test_187(): pass\ndef test_188(): pass\ndef test_189(): pass\ndef test_190(): pass\ndef test_191(): pass\ndef test_192(): pass\ndef test_193(): pass\ndef test_194(): pass\ndef test_195(): pass\ndef test_196(): pass\ndef test_197(): pass\ndef test_198(): pass\ndef test_199(): pass\ndef test_200(): pass\ndef test_201(): pass\ndef test_202(): pass\ndef test_203(): pass\ndef test_204(): pass\ndef test_205(): pass\ndef test_206(): pass\ndef test_207(): pass\ndef test_208(): pass\ndef test_209(): pass\ndef test_210(): pass\ndef test_211(): pass\ndef test_212(): pass\ndef test_213(): pass\ndef test_214(): pass\ndef test_215(): pass\ndef test_216(): pass\ndef test_217(): pass\ndef test_218(): pass\ndef test_219(): pass\ndef test_220(): pass\ndef test_221(): pass\ndef test_222(): pass\ndef test_223(): pass\ndef test_224(): pass\ndef test_225(): pass\ndef test_226(): pass\ndef test_227(): pass\ndef test_228(): pass\ndef test_229(): pass\ndef test_230(): pass\ndef test_231(): pass\ndef test_232(): pass\ndef test_233(): pass\ndef test_234(): pass\ndef test_235(): pass\ndef test_236(): pass\ndef test_237(): pass\ndef test_238(): pass\ndef test_239(): pass\ndef test_240(): pass\ndef test_241(): pass\ndef test_242(): pass\ndef test_243(): pass\ndef test_244(): pass\ndef test_245(): pass\ndef test_246(): pass\ndef test_247(): pass\ndef test_248(): pass\ndef test_249(): pass\ndef test_250(): pass\ndef test_251(): pass\ndef test_252(): pass\ndef test_253(): pass\ndef test_254(): pass\ndef test_255(): pass\ndef test_256(): pass\ndef test_257(): pass\ndef test_258(): pass\ndef test_259(): pass\ndef test_260(): pass\ndef test_261(): pass\ndef test_262(): pass\ndef test_263(): pass\ndef test_264(): pass\ndef test_265(): pass\ndef test_266(): pass\ndef test_267(): pass\ndef test_268(): pass\ndef test_269(): pass\ndef test_270(): pass\ndef test_271(): pass\ndef test_272(): pass\ndef test_273(): pass\ndef test_274(): pass\ndef test_275(): pass\ndef test_276(): pass\ndef test_277(): pass\ndef test_278(): pass\ndef test_279(): pass\ndef test_280(): pass\ndef test_281(): pass\ndef test_282(): pass\ndef test_283(): pass\ndef test_284(): pass\ndef test_285(): pass\ndef test_286(): pass\ndef test_287(): pass\ndef test_288(): pass\ndef test_289(): pass\ndef test_290(): pass\ndef test_291(): pass\ndef test_292(): pass\ndef test_293(): pass\ndef test_294(): pass\ndef test_295(): pass\ndef test_296(): pass\ndef test_297(): pass\ndef test_298(): pass\ndef test_299(): pass\ndef later_0(): pass\ndef later_1(): pass\ndef later_2(): pass\ndef later_3(): pass\ndef later_4(): pass\ndef later_5(): pass\ndef later_6(): pass\ndef later_7(): pass\ndef later_8(): pass\ndef later_9(): pass\ndef later_10(): pass\ndef later_11(): pass\ndef later_12(): pass\ndef later_13(): pass\ndef later_14(): pass\ndef later_15(): pass\ndef later_16(): pass\ndef later_17(): pass\ndef later_18(): pass\ndef later_19(): pass\ndef later_20(): pass\ndef later_21(): pass\ndef later_22(): pass\ndef later_23(): pass\ndef later_24(): pass\ndef later_25(): pass\ndef later_26(): pass\ndef later_27(): pass\ndef later_28(): pass\ndef later_29(): pass\ndef later_30(): pass\ndef later_31(): pass\ndef later_32(): pass\ndef later_33(): pass\ndef later_34(): pass\ndef later_35(): pass\ndef later_36(): pass\ndef later_37(): pass\ndef later_38(): pass\ndef later_39(): pass\ndef later_40(): pass\ndef later_41(): pass\ndef later_42(): pass\ndef later_43(): pass\ndef later_44(): pass\ndef later_45(): pass\ndef later_46(): pass\ndef later_47(): pass\ndef later_48(): pass\ndef later_49(): pass\ndef later_50(): pass\ndef later_51(): pass\ndef later_52(): pass\ndef later_53(): pass\ndef later_54(): pass\ndef later_55(): pass\ndef later_56(): pass\ndef later_57(): pass\ndef later_58(): pass\ndef later_59(): pass\ndef later_60(): pass\ndef later_61(): pass\ndef later_62(): pass\ndef later_63(): pass\ndef later_64(): pass\ndef later_65(): pass\ndef later_66(): pass\ndef later_67(): pass\ndef later_68(): pass\ndef later_69(): pass\ndef later_70(): pass\ndef later_71(): pass\ndef later_72(): pass\ndef later_73(): pass\ndef later_74(): pass\ndef later_75(): pass\ndef later_76(): pass\ndef later_77(): pass\ndef later_78(): pass\ndef later_79(): pass\ndef later_80(): pass\ndef later_81(): pass\ndef later_82(): pass\ndef later_83(): pass\ndef later_84(): pass\ndef later_85(): pass\ndef later_86(): pass\ndef later_87(): pass\ndef later_88(): pass\ndef later_89(): pass\ndef later_90(): pass\ndef later_91(): pass\ndef later_92(): pass\ndef later_93(): pass\ndef later_94(): pass\ndef later_95(): pass\ndef later_96(): pass\ndef later_97(): pass\ndef later_98(): pass\ndef later_99(): pass\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":2:f.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "def test_0(): pass\ndef test_1(): pass\ndef test_2(): pass\ndef test_3(): pass\ndef test_4(): pass\ndef test_5(): pass\ndef test_6(): pass\ndef test_7(): pass\ndef test_8(): pass\ndef test_9(): pass\ndef test_10(): pass\ndef test_11(): pass\ndef test_12(): pass\ndef test_13(): pass\ndef test_14(): pass\ndef test_15(): pass\ndef test_16(): pass\ndef test_17(): pass\ndef test_18(): pass\ndef test_19(): pass\ndef test_20(): pass\ndef test_21(): pass\ndef test_22(): pass\ndef test_23(): pass\ndef test_24(): pass\ndef test_25(): pass\ndef test_26(): pass\ndef test_27(): pass\ndef test_28(): pass\ndef test_29(): pass\ndef test_30(): pass\ndef test_31(): pass\ndef test_32(): pass\ndef test_33(): pass\ndef test_34(): pass\ndef test_35(): pass\ndef test_36(): pass\ndef test_37(): pass\ndef test_38(): pass\ndef test_39(): pass\ndef test_40(): pass\ndef test_41(): pass\ndef test_42(): pass\ndef test_43(): pass\ndef test_44(): pass\ndef test_45(): pass\ndef test_46(): pass\ndef test_47(): pass\ndef test_48(): pass\ndef test_49(): pass\ndef test_50(): pass\ndef test_51(): pass\ndef test_52(): pass\ndef test_53(): pass\ndef test_54(): pass\ndef test_55(): pass\ndef test_56(): pass\ndef test_57(): pass\ndef test_58(): pass\ndef test_59(): pass\ndef test_60(): pass\ndef test_61(): pass\ndef test_62(): pass\ndef test_63(): pass\ndef test_64(): pass\ndef test_65(): pass\ndef test_66(): pass\ndef test_67(): pass\ndef test_68(): pass\ndef test_69(): pass\ndef test_70(): pass\ndef test_71(): pass\ndef test_72(): pass\ndef test_73(): pass\ndef test_74(): pass\ndef test_75(): pass\ndef test_76(): pass\ndef test_77(): pass\ndef test_78(): pass\ndef test_79(): pass\ndef test_80(): pass\ndef test_81(): pass\ndef test_82(): pass\ndef test_83(): pass\ndef test_84(): pass\ndef test_85(): pass\ndef test_86(): pass\ndef test_87(): pass\ndef test_88(): pass\ndef test_89(): pass\ndef test_90(): pass\ndef test_91(): pass\ndef test_92(): pass\ndef test_93(): pass\ndef test_94(): pass\ndef test_95(): pass\ndef test_96(): pass\ndef test_97(): pass\ndef test_98(): pass\ndef test_99(): pass\ndef test_100(): pass\ndef test_101(): pass\ndef test_102(): pass\ndef test_103(): pass\ndef test_104(): pass\ndef test_105(): pass\ndef test_106(): pass\ndef test_107(): pass\ndef test_108(): pass\ndef test_109(): pass\ndef test_110(): pass\ndef test_111(): pass\ndef test_112(): pass\ndef test_113(): pass\ndef test_114(): pass\ndef test_115(): pass\ndef test_116(): pass\ndef test_117(): pass\ndef test_118(): pass\ndef test_119(): pass\ndef test_120(): pass\ndef test_121(): pass\ndef test_122(): pass\ndef test_123(): pass\ndef test_124(): pass\ndef test_125(): pass\ndef test_126(): pass\ndef test_127(): pass\ndef test_128(): pass\ndef test_129(): pass\ndef test_130(): pass\ndef test_131(): pass\ndef test_132(): pass\ndef test_133(): pass\ndef test_134(): pass\ndef test_135(): pass\ndef test_136(): pass\ndef test_137(): pass\ndef test_138(): pass\ndef test_139(): pass\ndef test_140(): pass\ndef test_141(): pass\ndef test_142(): pass\ndef test_143(): pass\ndef test_144(): pass\ndef test_145(): pass\ndef test_146(): pass\ndef test_147(): pass\ndef test_148(): pass\ndef test_149(): pass\ndef test_150(): pass\ndef test_151(): pass\ndef test_152(): pass\ndef test_153(): pass\ndef test_154(): pass\ndef test_155(): pass\ndef test_156(): pass\ndef test_157(): pass\ndef test_158(): pass\ndef test_159(): pass\ndef test_160(): pass\ndef test_161(): pass\ndef test_162(): pass\ndef test_163(): pass\ndef test_164(): pass\ndef test_165(): pass\ndef test_166(): pass\ndef test_167(): pass\ndef test_168(): pass\ndef test_169(): pass\ndef test_170(): pass\ndef test_171(): pass\ndef test_172(): pass\ndef test_173(): pass\ndef test_174(): pass\ndef test_175(): pass\ndef test_176(): pass\ndef test_177(): pass\ndef test_178(): pass\ndef test_179(): pass\ndef test_180(): pass\ndef test_181(): pass\ndef test_182(): pass\ndef test_183(): pass\ndef test_184(): pass\ndef test_185(): pass\ndef test_186(): pass\ndef test_187(): pass\ndef test_188(): pass\ndef test_189(): pass\ndef test_190(): pass\ndef test_191(): pass\ndef test_192(): pass\ndef test_193(): pass\ndef test_194(): pass\ndef test_195(): pass\ndef test_196(): pass\ndef test_197(): pass\ndef test_198(): pass\ndef test_199(): pass\ndef test_200(): pass\ndef test_201(): pass\ndef test_202(): pass\ndef test_203(): pass\ndef test_204(): pass\ndef test_205(): pass\ndef test_206(): pass\ndef test_207(): pass\ndef test_208(): pass\ndef test_209(): pass\ndef test_210(): pass\ndef test_211(): pass\ndef test_212(): pass\ndef test_213(): pass\ndef test_214(): pass\ndef test_215(): pass\ndef test_216(): pass\ndef test_217(): pass\ndef test_218(): pass\ndef test_219(): pass\ndef test_220(): pass\ndef test_221(): pass\ndef test_222(): pass\ndef test_223(): pass\ndef test_224(): pass\ndef test_225(): pass\ndef test_226(): pass\ndef test_227(): pass\ndef test_228(): pass\ndef test_229(): pass\ndef test_230(): pass\ndef test_231(): pass\ndef test_232(): pass\ndef test_233(): pass\ndef test_234(): pass\ndef test_235(): pass\ndef test_236(): pass\ndef test_237(): pass\ndef test_238(): pass\ndef test_239(): pass\ndef test_240(): pass\ndef test_241(): pass\ndef test_242(): pass\ndef test_243(): pass\ndef test_244(): pass\ndef test_245(): pass\ndef test_246(): pass\ndef test_247(): pass\ndef test_248(): pass\ndef test_249(): pass\ndef test_250(): pass\ndef test_251(): pass\ndef test_252(): pass\ndef test_253(): pass\ndef test_254(): pass\ndef test_255(): pass\ndef test_256(): pass\ndef test_257(): pass\ndef test_258(): pass\ndef test_259(): pass\ndef test_260(): pass\ndef test_261(): pass\ndef test_262(): pass\ndef test_263(): pass\ndef test_264(): pass\ndef test_265(): pass\ndef test_266(): pass\ndef test_267(): pass\ndef test_268(): pass\ndef test_269(): pass\ndef test_270(): pass\ndef test_271(): pass\ndef test_272(): pass\ndef test_273(): pass\ndef test_274(): pass\ndef test_275(): pass\ndef test_276(): pass\ndef test_277(): pass\ndef test_278(): pass\ndef test_279(): pass\ndef test_280(): pass\ndef test_281(): pass\ndef test_282(): pass\ndef test_283(): pass\ndef test_284(): pass\ndef test_285(): pass\ndef test_286(): pass\ndef test_287(): pass\ndef test_288(): pass\ndef test_289(): pass\ndef test_290(): pass\ndef test_291(): pass\ndef test_292(): pass\ndef test_293(): pass\ndef test_294(): pass\ndef test_295(): pass\ndef test_296(): pass\ndef test_297(): pass\ndef test_298(): pass\ndef test_299(): pass\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":3:f.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "def test_0(): pass\ndef test_1(): pass\ndef test_2(): pass\ndef test_3(): pass\ndef test_4(): pass\ndef test_5(): pass\ndef test_6(): pass\ndef test_7(): pass\ndef test_8(): pass\ndef test_9(): pass\ndef test_10(): pass\ndef test_11(): pass\ndef test_12(): pass\ndef test_13(): pass\ndef test_14(): pass\ndef test_15(): pass\ndef test_16(): pass\ndef test_17(): pass\ndef test_18(): pass\ndef test_19(): pass\ndef test_20(): pass\ndef test_21(): pass\ndef test_22(): pass\ndef test_23(): pass\ndef test_24(): pass\ndef test_25(): pass\ndef test_26(): pass\ndef test_27(): pass\ndef test_28(): pass\ndef test_29(): pass\ndef test_30(): pass\ndef test_31(): pass\ndef test_32(): pass\ndef test_33(): pass\ndef test_34(): pass\ndef test_35(): pass\ndef test_36(): pass\ndef test_37(): pass\ndef test_38(): pass\ndef test_39(): pass\ndef test_40(): pass\ndef test_41(): pass\ndef test_42(): pass\ndef test_43(): pass\ndef test_44(): pass\ndef test_45(): pass\ndef test_46(): pass\ndef test_47(): pass\ndef test_48(): pass\ndef test_49(): pass\ndef test_50(): pass\ndef test_51(): pass\ndef test_52(): pass\ndef test_53(): pass\ndef test_54(): pass\ndef test_55(): pass\ndef test_56(): pass\ndef test_57(): pass\ndef test_58(): pass\ndef test_59(): pass\ndef test_60(): pass\ndef test_61(): pass\ndef test_62(): pass\ndef test_63(): pass\ndef test_64(): pass\ndef test_65(): pass\ndef test_66(): pass\ndef test_67(): pass\ndef test_68(): pass\ndef test_69(): pass\ndef test_70(): pass\ndef test_71(): pass\ndef test_72(): pass\ndef test_73(): pass\ndef test_74(): pass\ndef test_75(): pass\ndef test_76(): pass\ndef test_77(): pass\ndef test_78(): pass\ndef test_79(): pass\ndef test_80(): pass\ndef test_81(): pass\ndef test_82(): pass\ndef test_83(): pass\ndef test_84(): pass\ndef test_85(): pass\ndef test_86(): pass\ndef test_87(): pass\ndef test_88(): pass\ndef test_89(): pass\ndef test_90(): pass\ndef test_91(): pass\ndef test_92(): pass\ndef test_93(): pass\ndef test_94(): pass\ndef test_95(): pass\ndef test_96(): pass\ndef test_97(): pass\ndef test_98(): pass\ndef test_99(): pass\ndef test_100(): pass\ndef test_101(): pass\ndef test_102(): pass\ndef test_103(): pass\ndef test_104(): pass\ndef test_105(): pass\ndef test_106(): pass\ndef test_107(): pass\ndef test_108(): pass\ndef test_109(): pass\ndef test_110(): pass\ndef test_111(): pass\ndef test_112(): pass\ndef test_113(): pass\ndef test_114(): pass\ndef test_115(): pass\ndef test_116(): pass\ndef test_117(): pass\ndef test_118(): pass\ndef test_119(): pass\ndef test_120(): pass\ndef test_121(): pass\ndef test_122(): pass\ndef test_123(): pass\ndef test_124(): pass\ndef test_125(): pass\ndef test_126(): pass\ndef test_127(): pass\ndef test_128(): pass\ndef test_129(): pass\ndef test_130(): pass\ndef test_131(): pass\ndef test_132(): pass\ndef test_133(): pass\ndef test_134(): pass\ndef test_135(): pass\ndef test_136(): pass\ndef test_137(): pass\ndef test_138(): pass\ndef test_139(): pass\ndef test_140(): pass\ndef test_141(): pass\ndef test_142(): pass\ndef test_143(): pass\ndef test_144(): pass\ndef test_145(): pass\ndef test_146(): pass\ndef test_147(): pass\ndef test_148(): pass\ndef test_149(): pass\ndef test_150(): pass\ndef test_151(): pass\ndef test_152(): pass\ndef test_153(): pass\ndef test_154(): pass\ndef test_155(): pass\ndef test_156(): pass\ndef test_157(): pass\ndef test_158(): pass\ndef test_159(): pass\ndef test_160(): pass\ndef test_161(): pass\ndef test_162(): pass\ndef test_163(): pass\ndef test_164(): pass\ndef test_165(): pass\ndef test_166(): pass\ndef test_167(): pass\ndef test_168(): pass\ndef test_169(): pass\ndef test_170(): pass\ndef test_171(): pass\ndef test_172(): pass\ndef test_173(): pass\ndef test_174(): pass\ndef test_175(): pass\ndef test_176(): pass\ndef test_177(): pass\ndef test_178(): pass\ndef test_179(): pass\ndef test_180(): pass\ndef test_181(): pass\ndef test_182(): pass\ndef test_183(): pass\ndef test_184(): pass\ndef test_185(): pass\ndef test_186(): pass\ndef test_187(): pass\ndef test_188(): pass\ndef test_189(): pass\ndef test_190(): pass\ndef test_191(): pass\ndef test_192(): pass\ndef test_193(): pass\ndef test_194(): pass\ndef test_195(): pass\ndef test_196(): pass\ndef test_197(): pass\ndef test_198(): pass\ndef test_199(): pass\ndef test_200(): pass\ndef test_201(): pass\ndef test_202(): pass\ndef test_203(): pass\ndef test_204(): pass\ndef test_205(): pass\ndef test_206(): pass\ndef test_207(): pass\ndef test_208(): pass\ndef test_209(): pass\ndef test_210(): pass\ndef test_211(): pass\ndef test_212(): pass\ndef test_213(): pass\ndef test_214(): pass\ndef test_215(): pass\ndef test_216(): pass\ndef test_217(): pass\ndef test_218(): pass\ndef test_219(): pass\ndef test_220(): pass\ndef test_221(): pass\ndef test_222(): pass\ndef test_223(): pass\ndef test_224(): pass\ndef test_225(): pass\ndef test_226(): pass\ndef test_227(): pass\ndef test_228(): pass\ndef test_229(): pass\ndef test_230(): pass\ndef test_231(): pass\ndef test_232(): pass\ndef test_233(): pass\ndef test_234(): pass\ndef test_235(): pass\ndef test_236(): pass\ndef test_237(): pass\ndef test_238(): pass\ndef test_239(): pass\ndef test_240(): pass\ndef test_241(): pass\ndef test_242(): pass\ndef test_243(): pass\ndef test_244(): pass\ndef test_245(): pass\ndef test_246(): pass\ndef test_247(): pass\ndef test_248(): pass\ndef test_249(): pass\ndef test_250(): pass\ndef test_251(): pass\ndef test_252(): pass\ndef test_253(): pass\ndef test_254(): pass\ndef test_255(): pass\ndef test_256(): pass\ndef test_257(): pass\ndef test_258(): pass\ndef test_259(): pass\ndef test_260(): pass\ndef test_261(): pass\ndef test_262(): pass\ndef test_263(): pass\ndef test_264(): pass\ndef test_265(): pass\ndef test_266(): pass\ndef test_267(): pass\ndef test_268(): pass\ndef test_269(): pass\ndef test_270(): pass\ndef test_271(): pass\ndef test_272(): pass\ndef test_273(): pass\ndef test_274(): pass\ndef test_275(): pass\ndef test_276(): pass\ndef test_277(): pass\ndef test_278(): pass\ndef test_279(): pass\ndef test_280(): pass\ndef test_281(): pass\ndef test_282(): pass\ndef test_283(): pass\ndef test_284(): pass\ndef test_285(): pass\ndef test_286(): pass\ndef test_287(): pass\ndef test_288(): pass\ndef test_289(): pass\ndef test_290(): pass\ndef test_291(): pass\ndef test_292(): pass\ndef test_293(): pass\ndef test_294(): pass\ndef test_295(): pass\ndef test_296(): pass\ndef test_297(): pass\ndef test_298(): pass\ndef test_299(): pass\ndef later_0(): pass\ndef later_1(): pass\ndef later_2(): pass\ndef later_3(): pass\ndef later_4(): pass\ndef later_5(): pass\ndef later_6(): pass\ndef later_7(): pass\ndef later_8(): pass\ndef later_9(): pass\ndef later_10(): pass\ndef later_11(): pass\ndef later_12(): pass\ndef later_13(): pass\ndef later_14(): pass\ndef later_15(): pass\ndef later_16(): pass\ndef later_17(): pass\ndef later_18(): pass\ndef later_19(): pass\ndef later_20(): pass\ndef later_21(): pass\ndef later_22(): pass\ndef later_23(): pass\ndef later_24(): pass\ndef later_25(): pass\ndef later_26(): pass\ndef later_27(): pass\ndef later_28(): pass\ndef later_29(): pass\ndef later_30(): pass\ndef later_31(): pass\ndef later_32(): pass\ndef later_33(): pass\ndef later_34(): pass\ndef later_35(): pass\ndef later_36(): pass\ndef later_37(): pass\ndef later_38(): pass\ndef later_39(): pass\ndef later_40(): pass\ndef later_41(): pass\ndef later_42(): pass\ndef later_43(): pass\ndef later_44(): pass\ndef later_45(): pass\ndef later_46(): pass\ndef later_47(): pass\ndef later_48(): pass\ndef later_49(): pass\ndef later_50(): pass\ndef later_51(): pass\ndef later_52(): pass\ndef later_53(): pass\ndef later_54(): pass\ndef later_55(): pass\ndef later_56(): pass\ndef later_57(): pass\ndef later_58(): pass\ndef later_59(): pass\ndef later_60(): pass\ndef later_61(): pass\ndef later_62(): pass\ndef later_63(): pass\ndef later_64(): pass\ndef later_65(): pass\ndef later_66(): pass\ndef later_67(): pass\ndef later_68(): pass\ndef later_69(): pass\ndef later_70(): pass\ndef later_71(): pass\ndef later_72(): pass\ndef later_73(): pass\ndef later_74(): pass\ndef later_75(): pass\ndef later_76(): pass\ndef later_77(): pass\ndef later_78(): pass\ndef later_79(): pass\ndef later_80(): pass\ndef later_81(): pass\ndef later_82(): pass\ndef later_83(): pass\ndef later_84(): pass\ndef later_85(): pass\ndef later_86(): pass\ndef later_87(): pass\ndef later_88(): pass\ndef later_89(): pass\ndef later_90(): pass\ndef later_91(): pass\ndef later_92(): pass\ndef later_93(): pass\ndef later_94(): pass\ndef later_95(): pass\ndef later_96(): pass\ndef later_97(): pass\ndef later_98(): pass\ndef later_99(): pass\ndef appended(): pass\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":1:f.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f6e48e498a760f4dabcab30266d326f14c90a622\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":1:f.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f6e48e498a760f4dabcab30266d326f14c90a622\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":2:f.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "84b88ea1e69a5d37cb03bd123c56848883497024\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":3:f.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "880ff456faadb693269c5f7c6cc509471d88a163\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "merge-file",
+    "-p",
+    "--diff3",
+    "-L",
+    "\ue000branch-so-far",
+    "-L",
+    "\ue000base",
+    "-L",
+    "\ue000replaying",
+    "{ABS}",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "def test_0(): pass\ndef test_1(): pass\ndef test_2(): pass\ndef test_3(): pass\ndef test_4(): pass\ndef test_5(): pass\ndef test_6(): pass\ndef test_7(): pass\ndef test_8(): pass\ndef test_9(): pass\ndef test_10(): pass\ndef test_11(): pass\ndef test_12(): pass\ndef test_13(): pass\ndef test_14(): pass\ndef test_15(): pass\ndef test_16(): pass\ndef test_17(): pass\ndef test_18(): pass\ndef test_19(): pass\ndef test_20(): pass\ndef test_21(): pass\ndef test_22(): pass\ndef test_23(): pass\ndef test_24(): pass\ndef test_25(): pass\ndef test_26(): pass\ndef test_27(): pass\ndef test_28(): pass\ndef test_29(): pass\ndef test_30(): pass\ndef test_31(): pass\ndef test_32(): pass\ndef test_33(): pass\ndef test_34(): pass\ndef test_35(): pass\ndef test_36(): pass\ndef test_37(): pass\ndef test_38(): pass\ndef test_39(): pass\ndef test_40(): pass\ndef test_41(): pass\ndef test_42(): pass\ndef test_43(): pass\ndef test_44(): pass\ndef test_45(): pass\ndef test_46(): pass\ndef test_47(): pass\ndef test_48(): pass\ndef test_49(): pass\ndef test_50(): pass\ndef test_51(): pass\ndef test_52(): pass\ndef test_53(): pass\ndef test_54(): pass\ndef test_55(): pass\ndef test_56(): pass\ndef test_57(): pass\ndef test_58(): pass\ndef test_59(): pass\ndef test_60(): pass\ndef test_61(): pass\ndef test_62(): pass\ndef test_63(): pass\ndef test_64(): pass\ndef test_65(): pass\ndef test_66(): pass\ndef test_67(): pass\ndef test_68(): pass\ndef test_69(): pass\ndef test_70(): pass\ndef test_71(): pass\ndef test_72(): pass\ndef test_73(): pass\ndef test_74(): pass\ndef test_75(): pass\ndef test_76(): pass\ndef test_77(): pass\ndef test_78(): pass\ndef test_79(): pass\ndef test_80(): pass\ndef test_81(): pass\ndef test_82(): pass\ndef test_83(): pass\ndef test_84(): pass\ndef test_85(): pass\ndef test_86(): pass\ndef test_87(): pass\ndef test_88(): pass\ndef test_89(): pass\ndef test_90(): pass\ndef test_91(): pass\ndef test_92(): pass\ndef test_93(): pass\ndef test_94(): pass\ndef test_95(): pass\ndef test_96(): pass\ndef test_97(): pass\ndef test_98(): pass\ndef test_99(): pass\ndef test_100(): pass\ndef test_101(): pass\ndef test_102(): pass\ndef test_103(): pass\ndef test_104(): pass\ndef test_105(): pass\ndef test_106(): pass\ndef test_107(): pass\ndef test_108(): pass\ndef test_109(): pass\ndef test_110(): pass\ndef test_111(): pass\ndef test_112(): pass\ndef test_113(): pass\ndef test_114(): pass\ndef test_115(): pass\ndef test_116(): pass\ndef test_117(): pass\ndef test_118(): pass\ndef test_119(): pass\ndef test_120(): pass\ndef test_121(): pass\ndef test_122(): pass\ndef test_123(): pass\ndef test_124(): pass\ndef test_125(): pass\ndef test_126(): pass\ndef test_127(): pass\ndef test_128(): pass\ndef test_129(): pass\ndef test_130(): pass\ndef test_131(): pass\ndef test_132(): pass\ndef test_133(): pass\ndef test_134(): pass\ndef test_135(): pass\ndef test_136(): pass\ndef test_137(): pass\ndef test_138(): pass\ndef test_139(): pass\ndef test_140(): pass\ndef test_141(): pass\ndef test_142(): pass\ndef test_143(): pass\ndef test_144(): pass\ndef test_145(): pass\ndef test_146(): pass\ndef test_147(): pass\ndef test_148(): pass\ndef test_149(): pass\ndef test_150(): pass\ndef test_151(): pass\ndef test_152(): pass\ndef test_153(): pass\ndef test_154(): pass\ndef test_155(): pass\ndef test_156(): pass\ndef test_157(): pass\ndef test_158(): pass\ndef test_159(): pass\ndef test_160(): pass\ndef test_161(): pass\ndef test_162(): pass\ndef test_163(): pass\ndef test_164(): pass\ndef test_165(): pass\ndef test_166(): pass\ndef test_167(): pass\ndef test_168(): pass\ndef test_169(): pass\ndef test_170(): pass\ndef test_171(): pass\ndef test_172(): pass\ndef test_173(): pass\ndef test_174(): pass\ndef test_175(): pass\ndef test_176(): pass\ndef test_177(): pass\ndef test_178(): pass\ndef test_179(): pass\ndef test_180(): pass\ndef test_181(): pass\ndef test_182(): pass\ndef test_183(): pass\ndef test_184(): pass\ndef test_185(): pass\ndef test_186(): pass\ndef test_187(): pass\ndef test_188(): pass\ndef test_189(): pass\ndef test_190(): pass\ndef test_191(): pass\ndef test_192(): pass\ndef test_193(): pass\ndef test_194(): pass\ndef test_195(): pass\ndef test_196(): pass\ndef test_197(): pass\ndef test_198(): pass\ndef test_199(): pass\ndef test_200(): pass\ndef test_201(): pass\ndef test_202(): pass\ndef test_203(): pass\ndef test_204(): pass\ndef test_205(): pass\ndef test_206(): pass\ndef test_207(): pass\ndef test_208(): pass\ndef test_209(): pass\ndef test_210(): pass\ndef test_211(): pass\ndef test_212(): pass\ndef test_213(): pass\ndef test_214(): pass\ndef test_215(): pass\ndef test_216(): pass\ndef test_217(): pass\ndef test_218(): pass\ndef test_219(): pass\ndef test_220(): pass\ndef test_221(): pass\ndef test_222(): pass\ndef test_223(): pass\ndef test_224(): pass\ndef test_225(): pass\ndef test_226(): pass\ndef test_227(): pass\ndef test_228(): pass\ndef test_229(): pass\ndef test_230(): pass\ndef test_231(): pass\ndef test_232(): pass\ndef test_233(): pass\ndef test_234(): pass\ndef test_235(): pass\ndef test_236(): pass\ndef test_237(): pass\ndef test_238(): pass\ndef test_239(): pass\ndef test_240(): pass\ndef test_241(): pass\ndef test_242(): pass\ndef test_243(): pass\ndef test_244(): pass\ndef test_245(): pass\ndef test_246(): pass\ndef test_247(): pass\ndef test_248(): pass\ndef test_249(): pass\ndef test_250(): pass\ndef test_251(): pass\ndef test_252(): pass\ndef test_253(): pass\ndef test_254(): pass\ndef test_255(): pass\ndef test_256(): pass\ndef test_257(): pass\ndef test_258(): pass\ndef test_259(): pass\ndef test_260(): pass\ndef test_261(): pass\ndef test_262(): pass\ndef test_263(): pass\ndef test_264(): pass\ndef test_265(): pass\ndef test_266(): pass\ndef test_267(): pass\ndef test_268(): pass\ndef test_269(): pass\ndef test_270(): pass\ndef test_271(): pass\ndef test_272(): pass\ndef test_273(): pass\ndef test_274(): pass\ndef test_275(): pass\ndef test_276(): pass\ndef test_277(): pass\ndef test_278(): pass\ndef test_279(): pass\ndef test_280(): pass\ndef test_281(): pass\ndef test_282(): pass\ndef test_283(): pass\ndef test_284(): pass\ndef test_285(): pass\ndef test_286(): pass\ndef test_287(): pass\ndef test_288(): pass\ndef test_289(): pass\ndef test_290(): pass\ndef test_291(): pass\ndef test_292(): pass\ndef test_293(): pass\ndef test_294(): pass\ndef test_295(): pass\ndef test_296(): pass\ndef test_297(): pass\ndef test_298(): pass\ndef test_299(): pass\n<<<<<<< \ue000branch-so-far\n||||||| \ue000base\ndef later_0(): pass\ndef later_1(): pass\ndef later_2(): pass\ndef later_3(): pass\ndef later_4(): pass\ndef later_5(): pass\ndef later_6(): pass\ndef later_7(): pass\ndef later_8(): pass\ndef later_9(): pass\ndef later_10(): pass\ndef later_11(): pass\ndef later_12(): pass\ndef later_13(): pass\ndef later_14(): pass\ndef later_15(): pass\ndef later_16(): pass\ndef later_17(): pass\ndef later_18(): pass\ndef later_19(): pass\ndef later_20(): pass\ndef later_21(): pass\ndef later_22(): pass\ndef later_23(): pass\ndef later_24(): pass\ndef later_25(): pass\ndef later_26(): pass\ndef later_27(): pass\ndef later_28(): pass\ndef later_29(): pass\ndef later_30(): pass\ndef later_31(): pass\ndef later_32(): pass\ndef later_33(): pass\ndef later_34(): pass\ndef later_35(): pass\ndef later_36(): pass\ndef later_37(): pass\ndef later_38(): pass\ndef later_39(): pass\ndef later_40(): pass\ndef later_41(): pass\ndef later_42(): pass\ndef later_43(): pass\ndef later_44(): pass\ndef later_45(): pass\ndef later_46(): pass\ndef later_47(): pass\ndef later_48(): pass\ndef later_49(): pass\ndef later_50(): pass\ndef later_51(): pass\ndef later_52(): pass\ndef later_53(): pass\ndef later_54(): pass\ndef later_55(): pass\ndef later_56(): pass\ndef later_57(): pass\ndef later_58(): pass\ndef later_59(): pass\ndef later_60(): pass\ndef later_61(): pass\ndef later_62(): pass\ndef later_63(): pass\ndef later_64(): pass\ndef later_65(): pass\ndef later_66(): pass\ndef later_67(): pass\ndef later_68(): pass\ndef later_69(): pass\ndef later_70(): pass\ndef later_71(): pass\ndef later_72(): pass\ndef later_73(): pass\ndef later_74(): pass\ndef later_75(): pass\ndef later_76(): pass\ndef later_77(): pass\ndef later_78(): pass\ndef later_79(): pass\ndef later_80(): pass\ndef later_81(): pass\ndef later_82(): pass\ndef later_83(): pass\ndef later_84(): pass\ndef later_85(): pass\ndef later_86(): pass\ndef later_87(): pass\ndef later_88(): pass\ndef later_89(): pass\ndef later_90(): pass\ndef later_91(): pass\ndef later_92(): pass\ndef later_93(): pass\ndef later_94(): pass\ndef later_95(): pass\ndef later_96(): pass\ndef later_97(): pass\ndef later_98(): pass\ndef later_99(): pass\n=======\ndef later_0(): pass\ndef later_1(): pass\ndef later_2(): pass\ndef later_3(): pass\ndef later_4(): pass\ndef later_5(): pass\ndef later_6(): pass\ndef later_7(): pass\ndef later_8(): pass\ndef later_9(): pass\ndef later_10(): pass\ndef later_11(): pass\ndef later_12(): pass\ndef later_13(): pass\ndef later_14(): pass\ndef later_15(): pass\ndef later_16(): pass\ndef later_17(): pass\ndef later_18(): pass\ndef later_19(): pass\ndef later_20(): pass\ndef later_21(): pass\ndef later_22(): pass\ndef later_23(): pass\ndef later_24(): pass\ndef later_25(): pass\ndef later_26(): pass\ndef later_27(): pass\ndef later_28(): pass\ndef later_29(): pass\ndef later_30(): pass\ndef later_31(): pass\ndef later_32(): pass\ndef later_33(): pass\ndef later_34(): pass\ndef later_35(): pass\ndef later_36(): pass\ndef later_37(): pass\ndef later_38(): pass\ndef later_39(): pass\ndef later_40(): pass\ndef later_41(): pass\ndef later_42(): pass\ndef later_43(): pass\ndef later_44(): pass\ndef later_45(): pass\ndef later_46(): pass\ndef later_47(): pass\ndef later_48(): pass\ndef later_49(): pass\ndef later_50(): pass\ndef later_51(): pass\ndef later_52(): pass\ndef later_53(): pass\ndef later_54(): pass\ndef later_55(): pass\ndef later_56(): pass\ndef later_57(): pass\ndef later_58(): pass\ndef later_59(): pass\ndef later_60(): pass\ndef later_61(): pass\ndef later_62(): pass\ndef later_63(): pass\ndef later_64(): pass\ndef later_65(): pass\ndef later_66(): pass\ndef later_67(): pass\ndef later_68(): pass\ndef later_69(): pass\ndef later_70(): pass\ndef later_71(): pass\ndef later_72(): pass\ndef later_73(): pass\ndef later_74(): pass\ndef later_75(): pass\ndef later_76(): pass\ndef later_77(): pass\ndef later_78(): pass\ndef later_79(): pass\ndef later_80(): pass\ndef later_81(): pass\ndef later_82(): pass\ndef later_83(): pass\ndef later_84(): pass\ndef later_85(): pass\ndef later_86(): pass\ndef later_87(): pass\ndef later_88(): pass\ndef later_89(): pass\ndef later_90(): pass\ndef later_91(): pass\ndef later_92(): pass\ndef later_93(): pass\ndef later_94(): pass\ndef later_95(): pass\ndef later_96(): pass\ndef later_97(): pass\ndef later_98(): pass\ndef later_99(): pass\ndef appended(): pass\n>>>>>>> \ue000replaying\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpt80bo0sx/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpt80bo0sx/merged\nindex f6e48e4..dfb68d0 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpt80bo0sx/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpt80bo0sx/merged\n@@ -300,0 +301,2 @@ def test_299(): pass\n+<<<<<<< \ue000branch-so-far\n+||||||| \ue000base\n@@ -400,0 +403,103 @@ def later_99(): pass\n+=======\n+def later_0(): pass\n+def later_1(): pass\n+def later_2(): pass\n+def later_3(): pass\n+def later_4(): pass\n+def later_5(): pass\n+def later_6(): pass\n+def later_7(): pass\n+def later_8(): pass\n+def later_9(): pass\n+def later_10(): pass\n+def later_11(): pass\n+def later_12(): pass\n+def later_13(): pass\n+def later_14(): pass\n+def later_15(): pass\n+def later_16(): pass\n+def later_17(): pass\n+def later_18(): pass\n+def later_19(): pass\n+def later_20(): pass\n+def later_21(): pass\n+def later_22(): pass\n+def later_23(): pass\n+def later_24(): pass\n+def later_25(): pass\n+def later_26(): pass\n+def later_27(): pass\n+def later_28(): pass\n+def later_29(): pass\n+def later_30(): pass\n+def later_31(): pass\n+def later_32(): pass\n+def later_33(): pass\n+def later_34(): pass\n+def later_35(): pass\n+def later_36(): pass\n+def later_37(): pass\n+def later_38(): pass\n+def later_39(): pass\n+def later_40(): pass\n+def later_41(): pass\n+def later_42(): pass\n+def later_43(): pass\n+def later_44(): pass\n+def later_45(): pass\n+def later_46(): pass\n+def later_47(): pass\n+def later_48(): pass\n+def later_49(): pass\n+def later_50(): pass\n+def later_51(): pass\n+def later_52(): pass\n+def later_53(): pass\n+def later_54(): pass\n+def later_55(): pass\n+def later_56(): pass\n+def later_57(): pass\n+def later_58(): pass\n+def later_59(): pass\n+def later_60(): pass\n+def later_61(): pass\n+def later_62(): pass\n+def later_63(): pass\n+def later_64(): pass\n+def later_65(): pass\n+def later_66(): pass\n+def later_67(): pass\n+def later_68(): pass\n+def later_69(): pass\n+def later_70(): pass\n+def later_71(): pass\n+def later_72(): pass\n+def later_73(): pass\n+def later_74(): pass\n+def later_75(): pass\n+def later_76(): pass\n+def later_77(): pass\n+def later_78(): pass\n+def later_79(): pass\n+def later_80(): pass\n+def later_81(): pass\n+def later_82(): pass\n+def later_83(): pass\n+def later_84(): pass\n+def later_85(): pass\n+def later_86(): pass\n+def later_87(): pass\n+def later_88(): pass\n+def later_89(): pass\n+def later_90(): pass\n+def later_91(): pass\n+def later_92(): pass\n+def later_93(): pass\n+def later_94(): pass\n+def later_95(): pass\n+def later_96(): pass\n+def later_97(): pass\n+def later_98(): pass\n+def later_99(): pass\n+def appended(): pass\n+>>>>>>> \ue000replaying\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "check-attr",
+    "diff",
+    "--",
+    "f.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f.py: diff: unspecified\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "core.attributesFile={ABS}",
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpne0tvq5i/before/f.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpne0tvq5i/after/f.py\nindex f6e48e4..14b4d38 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpne0tvq5i/before/f.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpne0tvq5i/after/f.py\n@@ -300,0 +301 @@ def test_299(): pass\n+\ue000region 0\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpj4dk_phn/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpj4dk_phn/merged\nindex f6e48e4..880ff45 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpj4dk_phn/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpj4dk_phn/merged\n@@ -400,0 +401 @@ def later_99(): pass\n+def appended(): pass\n",
+   "stderr": ""
+  }
+ ]
+}

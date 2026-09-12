@@ -1,0 +1,33 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "check-attr",
+    "diff",
+    "--",
+    "report.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "report.py: diff: unspecified\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "core.attributesFile={ABS}",
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpufxj536u/before/report.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpufxj536u/after/report.py\nindex 6cf2012..fedd3d3 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpufxj536u/before/report.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpufxj536u/after/report.py\n@@ -1,0 +2 @@ class Report:\n+\ue000region 0\n",
+   "stderr": ""
+  }
+ ]
+}

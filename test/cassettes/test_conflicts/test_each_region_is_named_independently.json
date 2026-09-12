@@ -1,0 +1,33 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "check-attr",
+    "diff",
+    "--",
+    "m.py"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "m.py: diff: unspecified\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "core.attributesFile={ABS}",
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpsm5ol_c3/before/m.py b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpsm5ol_c3/after/m.py\nindex 1f26d18..6f517b4 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpsm5ol_c3/before/m.py\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpsm5ol_c3/after/m.py\n@@ -1,0 +2 @@ def first():\n+\ue000region 0\n@@ -4,0 +6 @@ def second():\n+\ue000region 1\n",
+   "stderr": ""
+  }
+ ]
+}

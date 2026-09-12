@@ -1,0 +1,196 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "ba45f209c02a7aebfe0a2cbbceab86aa21577440\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "ba45f209c02a7aebfe0a2cbbceab86aa21577440\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rm",
+    "-q",
+    "f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "branch deletes f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "c5cc2618b0cafaa8b02aaedc6dce61b102f3b211\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "-b",
+    "side",
+    "ba45f209c02a7aebfe0a2cbbceab86aa21577440"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "side edits f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "869542a2eb63d8542c952af6879f670090b839d7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "869542a2eb63d8542c952af6879f670090b839d7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "main"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "sequence.editor=cp {REPO}/.todo",
+    "-c",
+    "core.editor=true",
+    "rebase",
+    "-i",
+    "ba45f209c02a7aebfe0a2cbbceab86aa21577440"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "CONFLICT (modify/delete): f deleted in HEAD and modified in 869542a (side edits f).  Version 869542a (side edits f) of f left in tree.\n",
+   "stderr": "Rebasing (2/2)\nerror: could not apply 869542a... side edits f\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nCould not apply 869542a... \n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":3:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "one\ntwo\nthree\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":2:f"
+   ],
+   "stdin": null,
+   "returncode": 128,
+   "stdout": "",
+   "stderr": "fatal: path 'f' is in the index, but not at stage 2\nhint: Did you mean ':1:f'?\n"
+  }
+ ]
+}

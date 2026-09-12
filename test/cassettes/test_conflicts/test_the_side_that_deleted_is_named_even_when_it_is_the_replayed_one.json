@@ -1,0 +1,259 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "c7fe0acf1b2caf2e6158c916d5c8d2ca9a763648\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "c7fe0acf1b2caf2e6158c916d5c8d2ca9a763648\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "-b",
+    "side",
+    "c7fe0acf1b2caf2e6158c916d5c8d2ca9a763648"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rm",
+    "-q",
+    "f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "side deletes f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "cecb3301a1da37fc94e4eefcae3979b66267cec5\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "main"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "branch edits f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "6bfc5cbed80ff99ec304f3e6945ac3992d6a49fc\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "6bfc5cbed80ff99ec304f3e6945ac3992d6a49fc\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "sequence.editor=cp {REPO}/.todo",
+    "-c",
+    "core.editor=true",
+    "rebase",
+    "-i",
+    "c7fe0acf1b2caf2e6158c916d5c8d2ca9a763648"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "CONFLICT (modify/delete): f deleted in cecb330 (side deletes f) and modified in HEAD.  Version HEAD of f left in tree.\n",
+   "stderr": "Rebasing (2/2)\nerror: could not apply cecb330... side deletes f\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nCould not apply cecb330... \n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":1:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "one\ntwo\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":2:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "one\ntwo\nthree\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":3:f"
+   ],
+   "stdin": null,
+   "returncode": 128,
+   "stdout": "",
+   "stderr": "fatal: path 'f' is in the index, but not at stage 3\nhint: Did you mean ':1:f'?\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":1:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "814f4a422927b82f5f8a43f8fab6d3839e3983f2\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":1:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "814f4a422927b82f5f8a43f8fab6d3839e3983f2\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":2:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "4cb29ea38f70d7c61b2a3a25b02e3bdf44905402\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":3:f"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  }
+ ]
+}

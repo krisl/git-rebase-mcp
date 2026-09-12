@@ -1,0 +1,32 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpe19gnr27/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpe19gnr27/merged\nindex 422c2b7..de98044 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpe19gnr27/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpe19gnr27/merged\n@@ -2,0 +3 @@ b\n+c\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmppwtlw9om/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmppwtlw9om/merged\nindex 7898192..422c2b7 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmppwtlw9om/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmppwtlw9om/merged\n@@ -1,0 +2 @@ a\n+b\n",
+   "stderr": ""
+  }
+ ]
+}

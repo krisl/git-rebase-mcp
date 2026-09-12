@@ -1,0 +1,39 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "a734b9b90d755c84bb8fedbe49d3a9f493f1d1f2\n",
+   "stderr": ""
+  }
+ ]
+}
