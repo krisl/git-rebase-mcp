@@ -60,6 +60,7 @@ class Git:
                 "GIT_TERMINAL_PROMPT": "0",
                 "GIT_OPTIONAL_LOCKS": "0",
                 "LC_ALL": "C",
+                **_extra_env(),
             },
         )
         result = GitResult(args, completed.returncode, completed.stdout, completed.stderr)
@@ -130,3 +131,20 @@ def _path() -> str:
     import os
 
     return os.environ.get("PATH", "/usr/bin:/bin")
+
+
+# Env vars passed through to git when set. Absent means git falls back to
+# config, so production is unchanged; the test session sets these once
+# instead of running `git config` in every scratch repository.
+_PASSTHROUGH_PREFIXES = ("GIT_AUTHOR_", "GIT_COMMITTER_", "GIT_CONFIG_KEY_", "GIT_CONFIG_VALUE_")
+_PASSTHROUGH_EXACT = frozenset({"GIT_CONFIG_COUNT"})
+
+
+def _extra_env() -> dict[str, str]:
+    import os
+
+    extra: dict[str, str] = {}
+    for key, value in os.environ.items():
+        if (key in _PASSTHROUGH_EXACT or key.startswith(_PASSTHROUGH_PREFIXES)) and value.strip():
+            extra[key] = value
+    return extra

@@ -9,12 +9,24 @@ Real git is opt-in for speed: plain `pytest` skips fixture-backed tests,
 
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
 import pytest
 
 from scratch import Scratch
+
+# Identity and hermetic settings for every git process in the session, via
+# env passthrough in Git.run. Saves three `git config` procs per repository;
+# setdefault so CI can still override.
+os.environ.setdefault("GIT_AUTHOR_NAME", "Test")
+os.environ.setdefault("GIT_AUTHOR_EMAIL", "test@example.com")
+os.environ.setdefault("GIT_COMMITTER_NAME", "Test")
+os.environ.setdefault("GIT_COMMITTER_EMAIL", "test@example.com")
+os.environ.setdefault("GIT_CONFIG_COUNT", "1")
+os.environ.setdefault("GIT_CONFIG_KEY_0", "commit.gpgsign")
+os.environ.setdefault("GIT_CONFIG_VALUE_0", "false")
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -44,8 +56,4 @@ def scratch(tmp_path: Path, request: pytest.FixtureRequest) -> Scratch:
     if not request.config.getoption("real_git"):
         pytest.skip("needs --real-git (pure unit tests run by default)")
     subprocess.run(["git", "init", "-q", "-b", "main", str(tmp_path)], check=True)
-    repo = Scratch(tmp_path)
-    repo.git.run("config", "user.name", "Test")
-    repo.git.run("config", "user.email", "test@example.com")
-    repo.git.run("config", "commit.gpgsign", "false")
-    return repo
+    return Scratch(tmp_path)

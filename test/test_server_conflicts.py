@@ -565,9 +565,6 @@ def test_a_repo_reached_through_a_symlink_is_still_its_own_inside(tmp_path: Path
     real = tmp_path / "real"
     subprocess.run(["git", "init", "-q", "-b", "main", str(real)], check=True)
     scratch = Scratch(real)
-    for name, value in (("user.name", "T"), ("user.email", "t@e.com")):
-        scratch.git.run("config", name, value)
-    scratch.git.run("config", "commit.gpgsign", "false")
     scratch.commit("base", f="one\n")
     link = tmp_path / "link"
     link.symlink_to(real)

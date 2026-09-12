@@ -71,8 +71,6 @@ def test_a_repo_path_containing_a_quote_still_drives_the_todo(tmp_path: Path) ->
     the editor command fail to parse, and the rebase silently did nothing."""
     repo = Scratch(tmp_path / "re'po")
     subprocess.run(["git", "init", "-q", "-b", "main", str(repo.path)], check=True)
-    repo.git.run("config", "user.name", "Test")
-    repo.git.run("config", "user.email", "test@example.com")
     repo.commit("base", a="one\n")
     repo.commit("adds b", b="two\n")
     repo.commit("adds c", c="three\n")
