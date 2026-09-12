@@ -178,10 +178,9 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
     anything, so only the range is reported.
     """
     commits = commits_in_range(git, base)
+    targets = autosquash_targets(commits)
     stray = tuple(
-        commit
-        for commit in commits
-        if commit.sha in autosquash_targets(commits) and autosquash_targets(commits)[commit.sha] is None
+        commit for commit in commits if commit.sha in targets and targets[commit.sha] is None
     )
     upstream = already_upstream(git, base)
     duplicated = tuple(commit for commit in commits if commit.sha in upstream)
