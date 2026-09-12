@@ -2657,7 +2657,13 @@ def rebase_finish(
     # `upstream_sha` is set only for a rebase given an explicit onto, where the
     # merge-base of the old tip and the landing place is not where the branch's
     # own contribution began.
-    fork = session.upstream_sha or None
+    #
+    # Resolved once here rather than in each check below: this phase only
+    # reads, so one merge-base answers both `branch_change` and
+    # `compare_commits`.
+    fork = session.upstream_sha or git.out(
+        "merge-base", session.backup_sha, session.base_sha
+    )
     change = branch_change(git, session.backup, session.base_sha, fork=fork)
     difference = change.summary if change else None
     unchanged_tree = bool(change) and same_tree(git, session.backup)
