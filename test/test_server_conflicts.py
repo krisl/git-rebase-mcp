@@ -187,6 +187,7 @@ def test_a_deleted_path_is_reported_as_a_deletion_not_as_regions(
     assert "include_file_diffs" in report.guidance
 
 
+@pytest.mark.live_repo
 def test_taking_the_side_that_deleted_stages_a_deletion(
     deleted_by_the_branch: Scratch,
 ) -> None:
@@ -350,6 +351,7 @@ def test_resolving_can_stage_what_is_already_in_the_working_tree(scratch: Scratc
     assert scratch.git.out("show", ":0:f") == "resolved in place"
 
 
+@pytest.mark.live_repo
 def test_staging_the_working_tree_still_refuses_markers(scratch: Scratch) -> None:
     """The check must not be skippable by taking the other route into the tool."""
     scratch.commit("base", f="one\n")

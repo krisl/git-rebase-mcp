@@ -277,7 +277,6 @@ def test_a_report_says_which_checkout_it_is_about(separate_files: Scratch) -> No
     assert there.branch == "side"
 
 
-@pytest.mark.live_repo
 def test_the_checkout_is_named_through_a_stop_too(separate_files: Scratch) -> None:
     """Not only when idle: the reports a caller reads mid-rebase are the ones
     it is comparing against its own `git` output."""

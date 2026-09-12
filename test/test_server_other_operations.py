@@ -170,6 +170,7 @@ def test_a_cherry_pick_can_be_skipped(diverged: Scratch) -> None:
     assert diverged.subjects()[0] == "main change"  # the pick was dropped
 
 
+@pytest.mark.live_repo
 def test_a_cherry_pick_is_abandoned_by_its_own_abort(diverged: Scratch) -> None:
     diverged.git.run("cherry-pick", "side", check=False)
 
@@ -178,6 +179,7 @@ def test_a_cherry_pick_is_abandoned_by_its_own_abort(diverged: Scratch) -> None:
     assert diverged.git.lines("diff", "--name-only", "--diff-filter=U") == []
 
 
+@pytest.mark.live_repo
 def test_aborting_a_conflict_nothing_owns_is_refused(scratch: Scratch) -> None:
     """There is no operation to abandon, and no way to tell what undoing it
     would discard."""
@@ -238,6 +240,7 @@ def test_a_finished_resolution_can_be_abandoned_on_purpose(diverged: Scratch) ->
     assert diverged.git.lines("diff", "--name-only", "--diff-filter=U") == []
 
 
+@pytest.mark.live_repo
 def test_an_untouched_conflict_does_not_block_an_abort(diverged: Scratch) -> None:
     """Markers left in the file mean nobody has answered it yet, and refusing on
     that would refuse every ordinary abort."""

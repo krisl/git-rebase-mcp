@@ -125,7 +125,6 @@ def test_a_rebase_git_never_started_is_reported_as_a_failure(scratch: Scratch) -
     assert scratch.read("a") == "uncommitted\n"  # and nothing was moved
 
 
-@pytest.mark.live_repo
 def test_force_overrides_the_refusal(series: Scratch) -> None:
     """Dropping a commit on purpose has to remain possible."""
     c = series.git.out("rev-parse", "HEAD")
@@ -171,7 +170,6 @@ def test_unrelated_untracked_files_are_left_alone(series: Scratch) -> None:
     assert series.read("notes.txt") == "mine\n"
 
 
-@pytest.mark.live_repo
 def test_a_check_command_that_fails_stops_the_rebase(series: Scratch) -> None:
     """The only thing that catches a commit which applies cleanly but is broken."""
     b, c = series.git.out("rev-parse", "HEAD~1"), series.git.out("rev-parse", "HEAD")

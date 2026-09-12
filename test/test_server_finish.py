@@ -209,6 +209,7 @@ def test_a_hand_edit_nobody_recorded_still_reads_as_a_warning(series: Scratch) -
     assert "allow_change=true only if all of it is yours" in guidance
 
 
+@pytest.mark.live_repo
 def test_the_refusal_says_how_to_undo(series: Scratch) -> None:
     _, c = two(series)
     started = rebase_start("HEAD~2", str(series.path), [f"pick {c}"], force=True)
@@ -337,6 +338,7 @@ def test_a_failed_check_keeps_the_session_for_a_retry(series: Scratch) -> None:
     assert load_session(series.git) is not None
 
 
+@pytest.mark.live_repo
 def test_aborting_restores_what_was_moved_aside(scratch: Scratch) -> None:
     scratch.commit("base", a="one\n")
     scratch.commit("adds b", b="b\n")
@@ -353,6 +355,7 @@ def test_aborting_restores_what_was_moved_aside(scratch: Scratch) -> None:
     assert load_session(scratch.git) is None
 
 
+@pytest.mark.live_repo
 def test_restoring_targets_our_stash_not_a_stash_made_meanwhile(
     scratch: Scratch,
 ) -> None:
@@ -377,6 +380,7 @@ def test_restoring_targets_our_stash_not_a_stash_made_meanwhile(
     assert "user work" in "\n".join(scratch.git.lines("stash", "list"))  # theirs remains
 
 
+@pytest.mark.live_repo
 def test_aborting_mid_conflict_returns_to_where_it_started(scratch: Scratch) -> None:
     scratch.commit("base", f="one\n")
     scratch.commit("second", f="two\n")

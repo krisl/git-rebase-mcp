@@ -46,6 +46,7 @@ def untracks_a_config(scratch: Scratch) -> Scratch:
     return scratch
 
 
+@pytest.mark.live_repo
 def test_the_round_trip_really_does_destroy_it(untracks_a_config: Scratch) -> None:
     """Pinned first, because the warning is only worth having if this holds."""
     report = rebase_finish(str(untracks_a_config.path), allow_change=True)
@@ -151,6 +152,7 @@ class TestTheCopyTheRewriteAlreadyTook:
     above blind to the loss actually happening -- which is how a real rebase
     deleted a config file and reported nothing at risk."""
 
+    @pytest.mark.live_repo
     def test_the_rebase_really_does_delete_it(
         self, onto_a_history_that_untracked_it: Scratch
     ) -> None:
