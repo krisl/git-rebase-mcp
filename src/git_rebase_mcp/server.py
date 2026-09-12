@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import re
 import shlex
-import subprocess
 from collections.abc import Callable, Sequence
 from functools import wraps
 from dataclasses import MISSING, dataclass, fields, replace
@@ -2114,15 +2113,9 @@ def _observed_check(git: Git, state: RebaseState) -> CheckResult | None:
         return None
     if isinstance(state, (Conflicted, Applying)) and state.unmerged:
         return None
-    # Through a shell, which is how git's own `exec` runs it: the same string has
-    # to mean the same thing whichever half of `check_command` is in use.
-    finished = subprocess.run(
-        session.check_command,
-        shell=True,
-        cwd=git.repo,
-        capture_output=True,
-        text=True,
-    )
+    # Through `Git.run_check`, so record-replay tests can capture it like any
+    # other subprocess the server runs.
+    finished = git.run_check(session.check_command)
     said = (finished.stdout + finished.stderr).strip()
     return CheckResult(
         command=session.check_command,

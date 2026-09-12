@@ -90,6 +90,23 @@ class Git:
         """Whether the command exits zero. For questions, not for actions."""
         return self.run(*args, check=False).ok
 
+    def run_check(self, command: str) -> GitResult:
+        """Run a shell command in the repository: the observed `check_command`.
+
+        Through a shell, which is how git's own `exec` runs it: the same
+        string has to mean the same thing whichever half of `check_command`
+        is in use. Inherits the environment, since a suite needs its own
+        PATH and settings to run.
+        """
+        completed = subprocess.run(
+            command,
+            shell=True,
+            cwd=self.repo,
+            capture_output=True,
+            text=True,
+        )
+        return GitResult(("check", command), completed.returncode, completed.stdout, completed.stderr)
+
     def where(self) -> tuple[str, str]:
         """The working tree this instance drives, and the branch checked out.
 

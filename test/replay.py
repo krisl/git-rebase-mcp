@@ -112,6 +112,24 @@ class CassetteStore:
         self.index += 1
         return frame
 
+    def consume_check(self, command: str) -> dict[str, Any]:
+        self._ensure_loaded()
+        if self.index >= len(self.frames):
+            raise AssertionError(
+                f"cassette {self.path} exhausted at call {self.index + 1}: "
+                f"unexpected check {command!r}"
+            )
+        frame = self.frames[self.index]
+        if frame.get("type") != "check" or frame["command"] != command:
+            raise AssertionError(
+                f"cassette {self.path} diverged at call {self.index + 1}:\n"
+                f"  recorded: {frame.get('type')} "
+                f"{frame.get('args', frame.get('command', frame.get('op')))}\n"
+                f"  received: check {command!r}"
+            )
+        self.index += 1
+        return frame
+
     def consume_fs(self, op: str, path: str) -> dict[str, Any]:
         self._ensure_loaded()
         if self.index >= len(self.frames):
@@ -167,6 +185,28 @@ class HarnessGit(Git):
         path = Path(raw)
         real = path if path.is_absolute() else self.repo / path
         return LoggedPath(real, self._store, self.repo)
+
+    def run_check(self, command: str) -> GitResult:
+        key = _normalize(command, self.repo, for_match=True)
+        if self._store.record:
+            result = super().run_check(command)
+            self._store.append(
+                {
+                    "type": "check",
+                    "command": key,
+                    "returncode": result.returncode,
+                    "stdout": _normalize(result.stdout, self.repo, for_match=False),
+                    "stderr": _normalize(result.stderr, self.repo, for_match=False),
+                }
+            )
+            return result
+        frame = self._store.consume_check(key)
+        return GitResult(
+            ("check", command),
+            frame["returncode"],
+            frame["stdout"].replace(REPO, str(self.repo)),
+            frame["stderr"].replace(REPO, str(self.repo)),
+        )
 
 
 class LoggedPath:
