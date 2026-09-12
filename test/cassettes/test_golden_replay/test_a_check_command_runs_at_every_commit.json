@@ -1,0 +1,971 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "Add counts"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "fc47f7d14964a21bdd78c6b67e239e67d96378a7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "Use delta_count"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "d5afb908c4f1c5a370c9216b526214836cbf2e35\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD~1"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "fc47f7d14964a21bdd78c6b67e239e67d96378a7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "d5afb908c4f1c5a370c9216b526214836cbf2e35\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "--reverse",
+    "--format=%H %s",
+    "HEAD~2..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "fc47f7d14964a21bdd78c6b67e239e67d96378a7 Add counts\nd5afb908c4f1c5a370c9216b526214836cbf2e35 Use delta_count\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "--cherry-mark",
+    "--right-only",
+    "HEAD~2...HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "+d5afb908c4f1c5a370c9216b526214836cbf2e35\n+fc47f7d14964a21bdd78c6b67e239e67d96378a7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "fc47f7d14964a21bdd78c6b67e239e67d96378a7^{commit}",
+    "d5afb908c4f1c5a370c9216b526214836cbf2e35^{commit}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "fc47f7d14964a21bdd78c6b67e239e67d96378a7^{commit}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "fc47f7d14964a21bdd78c6b67e239e67d96378a7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "d5afb908c4f1c5a370c9216b526214836cbf2e35^{commit}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "d5afb908c4f1c5a370c9216b526214836cbf2e35\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-merge"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-merge\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-merge",
+   "ok": true,
+   "result": false
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-apply"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-apply\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-apply",
+   "ok": true,
+   "result": false
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--name-only",
+    "--diff-filter=U"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "CHERRY_PICK_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "REVERT_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "MERGE_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "d5afb908c4f1c5a370c9216b526214836cbf2e35\nUse delta_count\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "status",
+    "--porcelain",
+    "--untracked-files=no"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-files",
+    "--others",
+    "--exclude-standard"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "d5afb908c4f1c5a370c9216b526214836cbf2e35\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "tag",
+    "-f",
+    "rebase-backup/{STAMP}",
+    "d5afb908c4f1c5a370c9216b526214836cbf2e35"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "d5afb908c4f1c5a370c9216b526214836cbf2e35^{tree}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "98186a7f5671888aae34c3ae2b35d5e5e7fbc667\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD~2^{commit}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "write_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": 413
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp-todo"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp-todo\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "write_text",
+   "path": "{REPO}/.git/rebase-mcp-todo",
+   "ok": true,
+   "result": 139
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "core.editor=true",
+    "-c",
+    "rerere.enabled=true",
+    "-c",
+    "sequence.editor=cp {REPO}/.git/rebase-mcp-todo",
+    "rebase",
+    "-i",
+    "HEAD~2"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": "Rebasing (2/4)\nExecuting: test -f counts.py\nRebasing (3/4)\nRebasing (4/4)\nExecuting: test -f counts.py\nSuccessfully rebased and updated refs/heads/main.\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-merge"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-merge\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-merge",
+   "ok": true,
+   "result": false
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-apply"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-apply\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-apply",
+   "ok": true,
+   "result": false
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--name-only",
+    "--diff-filter=U"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "CHERRY_PICK_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "REVERT_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "MERGE_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e451756830d03e7687523b2e408fcd116d5321d7\nAdd counts\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144311\",\n \"backup_sha\": \"d5afb908c4f1c5a370c9216b526214836cbf2e35\",\n \"backup_tree\": \"98186a7f5671888aae34c3ae2b35d5e5e7fbc667\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": \"test -f counts.py\",\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144311\",\n \"backup_sha\": \"d5afb908c4f1c5a370c9216b526214836cbf2e35\",\n \"backup_tree\": \"98186a7f5671888aae34c3ae2b35d5e5e7fbc667\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": \"test -f counts.py\",\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144311\",\n \"backup_sha\": \"d5afb908c4f1c5a370c9216b526214836cbf2e35\",\n \"backup_tree\": \"98186a7f5671888aae34c3ae2b35d5e5e7fbc667\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": \"test -f counts.py\",\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e451756830d03e7687523b2e408fcd116d5321d7\n^084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e451756830d03e7687523b2e408fcd116d5321d7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e451756830d03e7687523b2e408fcd116d5321d7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--show-toplevel"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "{REPO}\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--abbrev-ref",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "main\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "d5afb908c4f1c5a370c9216b526214836cbf2e35"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "counts.py\nreadme\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "counts.py\nreadme\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-merge"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-merge\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-merge",
+   "ok": true,
+   "result": false
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-apply"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-apply\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-apply",
+   "ok": true,
+   "result": false
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--name-only",
+    "--diff-filter=U"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "CHERRY_PICK_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "REVERT_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "MERGE_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e451756830d03e7687523b2e408fcd116d5321d7\nAdd counts\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144311\",\n \"backup_sha\": \"d5afb908c4f1c5a370c9216b526214836cbf2e35\",\n \"backup_tree\": \"98186a7f5671888aae34c3ae2b35d5e5e7fbc667\",\n \"base\": \"HEAD~2\",\n \"base_sha\": \"084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": \"test -f counts.py\",\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "merge-base",
+    "d5afb908c4f1c5a370c9216b526214836cbf2e35",
+    "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1",
+    "d5afb908c4f1c5a370c9216b526214836cbf2e35"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "diff --git a/counts.py b/counts.py\nnew file mode 100644\nindex 0000000..30cbd17\n--- /dev/null\n+++ b/counts.py\n@@ -0,0 +1,5 @@\n+def counts(packages):\n+    rows = []\n+    for package in packages:\n+        rows.append(delta_count(package))\n+    return rows\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "diff --git a/counts.py b/counts.py\nnew file mode 100644\nindex 0000000..30cbd17\n--- /dev/null\n+++ b/counts.py\n@@ -0,0 +1,5 @@\n+def counts(packages):\n+    rows = []\n+    for package in packages:\n+        rows.append(delta_count(package))\n+    return rows\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "patch-id",
+    "--stable"
+   ],
+   "stdin": "diff --git a/counts.py b/counts.py\nnew file mode 100644\nindex 0000000..30cbd17\n--- /dev/null\n+++ b/counts.py\n@@ -0,0 +1,5 @@\n+def counts(packages):\n+    rows = []\n+    for package in packages:\n+        rows.append(delta_count(package))\n+    return rows\n",
+   "returncode": 0,
+   "stdout": "e03ec7b7e62783f79ba9e256e01cb767c573678a 0000000000000000000000000000000000000000\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "patch-id",
+    "--stable"
+   ],
+   "stdin": "diff --git a/counts.py b/counts.py\nnew file mode 100644\nindex 0000000..30cbd17\n--- /dev/null\n+++ b/counts.py\n@@ -0,0 +1,5 @@\n+def counts(packages):\n+    rows = []\n+    for package in packages:\n+        rows.append(delta_count(package))\n+    return rows\n",
+   "returncode": 0,
+   "stdout": "e03ec7b7e62783f79ba9e256e01cb767c573678a 0000000000000000000000000000000000000000\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e451756830d03e7687523b2e408fcd116d5321d7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "grep",
+    "-l",
+    "-E",
+    "-e",
+    "^<<<<<<<",
+    "-e",
+    "^\\|\\|\\|\\|\\|\\|\\|",
+    "-e",
+    "^>>>>>>>",
+    "e451756830d03e7687523b2e408fcd116d5321d7"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "d5afb908c4f1c5a370c9216b526214836cbf2e35"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "counts.py\nreadme\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "counts.py\nreadme\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "d5afb908c4f1c5a370c9216b526214836cbf2e35"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "counts.py\nreadme\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "counts.py\nreadme\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "unlink",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": null
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "--reverse",
+    "084ec8794a5bebf12d8ab5176a8d7e2f5d1a53f1..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e451756830d03e7687523b2e408fcd116d5321d7\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "e451756830d03e7687523b2e408fcd116d5321d7"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e451756830d03e7687523b2e408fcd116d5321d7\nAdd counts\n",
+   "stderr": ""
+  }
+ ]
+}

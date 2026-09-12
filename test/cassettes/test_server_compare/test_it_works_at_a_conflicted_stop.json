@@ -1,0 +1,725 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "9f691128abbd9e592dfc042bb4710f6901123537\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "branch",
+    "side"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "mine"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "0760427f2659b37d52d6c5edef2ce21a121d8382\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "side"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "theirs"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "748d7704e7dd9d8c5427bbd2080568f194f616ca\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "main"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "--reverse",
+    "--format=%H %s",
+    "side..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "0760427f2659b37d52d6c5edef2ce21a121d8382 mine\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "--cherry-mark",
+    "--right-only",
+    "side...HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "+0760427f2659b37d52d6c5edef2ce21a121d8382\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-merge"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-merge\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-merge",
+   "ok": true,
+   "result": false
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-apply"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-apply\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-apply",
+   "ok": true,
+   "result": false
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--name-only",
+    "--diff-filter=U"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "CHERRY_PICK_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "REVERT_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "MERGE_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "0760427f2659b37d52d6c5edef2ce21a121d8382\nmine\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "status",
+    "--porcelain",
+    "--untracked-files=no"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-files",
+    "--others",
+    "--exclude-standard"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "0760427f2659b37d52d6c5edef2ce21a121d8382\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "tag",
+    "-f",
+    "rebase-backup/{STAMP}",
+    "0760427f2659b37d52d6c5edef2ce21a121d8382"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "0760427f2659b37d52d6c5edef2ce21a121d8382^{tree}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "0e493054e65e28c31330d6adc94cd0054f969575\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "side^{commit}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "748d7704e7dd9d8c5427bbd2080568f194f616ca\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "write_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": 396
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "core.editor=true",
+    "-c",
+    "rerere.enabled=true",
+    "rebase",
+    "-i",
+    "side"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "Auto-merging f\nCONFLICT (content): Merge conflict in f\n",
+   "stderr": "Rebasing (1/1)\nerror: could not apply 0760427... mine\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 0760427... # mine\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-merge"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-merge\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-merge",
+   "ok": true,
+   "result": true
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "1\n"
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "1\n"
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "pick 0760427f2659b37d52d6c5edef2ce21a121d8382 # mine\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "748d7704e7dd9d8c5427bbd2080568f194f616ca\ntheirs\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--name-only",
+    "--diff-filter=U"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "REBASE_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "0760427f2659b37d52d6c5edef2ce21a121d8382\nmine\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-merge"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-merge\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-merge",
+   "ok": true,
+   "result": true
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "1\n"
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "1\n"
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "pick 0760427f2659b37d52d6c5edef2ce21a121d8382 # mine\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "748d7704e7dd9d8c5427bbd2080568f194f616ca\ntheirs\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--name-only",
+    "--diff-filter=U"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "REBASE_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "0760427f2659b37d52d6c5edef2ce21a121d8382\nmine\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144349\",\n \"backup_sha\": \"0760427f2659b37d52d6c5edef2ce21a121d8382\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"748d7704e7dd9d8c5427bbd2080568f194f616ca\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [],\n \"carried\": []\n}\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "write_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": 443
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144349\",\n \"backup_sha\": \"0760427f2659b37d52d6c5edef2ce21a121d8382\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"748d7704e7dd9d8c5427bbd2080568f194f616ca\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"0760427f2659b37d52d6c5edef2ce21a121d8382\"\n ],\n \"carried\": []\n}\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--show-toplevel"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "{REPO}\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--abbrev-ref",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "HEAD\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-merge/head-name"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-merge/head-name\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "refs/heads/main\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "0760427f2659b37d52d6c5edef2ce21a121d8382"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "ls-tree",
+    "-r",
+    "--name-only",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": "{\n \"backup_ref\": \"rebase-backup/20260912T144349\",\n \"backup_sha\": \"0760427f2659b37d52d6c5edef2ce21a121d8382\",\n \"backup_tree\": \"0e493054e65e28c31330d6adc94cd0054f969575\",\n \"base\": \"side\",\n \"base_sha\": \"748d7704e7dd9d8c5427bbd2080568f194f616ca\",\n \"upstream_sha\": \"\",\n \"stashed\": [],\n \"stash_ref\": null,\n \"check_command\": null,\n \"check_halts\": true,\n \"amended\": [],\n \"resolved\": [\n  \"0760427f2659b37d52d6c5edef2ce21a121d8382\"\n ],\n \"carried\": []\n}\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "--reverse",
+    "748d7704e7dd9d8c5427bbd2080568f194f616ca..0760427f2659b37d52d6c5edef2ce21a121d8382"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "0760427f2659b37d52d6c5edef2ce21a121d8382\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "--reverse",
+    "748d7704e7dd9d8c5427bbd2080568f194f616ca..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "merge-base",
+    "0760427f2659b37d52d6c5edef2ce21a121d8382",
+    "748d7704e7dd9d8c5427bbd2080568f194f616ca"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "9f691128abbd9e592dfc042bb4710f6901123537\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "range-diff",
+    "9f691128abbd9e592dfc042bb4710f6901123537..0760427f2659b37d52d6c5edef2ce21a121d8382",
+    "748d7704e7dd9d8c5427bbd2080568f194f616ca..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 129,
+   "stdout": "",
+   "stderr": "fatal: need two commit ranges\n\nusage: git range-diff [<options>] <old-base>..<old-tip> <new-base>..<new-tip>\n   or: git range-diff [<options>] <old-tip>...<new-tip>\n   or: git range-diff [<options>] <base> <old-tip> <new-tip>\n\n    --[no-]creation-factor <n>\n                          percentage by which creation is weighted\n    --no-dual-color       use simple diff colors\n    --dual-color          opposite of --no-dual-color\n    --[no-]notes[=<notes>]\n                          passed to 'git log'\n    --[no-]diff-merges <style>\n                          passed to 'git log'\n    --[no-]max-memory <size>\n                          maximum memory for cost matrix (default 4G)\n    --[no-]remerge-diff   passed to 'git log'\n    --[no-]left-only      only emit output related to the first range\n    --[no-]right-only     only emit output related to the second range\n\nDiff output format options\n    -p, --patch           generate patch\n    -s, --no-patch        suppress diff output\n    -u                    generate patch\n    -U, --unified[=<n>]   generate diffs with <n> lines context\n    -W, --[no-]function-context\n                          generate diffs with <n> lines context\n    --raw                 generate the diff in raw format\n    --patch-with-raw      synonym for '-p --raw'\n    --patch-with-stat     synonym for '-p --stat'\n    --numstat             machine friendly --stat\n    --shortstat           output only the last line of --stat\n    -X, --dirstat[=<param1>,<param2>...]\n                          output the distribution of relative amount of changes for each sub-directory\n    --cumulative          synonym for --dirstat=cumulative\n    --dirstat-by-file[=<param1>,<param2>...]\n                          synonym for --dirstat=files,<param1>,<param2>...\n    --check               warn if changes introduce conflict markers or whitespace errors\n    --summary             condensed summary such as creations, renames and mode changes\n    --name-only           show only names of changed files\n    --name-status         show only names and status of changed files\n    --stat[=<width>[,<name-width>[,<count>]]]\n                          generate diffstat\n    --stat-width <width>  generate diffstat with a given width\n    --stat-name-width <width>\n                          generate diffstat with a given name width\n    --stat-graph-width <width>\n                          generate diffstat with a given graph width\n    --stat-count <count>  generate diffstat with limited lines\n    --[no-]compact-summary\n                          generate compact summary in diffstat\n    --binary              output a binary diff that can be applied\n    --[no-]full-index     show full pre- and post-image object names on the \"index\" lines\n    --[no-]color[=<when>] show colored diff\n    --ws-error-highlight <kind>\n                          highlight whitespace errors in the 'context', 'old' or 'new' lines in the diff\n    -z                    do not munge pathnames and use NULs as output field terminators in --raw or --numstat\n    --[no-]abbrev[=<n>]   use <n> digits to display object names\n    --src-prefix <prefix> show the given source prefix instead of \"a/\"\n    --dst-prefix <prefix> show the given destination prefix instead of \"b/\"\n    --line-prefix <prefix>\n                          prepend an additional prefix to every line of output\n    --no-prefix           do not show any source or destination prefix\n    --default-prefix      use default prefixes a/ and b/\n    --inter-hunk-context <n>\n                          show context between diff hunks up to the specified number of lines\n    --output-indicator-new <char>\n                          specify the character to indicate a new line instead of '+'\n    --output-indicator-old <char>\n                          specify the character to indicate an old line instead of '-'\n    --output-indicator-context <char>\n                          specify the character to indicate a context instead of ' '\n\nDiff rename options\n    -B, --break-rewrites[=<n>[/<m>]]\n                          break complete rewrite changes into pairs of delete and create\n    -M, --find-renames[=<n>]\n                          detect renames\n    -D, --irreversible-delete\n                          omit the preimage for deletes\n    -C, --find-copies[=<n>]\n                          detect copies\n    --[no-]find-copies-harder\n                          use unmodified files as source to find copies\n    --no-renames          disable rename detection\n    --[no-]rename-empty   use empty blobs as rename source\n    --[no-]follow         continue listing the history of a file beyond renames\n    -l <n>                prevent rename/copy detection if the number of rename/copy targets exceeds given limit\n\nDiff algorithm options\n    --minimal             produce the smallest possible diff\n    -w, --ignore-all-space\n                          ignore whitespace when comparing lines\n    -b, --ignore-space-change\n                          ignore changes in amount of whitespace\n    --ignore-space-at-eol ignore changes in whitespace at EOL\n    --ignore-cr-at-eol    ignore carrier-return at the end of line\n    --ignore-blank-lines  ignore changes whose lines are all blank\n    -I, --[no-]ignore-matching-lines <regex>\n                          ignore changes whose all lines match <regex>\n    --[no-]indent-heuristic\n                          heuristic to shift diff hunk boundaries for easy reading\n    --patience            generate diff using the \"patience diff\" algorithm\n    --histogram           generate diff using the \"histogram diff\" algorithm\n    --diff-algorithm <algorithm>\n                          choose a diff algorithm\n    --anchored <text>     generate diff using the \"anchored diff\" algorithm\n    --word-diff[=<mode>]  show word diff, using <mode> to delimit changed words\n    --word-diff-regex <regex>\n                          use <regex> to decide what a word is\n    --color-words[=<regex>]\n                          equivalent to --word-diff=color --word-diff-regex=<regex>\n    --[no-]color-moved[=<mode>]\n                          moved lines of code are colored differently\n    --[no-]color-moved-ws <mode>\n                          how white spaces are ignored in --color-moved\n\nOther diff options\n    --[no-]relative[=<prefix>]\n                          when run from subdir, exclude changes outside and show relative paths\n    -a, --[no-]text       treat all files as text\n    -R                    swap two inputs, reverse the diff\n    --[no-]exit-code      exit with 1 if there were differences, 0 otherwise\n    --[no-]quiet          disable all output of the program\n    --[no-]ext-diff       allow an external diff helper to be executed\n    --[no-]textconv       run external text conversion filters when comparing binary files\n    --ignore-submodules[=<when>]\n                          ignore changes to submodules in the diff generation\n    --submodule[=<format>]\n                          specify how differences in submodules are shown\n    --ita-invisible-in-index\n                          hide 'git add -N' entries from the index\n    --ita-visible-in-index\n                          treat 'git add -N' entries as real in the index\n    -S <string>           look for differences that change the number of occurrences of the specified string\n    -G <regex>            look for differences that change the number of occurrences of the specified regex\n    --pickaxe-all         show all changes in the changeset with -S or -G\n    --pickaxe-regex       treat <string> in -S as extended POSIX regular expression\n    -O <file>             control the order in which files appear in the output\n    --rotate-to <path>    show the change in the specified path first\n    --skip-to <path>      skip the output to the specified path\n    --find-object <object-id>\n                          look for differences that change the number of occurrences of the specified object\n    --diff-filter [(A|C|D|M|R|T|U|X|B)...[*]]\n                          select files by diff type\n    --max-depth <depth>   maximum tree depth to recurse\n    --output <file>       output to a specific file\n\n"
+  }
+ ]
+}
