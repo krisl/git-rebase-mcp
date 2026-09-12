@@ -1,0 +1,314 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "246723b0822a9f5196f2cdce592ba1d8e4b8eefc\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "246723b0822a9f5196f2cdce592ba1d8e4b8eefc\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "adds mine"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "2961f52e9b06edb37c71307358952844edcd774d\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "adds other"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "23d9c884df7922518c8e95f4ed8a00b6ceb8b349\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "23d9c884df7922518c8e95f4ed8a00b6ceb8b349\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "tag",
+    "-f",
+    "rebase-backup/test",
+    "23d9c884df7922518c8e95f4ed8a00b6ceb8b349"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "23d9c884df7922518c8e95f4ed8a00b6ceb8b349^{tree}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "92a3697ba5ee14a011cc4ff70bf29dd892b06aee\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "-b",
+    "upstream",
+    "246723b0822a9f5196f2cdce592ba1d8e4b8eefc"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "upstream work"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "612c1844f3630d718049e6ce67d60182ed7148af\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "612c1844f3630d718049e6ce67d60182ed7148af\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "-q",
+    "main"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD~1"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "2961f52e9b06edb37c71307358952844edcd774d\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "sequence.editor=cp {REPO}/.todo",
+    "-c",
+    "core.editor=true",
+    "rebase",
+    "-i",
+    "--onto",
+    "612c1844f3630d718049e6ce67d60182ed7148af",
+    "246723b0822a9f5196f2cdce592ba1d8e4b8eefc"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": "Rebasing (1/1)\nSuccessfully rebased and updated refs/heads/main.\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "merge-base",
+    "23d9c884df7922518c8e95f4ed8a00b6ceb8b349",
+    "612c1844f3630d718049e6ce67d60182ed7148af"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "246723b0822a9f5196f2cdce592ba1d8e4b8eefc\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "246723b0822a9f5196f2cdce592ba1d8e4b8eefc",
+    "23d9c884df7922518c8e95f4ed8a00b6ceb8b349"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "diff --git a/mine b/mine\nnew file mode 100644\nindex 0000000..a7453f0\n--- /dev/null\n+++ b/mine\n@@ -0,0 +1 @@\n+feature\ndiff --git a/other b/other\nnew file mode 100644\nindex 0000000..e019be0\n--- /dev/null\n+++ b/other\n@@ -0,0 +1 @@\n+second\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "612c1844f3630d718049e6ce67d60182ed7148af",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "diff --git a/mine b/mine\nnew file mode 100644\nindex 0000000..a7453f0\n--- /dev/null\n+++ b/mine\n@@ -0,0 +1 @@\n+feature\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "patch-id",
+    "--stable"
+   ],
+   "stdin": "diff --git a/mine b/mine\nnew file mode 100644\nindex 0000000..a7453f0\n--- /dev/null\n+++ b/mine\n@@ -0,0 +1 @@\n+feature\ndiff --git a/other b/other\nnew file mode 100644\nindex 0000000..e019be0\n--- /dev/null\n+++ b/other\n@@ -0,0 +1 @@\n+second\n",
+   "returncode": 0,
+   "stdout": "b934895d4cbef58fd7f315dec05f0568eb104067 0000000000000000000000000000000000000000\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "patch-id",
+    "--stable"
+   ],
+   "stdin": "diff --git a/mine b/mine\nnew file mode 100644\nindex 0000000..a7453f0\n--- /dev/null\n+++ b/mine\n@@ -0,0 +1 @@\n+feature\n",
+   "returncode": 0,
+   "stdout": "f79dbce5c608ad0f637db632143a30e3147d705a 0000000000000000000000000000000000000000\n",
+   "stderr": ""
+  }
+ ]
+}

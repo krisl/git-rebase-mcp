@@ -1,0 +1,131 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "5f3751e8f8f223a544e99f762decd3452540c25f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "5f3751e8f8f223a544e99f762decd3452540c25f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "tag",
+    "-f",
+    "rebase-backup/test",
+    "5f3751e8f8f223a544e99f762decd3452540c25f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "5f3751e8f8f223a544e99f762decd3452540c25f^{tree}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "b1ea253509c6004817f83cd7659ab4e6c38b2981\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "write_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": 387
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "unlink",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": null
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": false,
+   "error": "FileNotFoundError"
+  }
+ ]
+}

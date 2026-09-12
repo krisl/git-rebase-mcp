@@ -1,0 +1,58 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "5f3751e8f8f223a544e99f762decd3452540c25f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": false,
+   "error": "FileNotFoundError"
+  }
+ ]
+}

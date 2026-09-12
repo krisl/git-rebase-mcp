@@ -1,0 +1,138 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "97ba67b7aeb3ec85b131efee7da4699f9d0ffb5f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "resolved badly"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "c4cb30dbfeb4da4593237e7c1bf10764752de058\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "HEAD~1..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "c4cb30dbfeb4da4593237e7c1bf10764752de058\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "grep",
+    "-l",
+    "-E",
+    "-e",
+    "^<<<<<<<",
+    "-e",
+    "^\\|\\|\\|\\|\\|\\|\\|",
+    "-e",
+    "^>>>>>>>",
+    "c4cb30dbfeb4da4593237e7c1bf10764752de058"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "c4cb30dbfeb4da4593237e7c1bf10764752de058:a\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "grep",
+    "-l",
+    "-E",
+    "-e",
+    "^<<<<<<<",
+    "-e",
+    "^\\|\\|\\|\\|\\|\\|\\|",
+    "-e",
+    "^>>>>>>>",
+    "c4cb30dbfeb4da4593237e7c1bf10764752de058^",
+    "--",
+    "a"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%s",
+    "c4cb30dbfeb4da4593237e7c1bf10764752de058"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "resolved badly\n",
+   "stderr": ""
+  }
+ ]
+}

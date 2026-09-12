@@ -1,0 +1,125 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "134974dd007e9424788f124afda78eb349adddd5\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "unrelated"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "7428ddf08c0531c141a6ec2abb12b938ba15b6d8\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "HEAD~1..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "7428ddf08c0531c141a6ec2abb12b938ba15b6d8\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "grep",
+    "-l",
+    "-E",
+    "-e",
+    "^<<<<<<<",
+    "-e",
+    "^\\|\\|\\|\\|\\|\\|\\|",
+    "-e",
+    "^>>>>>>>",
+    "7428ddf08c0531c141a6ec2abb12b938ba15b6d8"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "7428ddf08c0531c141a6ec2abb12b938ba15b6d8:test_fixture\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "grep",
+    "-l",
+    "-E",
+    "-e",
+    "^<<<<<<<",
+    "-e",
+    "^\\|\\|\\|\\|\\|\\|\\|",
+    "-e",
+    "^>>>>>>>",
+    "7428ddf08c0531c141a6ec2abb12b938ba15b6d8^",
+    "--",
+    "test_fixture"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "7428ddf08c0531c141a6ec2abb12b938ba15b6d8^:test_fixture\n",
+   "stderr": ""
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "ff1ab226077a4c098cb5b2a069b0af61ebbbc380\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "write_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": 9
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": true,
+   "result": "{not json"
+  }
+ ]
+}

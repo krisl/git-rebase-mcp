@@ -1,0 +1,263 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "522235f3a3cc2c19f4c574a7f61209324151546b\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "adds b"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e3f99f8db0d264abfa1504c43818bce8bc3b4dfc\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "adds c"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "7252a0545ab613e59853b30247c2c557dc163ed6\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD~2"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "522235f3a3cc2c19f4c574a7f61209324151546b\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "7252a0545ab613e59853b30247c2c557dc163ed6\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "tag",
+    "-f",
+    "rebase-backup/test",
+    "7252a0545ab613e59853b30247c2c557dc163ed6"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "7252a0545ab613e59853b30247c2c557dc163ed6^{tree}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "95cdf64464bed58021df4e8a6feec1a7fb297455\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD~1"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "e3f99f8db0d264abfa1504c43818bce8bc3b4dfc\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "7252a0545ab613e59853b30247c2c557dc163ed6\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "sequence.editor=cp {REPO}/.todo",
+    "-c",
+    "core.editor=true",
+    "rebase",
+    "-i",
+    "HEAD~2"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": "Rebasing (1/2)\nRebasing (2/2)\nSuccessfully rebased and updated refs/heads/main.\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "--format=%s",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "adds b\nadds c\nbase\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "merge-base",
+    "7252a0545ab613e59853b30247c2c557dc163ed6",
+    "522235f3a3cc2c19f4c574a7f61209324151546b"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "522235f3a3cc2c19f4c574a7f61209324151546b\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "522235f3a3cc2c19f4c574a7f61209324151546b",
+    "7252a0545ab613e59853b30247c2c557dc163ed6"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "diff --git a/b b/b\nnew file mode 100644\nindex 0000000..f719efd\n--- /dev/null\n+++ b/b\n@@ -0,0 +1 @@\n+two\ndiff --git a/c b/c\nnew file mode 100644\nindex 0000000..2bdf67a\n--- /dev/null\n+++ b/c\n@@ -0,0 +1 @@\n+three\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "522235f3a3cc2c19f4c574a7f61209324151546b",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "diff --git a/b b/b\nnew file mode 100644\nindex 0000000..f719efd\n--- /dev/null\n+++ b/b\n@@ -0,0 +1 @@\n+two\ndiff --git a/c b/c\nnew file mode 100644\nindex 0000000..2bdf67a\n--- /dev/null\n+++ b/c\n@@ -0,0 +1 @@\n+three\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "patch-id",
+    "--stable"
+   ],
+   "stdin": "diff --git a/b b/b\nnew file mode 100644\nindex 0000000..f719efd\n--- /dev/null\n+++ b/b\n@@ -0,0 +1 @@\n+two\ndiff --git a/c b/c\nnew file mode 100644\nindex 0000000..2bdf67a\n--- /dev/null\n+++ b/c\n@@ -0,0 +1 @@\n+three\n",
+   "returncode": 0,
+   "stdout": "60e5612670c3731547f800099aa1e0527f3e4e29 0000000000000000000000000000000000000000\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "patch-id",
+    "--stable"
+   ],
+   "stdin": "diff --git a/b b/b\nnew file mode 100644\nindex 0000000..f719efd\n--- /dev/null\n+++ b/b\n@@ -0,0 +1 @@\n+two\ndiff --git a/c b/c\nnew file mode 100644\nindex 0000000..2bdf67a\n--- /dev/null\n+++ b/c\n@@ -0,0 +1 @@\n+three\n",
+   "returncode": 0,
+   "stdout": "60e5612670c3731547f800099aa1e0527f3e4e29 0000000000000000000000000000000000000000\n",
+   "stderr": ""
+  }
+ ]
+}

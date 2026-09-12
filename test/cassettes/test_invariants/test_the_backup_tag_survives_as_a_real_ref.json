@@ -1,0 +1,85 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "be64503035febe328ff8f20b4fdd94ac5e3f77a1\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "be64503035febe328ff8f20b4fdd94ac5e3f77a1\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "tag",
+    "-f",
+    "rebase-backup/test",
+    "be64503035febe328ff8f20b4fdd94ac5e3f77a1"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "be64503035febe328ff8f20b4fdd94ac5e3f77a1^{tree}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "b1ea253509c6004817f83cd7659ab4e6c38b2981\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "rebase-backup/test"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "be64503035febe328ff8f20b4fdd94ac5e3f77a1\n",
+   "stderr": ""
+  }
+ ]
+}
