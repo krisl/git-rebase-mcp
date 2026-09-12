@@ -557,6 +557,7 @@ def test_the_replayed_commit_s_whole_file_diff_can_be_asked_for(scratch: Scratch
     assert "changed elsewhere too" in with_it.replaying_file_diff
 
 
+@pytest.mark.real_git
 def test_a_repo_reached_through_a_symlink_is_still_its_own_inside(tmp_path: Path) -> None:
     """The containment check resolves the path it is given, so it has to resolve
     what it compares against too -- or every path in a repository reached

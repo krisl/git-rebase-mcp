@@ -64,6 +64,7 @@ def test_a_start_that_stops_still_points_at_the_backup_tag(scratch: Scratch) -> 
     assert "The tip beforehand is tagged" in report.guidance
 
 
+@pytest.mark.real_git
 def test_a_repo_path_containing_a_quote_still_drives_the_todo(tmp_path: Path) -> None:
     """The todo is fed to git through a shell command, so the path has to be
     quoted the way a shell would quote it. A repo named `re'po` used to make

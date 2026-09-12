@@ -1,8 +1,10 @@
 """Fixtures providing scratch repositories.
 
-Every test builds a real repository and runs real git against it. The point of
-the server is that it agrees with git, so mocking git would test nothing worth
-testing.
+Tests that need git take the `scratch` fixture below and run real git
+against it. Pure unit tests take no fixture and always run.
+
+Real git is opt-in for speed: plain `pytest` skips fixture-backed tests,
+`pytest --real-git` runs the full suite (including CI).
 """
 
 from __future__ import annotations
@@ -15,9 +17,32 @@ import pytest
 from scratch import Scratch
 
 
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--real-git",
+        action="store_true",
+        default=False,
+        help="run tests that shell out to real git (slow); skipped by default",
+    )
+
+
+def pytest_collection_modifyitems(
+    session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
+) -> None:
+    """Skip `real_git`-marked tests unless the flag opts in."""
+    if config.getoption("real_git"):
+        return
+    skip = pytest.mark.skip(reason="needs --real-git (pure unit tests run by default)")
+    for item in items:
+        if item.get_closest_marker("real_git") is not None:
+            item.add_marker(skip)
+
+
 @pytest.fixture
-def scratch(tmp_path: Path) -> Scratch:
+def scratch(tmp_path: Path, request: pytest.FixtureRequest) -> Scratch:
     """An initialised repository with an identity, ready to be committed into."""
+    if not request.config.getoption("real_git"):
+        pytest.skip("needs --real-git (pure unit tests run by default)")
     subprocess.run(["git", "init", "-q", "-b", "main", str(tmp_path)], check=True)
     repo = Scratch(tmp_path)
     repo.git.run("config", "user.name", "Test")
