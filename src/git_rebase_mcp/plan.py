@@ -228,12 +228,14 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
     kept: dict[str, Commit] = {}
     dropped_on_purpose: dict[str, Commit] = {}
     unknown: list[str] = []
+    named = [m["sha"] for line in todo if (m := TODO_LINE.match(line))]
+    resolved_by_sha = _resolve_many(git, named)
 
     for line in todo:
         match = TODO_LINE.match(line)
         if not match:
             continue
-        resolved = _resolve(git, match["sha"]) or ""
+        resolved = resolved_by_sha.get(match["sha"]) or ""
         commit = by_sha.get(resolved)
         if commit is None:
             unknown.append(match["sha"])
@@ -280,6 +282,23 @@ def check_plan(git: Git, base: str, todo: list[str] | None) -> PlanCheck:
 def _resolve(git: Git, revision: str) -> str | None:
     result = git.run("rev-parse", "--verify", "--quiet", f"{revision}^{{commit}}", check=False)
     return result.stdout.strip() or None
+
+
+def _resolve_many(git: Git, revisions: Sequence[str]) -> dict[str, str | None]:
+    """Resolve several revisions to full commit shas in one proc.
+
+    One `rev-parse` for the common all-valid case; per-revision fallback when
+    anything fails, since a batch run cannot say which input a line answers.
+    """
+    if not revisions:
+        return {}
+    result = git.run(
+        "rev-parse", "--verify", "--quiet", *[f"{rev}^{{commit}}" for rev in revisions], check=False
+    )
+    lines = result.stdout.splitlines()
+    if result.ok and len(lines) == len(revisions):
+        return dict(zip(revisions, lines))
+    return {rev: _resolve(git, rev) for rev in revisions}
 
 
 def todo_stopping_at(
@@ -329,8 +348,9 @@ def todo_stopping_at(
             f"{action} {commit.sha} {commit.subject}" for commit in commits
         ]
     wanted: dict[str, str] = {}
+    resolved_many = _resolve_many(git, list(stop_at or ()))
     for revision in stop_at or ():
-        resolved = _resolve(git, revision)
+        resolved = resolved_many[revision]
         if resolved is None or all(commit.sha != resolved for commit in commits):
             raise ValueError(
                 f"{revision} is not a commit in {base}..HEAD, so a todo built from "
