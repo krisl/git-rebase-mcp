@@ -90,6 +90,17 @@ class Git:
         """Whether the command exits zero. For questions, not for actions."""
         return self.run(*args, check=False).ok
 
+    def exists(self, path: str) -> bool:
+        """Whether a working-tree path exists. Asked here rather than of
+        `pathlib` so record-replay tests can answer from the cassette:
+        whether a rebase deleted a file is exactly what differs between a
+        live run and a replay."""
+        return (self.repo / path).exists()
+
+    def is_file(self, path: str) -> bool:
+        """Whether a working-tree path is a file, answered like `exists`."""
+        return (self.repo / path).is_file()
+
     def run_check(self, command: str) -> GitResult:
         """Run a shell command in the repository: the observed `check_command`.
 

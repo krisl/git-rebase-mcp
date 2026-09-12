@@ -425,7 +425,7 @@ def locals_the_backup_tracks(git: Git, backup: Backup, revision: str = "HEAD") -
     candidates = sorted(
         path
         for path in before - tracked_now
-        if (git.repo / path).is_file() and path not in set(git.lines("ls-files"))
+        if git.is_file(path) and path not in set(git.lines("ls-files"))
     )
     return _ignored(git, candidates) if candidates else ()
 
@@ -471,7 +471,7 @@ def locals_the_rewrite_removed(
     candidates = sorted(
         path
         for path in before - tracked_now
-        if path not in aside and not (git.repo / path).exists()
+        if path not in aside and not git.exists(path)
     )
     return _ignored(git, candidates) if candidates else ()
 

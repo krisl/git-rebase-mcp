@@ -186,6 +186,16 @@ class HarnessGit(Git):
         real = path if path.is_absolute() else self.repo / path
         return LoggedPath(real, self._store, self.repo)
 
+    def exists(self, path: str) -> bool:
+        return _probe_fs(
+            self._store, self.repo, "exists", path, lambda: (self.repo / path).exists()
+        )
+
+    def is_file(self, path: str) -> bool:
+        return _probe_fs(
+            self._store, self.repo, "is_file", path, lambda: (self.repo / path).is_file()
+        )
+
     def run_check(self, command: str) -> GitResult:
         key = _normalize(command, self.repo, for_match=True)
         if self._store.record:
@@ -211,14 +221,10 @@ class HarnessGit(Git):
 
 class LoggedPath:
     """A path inside the git dir whose reads the cassette answers."""
-
     def __init__(self, real: Path, store: CassetteStore, repo: Path) -> None:
         self._real = real
         self._store = store
         self._repo = repo
-
-    def _key(self) -> str:
-        return _normalize(str(self._real), self._repo, for_match=True)
 
     def __truediv__(self, other: str | Path) -> LoggedPath:
         return LoggedPath(self._real / other, self._store, self._repo)
@@ -249,24 +255,34 @@ class LoggedPath:
         return None
 
     def _probe(self, op: str, call: Any) -> Any:
-        if self._store.record:
-            try:
-                result = call()
-            except OSError as exc:
-                self._store.append(
-                    {"type": "fs", "op": op, "path": self._key(), "ok": False,
-                     "error": type(exc).__name__}
-                )
-                raise
-            self._store.append(
-                {"type": "fs", "op": op, "path": self._key(), "ok": True,
-                 "result": result}
+        return _probe_fs(self._store, self._repo, op, str(self._real), call)
+
+
+def _probe_fs(store: CassetteStore, repo: Path, op: str, path: str, call: Any) -> Any:
+    """One working-tree existence probe, recorded or replayed.
+
+    The same stream as every other frame: whether a rebase deleted a file
+    is what differs between a live run and a replay, so the answer has to
+    come from the cassette rather than from the disk.
+    """
+    key = _normalize(path, repo, for_match=True)
+    if store.record:
+        try:
+            result = call()
+        except OSError as exc:
+            store.append(
+                {"type": "fs", "op": op, "path": key, "ok": False,
+                 "error": type(exc).__name__}
             )
-            return result
-        frame = self._store.consume_fs(op, self._key())
-        if not frame["ok"]:
-            raise OSError(f"replayed fs {op} {self._key()} failed")
-        return frame["result"]
+            raise
+        store.append(
+            {"type": "fs", "op": op, "path": key, "ok": True, "result": result}
+        )
+        return result
+    frame = store.consume_fs(op, key)
+    if not frame["ok"]:
+        raise OSError(f"replayed fs {op} {key} failed")
+    return frame["result"]
 
 
 class RecordingGit(HarnessGit):
