@@ -49,6 +49,21 @@ def test_the_conflict_reading_names_each_region(conflicting: Scratch) -> None:
     assert "branch_so_far" in text and "replaying" in text
 
 
+def test_the_conflict_reading_shows_each_sides_diff(conflicting: Scratch) -> None:
+    third = conflicting.git.out("rev-parse", "HEAD")
+    conflicting.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")
+
+    text = render(conflicts(str(conflicting.path)))
+
+    # Summaries say how much changed; the diffs say what. Both sides' actual
+    # lines are in the reading, so the usual conflict resolves without
+    # opening the file. (Against the pick's parent as base, the branch side
+    # reads -two/+one and the replayed side -two/+three.)
+    assert text.count("@@ ") >= 2
+    assert "+one" in text
+    assert "+three" in text
+
+
 def test_a_repeated_line_is_shown_where_it_is_decided(conflicting: Scratch) -> None:
     third = conflicting.git.out("rev-parse", "HEAD")
     conflicting.start_rebase("HEAD~1", [f"pick {third}"], onto="HEAD~2")

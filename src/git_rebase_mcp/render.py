@@ -126,8 +126,21 @@ def _conflicts(report: Any) -> str:
                      if unit.base_range else "not in the base")
             lines.append(f"    region {index}  {where}")
             lines.append(f"      branch_so_far  {unit.branch_so_far_summary}")
+            lines.extend(_indented(unit.branch_so_far_diff))
             lines.append(f"      replaying      {unit.replaying_summary}")
+            lines.extend(_indented(unit.replaying_diff))
     return "\n".join(lines)
+
+
+def _indented(text: str, width: int = 8) -> list[str]:
+    """Diff lines nested under their summary, without trailing whitespace.
+
+    The diffs are already trimmed where they are built (long runs summarised,
+    context kept), so this is bounded: it shows what each side did rather than
+    only how much, which is what the region is read for.
+    """
+    pad = " " * width
+    return [(pad + line) if line else "" for line in text.splitlines()]
 
 
 def _resolve(report: Any) -> str:
