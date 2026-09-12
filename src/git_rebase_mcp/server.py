@@ -1976,7 +1976,13 @@ def _git(repo: str) -> Git:
     path = Path(repo).expanduser().resolve()
     if not path.is_dir():
         raise ValueError(f"{path} is not a directory")
-    return Git(path)
+    return _git_factory(path)
+
+
+# How `_git` builds its driver. Tests point this at a recorder or a replay;
+# production leaves the default, which shells out to real git.
+GitFactory = Callable[[Path], Git]
+_git_factory: GitFactory = Git
 
 
 def _contained(repo: Path, path: str) -> tuple[Path, Path]:

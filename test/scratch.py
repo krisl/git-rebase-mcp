@@ -10,9 +10,9 @@ from git_rebase_mcp.git import Git
 class Scratch:
     """A small repository under construction."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, git: Git | None = None) -> None:
         self.path = path
-        self.git = Git(path)
+        self.git = git if git is not None else Git(path)
 
     def write(self, name: str, content: str) -> None:
         target = self.path / name
