@@ -1,0 +1,38 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Nightly thorough run: catches replay drift even without pushes.
+    - cron: "0 6 * * *"
+
+jobs:
+  replay:
+    name: fast suite (replay)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --group dev
+      - run: uv run pytest -q
+
+  thorough:
+    name: full suite (real git)
+    runs-on: ubuntu-latest
+    # Cheap signal on every push; the thorough reference on main, nightly,
+    # or when asked for. Skip on PR pushes to save minutes.
+    if: >
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv sync --group dev
+      - run: uv run pytest -q --real-git -n auto
