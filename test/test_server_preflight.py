@@ -100,6 +100,7 @@ def test_preflight_names_commits_already_in_the_base(scratch: Scratch) -> None:
     assert "probably been merged already" in report.guidance
 
 
+@pytest.mark.live_repo
 def test_the_backup_ref_is_named_as_not_an_ancestor(series: Scratch) -> None:
     """The report a real session got stuck on. Handed this server's own backup
     tag as a base, preflight refused -- correctly -- but explained it as "the

@@ -253,6 +253,7 @@ def test_a_stopped_fixup_chain_is_not_reported_as_the_replayed_commit(
     assert "ignore the subject" in report.guidance
 
 
+@pytest.mark.live_repo
 def test_a_report_says_which_checkout_it_is_about(separate_files: Scratch) -> None:
     """The field that exists because a shell got this wrong and a tool did not.
 
@@ -276,6 +277,7 @@ def test_a_report_says_which_checkout_it_is_about(separate_files: Scratch) -> No
     assert there.branch == "side"
 
 
+@pytest.mark.live_repo
 def test_the_checkout_is_named_through_a_stop_too(separate_files: Scratch) -> None:
     """Not only when idle: the reports a caller reads mid-rebase are the ones
     it is comparing against its own `git` output."""

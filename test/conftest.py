@@ -47,12 +47,17 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 def pytest_collection_modifyitems(
     session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
 ) -> None:
-    """Skip `real_git`-marked tests unless recording or running them for real."""
-    if config.getoption("real_git") or config.getoption("record"):
+    """Skip `live_repo`-marked tests unless running them for real.
+
+    These depend on repository state replay cannot reproduce -- worktree
+    checkouts on disk, files a rebase deleted -- so they run only under
+    `--real-git`, never from cassettes.
+    """
+    if config.getoption("real_git"):
         return
-    skip = pytest.mark.skip(reason="needs --real-git (pure unit tests run by default)")
+    skip = pytest.mark.skip(reason="needs a live repo; run with --real-git")
     for item in items:
-        if item.get_closest_marker("real_git") is not None:
+        if item.get_closest_marker("live_repo") is not None:
             item.add_marker(skip)
 
 

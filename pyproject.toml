@@ -34,7 +34,7 @@ packages = ["src/git_rebase_mcp"]
 testpaths = ["test"]
 pythonpath = ["test"]
 addopts = "--strict-markers"
-markers = ["real_git: shells out to real git (skipped without --real-git)"]
+markers = ["live_repo: needs a live repository on disk; skipped without --real-git"]
 
 [tool.pyright]
 include = ["src", "test"]
