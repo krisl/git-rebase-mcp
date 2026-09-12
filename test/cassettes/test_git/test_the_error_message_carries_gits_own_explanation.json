@@ -1,0 +1,15 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "checkout",
+    "no-such-branch"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": "error: pathspec 'no-such-branch' did not match any file(s) known to git\n"
+  }
+ ]
+}

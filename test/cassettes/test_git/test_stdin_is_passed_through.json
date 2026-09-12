@@ -1,0 +1,61 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "first"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "412a6fbef070656e2007da3b2f3ae87b0a1394db\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "412a6fbef070656e2007da3b2f3ae87b0a1394db\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "cat-file",
+    "--batch-check"
+   ],
+   "stdin": "412a6fbef070656e2007da3b2f3ae87b0a1394db",
+   "returncode": 0,
+   "stdout": "412a6fbef070656e2007da3b2f3ae87b0a1394db commit 152\n",
+   "stderr": ""
+  }
+ ]
+}

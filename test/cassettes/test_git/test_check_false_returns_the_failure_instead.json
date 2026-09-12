@@ -1,0 +1,15 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "does-not-exist"
+   ],
+   "stdin": null,
+   "returncode": 128,
+   "stdout": "does-not-exist\n",
+   "stderr": "fatal: ambiguous argument 'does-not-exist': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'\n"
+  }
+ ]
+}

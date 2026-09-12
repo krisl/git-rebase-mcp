@@ -1,0 +1,237 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "01786cc8db6061384e9cf4467b2e9136d794483e\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "adds b"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "9d99d02031cfd45682873fa5d600b91df59d71d0\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "adds c"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "9e6c3a546cb8779107fde63c68e8eaf8bf0caebf\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "adds d"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "145d0b57ab80bc9331e04460180d4717ad4f99f8\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "--reverse",
+    "--format=%H %s",
+    "HEAD~3..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "9d99d02031cfd45682873fa5d600b91df59d71d0 adds b\n9e6c3a546cb8779107fde63c68e8eaf8bf0caebf adds c\n145d0b57ab80bc9331e04460180d4717ad4f99f8 adds d\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "--reverse",
+    "--format=%H %s",
+    "HEAD~3..HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "9d99d02031cfd45682873fa5d600b91df59d71d0 adds b\n9e6c3a546cb8779107fde63c68e8eaf8bf0caebf adds c\n145d0b57ab80bc9331e04460180d4717ad4f99f8 adds d\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-list",
+    "--cherry-mark",
+    "--right-only",
+    "HEAD~3...HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "+145d0b57ab80bc9331e04460180d4717ad4f99f8\n+9e6c3a546cb8779107fde63c68e8eaf8bf0caebf\n+9d99d02031cfd45682873fa5d600b91df59d71d0\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "9d99d02031cfd45682873fa5d600b91df59d71d0^{commit}",
+    "9e6c3a546cb8779107fde63c68e8eaf8bf0caebf^{commit}",
+    "145d0b57ab80bc9331e04460180d4717ad4f99f8^{commit}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "9d99d02031cfd45682873fa5d600b91df59d71d0^{commit}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "9d99d02031cfd45682873fa5d600b91df59d71d0\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "9e6c3a546cb8779107fde63c68e8eaf8bf0caebf^{commit}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "9e6c3a546cb8779107fde63c68e8eaf8bf0caebf\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    "145d0b57ab80bc9331e04460180d4717ad4f99f8^{commit}"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "145d0b57ab80bc9331e04460180d4717ad4f99f8\n",
+   "stderr": ""
+  }
+ ]
+}
