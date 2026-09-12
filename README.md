@@ -378,9 +378,16 @@ gap between those two is the whole design brief.
 
 ```bash
 uv sync
-uv run pytest       # builds real repositories and runs real git against them
+uv run pytest                    # fast suite: replays recorded git answers (~15s)
+uv run pytest --real-git -n auto # thorough suite: real repositories, real git (~2min)
+uv run pytest --record <file>    # re-record cassettes after a behavior change
 uv run pyright
 ```
 
-Tests use scratch repositories rather than mocks. The point of the server is
-that it agrees with git, so mocking git would test nothing worth testing.
+Tests run against git, not mocks: the point of the server is that it agrees
+with git, so mocking git would test nothing worth testing. Plain `pytest`
+replays per-test cassettes under `test/cassettes/` instead of shelling out,
+so a behavior change that shifts git's answers fails replay loudly -- review
+the cassette diff like any other. `--real-git` always runs the full 454
+against live git. Tests marked `live_repo` need a live checkout on disk
+(worktrees, files a rebase deleted) and run only there, never from cassettes.
