@@ -914,7 +914,9 @@ def _dropped_steps(git: Git, current: list[str], replacement: list[str]) -> tupl
         return found
 
     missing = set(named(current)) - set(named(replacement))
-    return tuple(_commit_info(git, sha) for sha in missing)
+    # Sorted: each lookup is a git call, so set order would make the call
+    # sequence (and the refusal listing) nondeterministic across processes.
+    return tuple(_commit_info(git, sha) for sha in sorted(missing))
 
 
 @dataclass(frozen=True)

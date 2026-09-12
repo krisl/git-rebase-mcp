@@ -422,9 +422,11 @@ def locals_the_backup_tracks(git: Git, backup: Backup, revision: str = "HEAD") -
     if not before:
         return ()
     tracked_now = set(git.lines("ls-tree", "-r", "--name-only", revision))
+    # Sorted before probing: the existence checks below are git calls, so set
+    # order would make the call sequence nondeterministic across processes.
     candidates = sorted(
         path
-        for path in before - tracked_now
+        for path in sorted(before - tracked_now)
         if git.is_file(path) and path not in set(git.lines("ls-files"))
     )
     return _ignored(git, candidates) if candidates else ()
@@ -468,9 +470,10 @@ def locals_the_rewrite_removed(
         return ()
     tracked_now = set(git.lines("ls-tree", "-r", "--name-only", revision))
     aside = set(stashed)
+    # Sorted before probing, as above: `exists` is a recorded call.
     candidates = sorted(
         path
-        for path in before - tracked_now
+        for path in sorted(before - tracked_now)
         if path not in aside and not git.exists(path)
     )
     return _ignored(git, candidates) if candidates else ()
