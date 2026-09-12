@@ -36,13 +36,19 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=False,
         help="run tests that shell out to real git (slow); skipped by default",
     )
+    parser.addoption(
+        "--record",
+        action="store_true",
+        default=False,
+        help="record real git answers to test/cassettes for replay runs",
+    )
 
 
 def pytest_collection_modifyitems(
     session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
 ) -> None:
-    """Skip `real_git`-marked tests unless the flag opts in."""
-    if config.getoption("real_git"):
+    """Skip `real_git`-marked tests unless recording or running them for real."""
+    if config.getoption("real_git") or config.getoption("record"):
         return
     skip = pytest.mark.skip(reason="needs --real-git (pure unit tests run by default)")
     for item in items:
@@ -52,8 +58,25 @@ def pytest_collection_modifyitems(
 
 @pytest.fixture
 def scratch(tmp_path: Path, request: pytest.FixtureRequest) -> Scratch:
-    """An initialised repository with an identity, ready to be committed into."""
-    if not request.config.getoption("real_git"):
-        pytest.skip("needs --real-git (pure unit tests run by default)")
+    """An initialised repository with an identity, ready to be committed into.
+
+    Real git under `--real-git` (or `--record`, which also writes the
+    cassette); a replay of recorded answers otherwise. `git init` itself
+    always runs for real: it is one proc, and the working tree stays real.
+    """
+    from git_rebase_mcp import server
+    from replay import CassetteStore
+
+    record = bool(request.config.getoption("record"))
+    real = bool(request.config.getoption("real_git"))
+    store = None if real else CassetteStore.for_node(request.node.nodeid, record=record)
+    if store is not None and not record and not store.exists():
+        pytest.skip(f"no cassette recorded; run with --record ({store.path.name})")
     subprocess.run(["git", "init", "-q", "-b", "main", str(tmp_path)], check=True)
-    return Scratch(tmp_path)
+    if store is None:
+        return Scratch(tmp_path)
+    previous = server._git_factory
+    server._git_factory = store.factory
+    request.addfinalizer(lambda: setattr(server, "_git_factory", previous))
+    request.addfinalizer(store.finalize)
+    return Scratch(tmp_path, git=store.factory(tmp_path))
