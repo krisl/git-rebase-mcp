@@ -19,6 +19,7 @@ git-rebase-mcp = "git_rebase_mcp.server:main"
 [dependency-groups]
 dev = [
     "pytest>=8",
+    "pytest-xdist>=3",
     "pyright>=1.1",
 ]
 
