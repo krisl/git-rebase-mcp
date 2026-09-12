@@ -1,0 +1,427 @@
+{
+ "frames": [
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "base"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "8ceca54f0b85a7a3ff7f9b871f350e5ca683bd0f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "second"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "d1bae68c80daebbf067831fa6f41e2d360812468\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "add",
+    "-A"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "commit",
+    "-q",
+    "-m",
+    "third"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "2c73e766d271651e249b738245bb1404a7d6a70d\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "2c73e766d271651e249b738245bb1404a7d6a70d\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "sequence.editor=cp {REPO}/.todo",
+    "-c",
+    "core.editor=true",
+    "rebase",
+    "-i",
+    "--onto",
+    "HEAD~2",
+    "HEAD~1"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "Auto-merging f\nCONFLICT (content): Merge conflict in f\n",
+   "stderr": "Rebasing (1/1)\nerror: could not apply 2c73e76... third\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: \"git add/rm <conflicted_files>\", then run \"git rebase --continue\".\nhint: You can instead skip this commit: run \"git rebase --skip\".\nhint: To abort and get back to the state before \"git rebase\", run \"git rebase --abort\".\nhint: Disable this message with \"git config set advice.mergeConflict false\"\nRecorded preimage for 'f'\nCould not apply 2c73e76... \n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-merge"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-merge\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "is_dir",
+   "path": "{REPO}/.git/rebase-merge",
+   "ok": true,
+   "result": true
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "1\n"
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "1\n"
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git{ABS}",
+   "ok": true,
+   "result": "pick 2c73e766d271651e249b738245bb1404a7d6a70d\n"
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "8ceca54f0b85a7a3ff7f9b871f350e5ca683bd0f\nbase\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--name-only",
+    "--diff-filter=U"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%H%n%s",
+    "REBASE_HEAD"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "2c73e766d271651e249b738245bb1404a7d6a70d\nthird\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--git-path",
+    "rebase-mcp.json"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": ".git/rebase-mcp.json\n",
+   "stderr": ""
+  },
+  {
+   "type": "fs",
+   "op": "read_text",
+   "path": "{REPO}/.git/rebase-mcp.json",
+   "ok": false,
+   "error": "FileNotFoundError"
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":1:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "two\nkeep\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":2:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "one\nkeep\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "show",
+    ":3:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "three\nkeep\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":1:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f079c7878011c7c26c0acdcee0100b5b7bbbe5fe\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":1:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f079c7878011c7c26c0acdcee0100b5b7bbbe5fe\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":2:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "644b8f76ce5aa13f253feb176ce04b75fdcfdb1d\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    ":3:f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "a66bc9d91975f55cc04711b12f49f97af62502bc\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "merge-file",
+    "-p",
+    "--diff3",
+    "-L",
+    "\ue000branch-so-far",
+    "-L",
+    "\ue000base",
+    "-L",
+    "\ue000replaying",
+    "{ABS}",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "<<<<<<< \ue000branch-so-far\none\n||||||| \ue000base\ntwo\n=======\nthree\n>>>>>>> \ue000replaying\nkeep\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp04rcq6n_/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp04rcq6n_/merged\nindex f079c78..39a8e8b 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp04rcq6n_/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp04rcq6n_/merged\n@@ -0,0 +1,3 @@\n+<<<<<<< \ue000branch-so-far\n+one\n+||||||| \ue000base\n@@ -1,0 +5,3 @@ two\n+=======\n+three\n+>>>>>>> \ue000replaying\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "check-attr",
+    "diff",
+    "--",
+    "f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "f: diff: unspecified\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "-c",
+    "core.attributesFile={ABS}",
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpa2rmucck/before/f b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpa2rmucck/after/f\nindex f079c78..a416767 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpa2rmucck/before/f\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmpa2rmucck/after/f\n@@ -0,0 +1 @@\n+\ue000region 0\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "blame",
+    "--line-porcelain",
+    "-L",
+    "1,1",
+    "HEAD",
+    "--",
+    "f"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "8ceca54f0b85a7a3ff7f9b871f350e5ca683bd0f 1 1 1\nauthor Test\nauthor-mail <test@example.com>\nauthor-time 1789222784\nauthor-tz +0200\ncommitter Test\ncommitter-mail <test@example.com>\ncommitter-time 1789222784\ncommitter-tz +0200\nsummary base\nboundary\nfilename f\n\tone\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "diff",
+    "--no-index",
+    "--unified=0",
+    "{ABS}",
+    "{ABS}"
+   ],
+   "stdin": null,
+   "returncode": 1,
+   "stdout": "diff --git a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp0arwn2xd/base b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp0arwn2xd/merged\nindex f079c78..a66bc9d 100644\n--- a/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp0arwn2xd/base\n+++ b/var/folders/sp/9mbmdcwd27vghvkbrzrhshkh0000gn/T/tmp0arwn2xd/merged\n@@ -1 +1 @@\n-two\n+three\n",
+   "stderr": ""
+  },
+  {
+   "type": "git",
+   "args": [
+    "log",
+    "-1",
+    "--format=%B",
+    "2c73e766d271651e249b738245bb1404a7d6a70d"
+   ],
+   "stdin": null,
+   "returncode": 0,
+   "stdout": "third\n\n",
+   "stderr": ""
+  }
+ ]
+}
